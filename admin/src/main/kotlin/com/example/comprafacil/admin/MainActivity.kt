@@ -1,8 +1,11 @@
 package com.example.comprafacil.admin
 
+import android.net.Uri
 import android.os.Bundle
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -15,10 +18,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.example.comprafacil.admin.data.Product
+import com.example.comprafacil.admin.data.ProductImage
 import com.example.comprafacil.admin.data.SupabaseConfig
 import com.example.comprafacil.admin.ui.theme.CompraFacilAdminTheme
 import io.github.jan.supabase.postgrest.postgrest
+import io.github.jan.supabase.storage.storage
 import kotlinx.coroutines.launch
+import java.util.UUID
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -88,9 +94,7 @@ fun AdminApp() {
                         scope.launch {
                             try {
                                 SupabaseConfig.client.postgrest["products"].delete {
-                                    filter {
-                                        eq("id", product.id!!)
-                                    }
+                                    filter { eq("id", product.id!!) }
                                 }
                                 fetchProducts()
                             } catch (e: Exception) {
@@ -105,16 +109,23 @@ fun AdminApp() {
         if (showAddDialog) {
             AddProductDialog(
                 onDismiss = { showAddDialog = false },
-                onConfirm = { name, price, description, imageUrl ->
+                onConfirm = { name, price, description, imageUrls ->
                     scope.launch {
                         try {
                             val newProduct = Product(
                                 name = name,
                                 price = price.toDoubleOrNull() ?: 0.0,
-                                description = description,
-                                image_url = imageUrl
+                                description = description
                             )
-                            SupabaseConfig.client.postgrest["products"].insert(newProduct)
+                            val insertedProduct = SupabaseConfig.client.postgrest["products"]
+                                .insert(newProduct) { select() }.decodeSingle<Product>()
+
+                            // Insert images
+                            imageUrls.forEach { url ->
+                                val img = ProductImage(product_id = insertedProduct.id!!, image_url = url)
+                                SupabaseConfig.client.postgrest["product_images"].insert(img)
+                            }
+
                             fetchProducts()
                             showAddDialog = false
                         } catch (e: Exception) {
@@ -149,11 +160,11 @@ fun ProductItem(product: Product, onDelete: () -> Unit) {
 }
 
 @Composable
-fun AddProductDialog(onDismiss: () -> Unit, onConfirm: (String, String, String, String) -> Unit) {
+fun AddProductDialog(onDismiss: () -> Unit, onConfirm: (String, String, String, List<String>) -> Unit) {
     var name by remember { mutableStateOf("") }
     var price by remember { mutableStateOf("") }
     var description by remember { mutableStateOf("") }
-    var imageUrl by remember { mutableStateOf("") }
+    var imageUrlsInput by remember { mutableStateOf("") } // Comma separated for this demo
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -163,11 +174,18 @@ fun AddProductDialog(onDismiss: () -> Unit, onConfirm: (String, String, String, 
                 TextField(value = name, onValueChange = { name = it }, label = { Text("Nome") })
                 TextField(value = price, onValueChange = { price = it }, label = { Text("Preço") })
                 TextField(value = description, onValueChange = { description = it }, label = { Text("Descrição") })
-                TextField(value = imageUrl, onValueChange = { imageUrl = it }, label = { Text("URL da Imagem") })
+                TextField(
+                    value = imageUrlsInput,
+                    onValueChange = { imageUrlsInput = it },
+                    label = { Text("URLs das Imagens (separadas por vírgula)") }
+                )
             }
         },
         confirmButton = {
-            Button(onClick = { onConfirm(name, price, description, imageUrl) }) {
+            Button(onClick = {
+                val urls = imageUrlsInput.split(",").map { it.trim() }.filter { it.isNotEmpty() }
+                onConfirm(name, price, description, urls)
+            }) {
                 Text("Adicionar")
             }
         },

@@ -8,9 +8,16 @@ data class Product(
     val name: String,
     val description: String? = null,
     val price: Double,
-    val image_url: String? = null,
     val category_id: String? = null,
-    val created_at: String? = null
+    val created_at: String? = null,
+    val images: List<ProductImage>? = null
+)
+
+@Serializable
+data class ProductImage(
+    val id: String? = null,
+    val product_id: String,
+    val image_url: String
 )
 
 @Serializable

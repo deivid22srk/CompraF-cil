@@ -3,21 +3,22 @@ package com.example.comprafacil
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.items
-import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.unit.dp
-import coil.compose.AsyncImage
+import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavType
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
+import com.example.comprafacil.data.CartItem
 import com.example.comprafacil.data.Product
 import com.example.comprafacil.data.SupabaseConfig
+import com.example.comprafacil.ui.AuthViewModel
+import com.example.comprafacil.ui.screens.*
 import com.example.comprafacil.ui.theme.CompraFacilTheme
+import io.github.jan.supabase.gotrue.auth
 import io.github.jan.supabase.postgrest.postgrest
+import io.github.jan.supabase.postgrest.query.Columns
 import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
@@ -25,67 +26,13 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         setContent {
             CompraFacilTheme {
-                StoreApp()
-            }
-        }
-    }
-}
+                val authViewModel: AuthViewModel = viewModel()
+                val currentUser by authViewModel.currentUser
 
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun StoreApp() {
-    val scope = rememberCoroutineScope()
-    var products by remember { mutableStateOf<List<Product>>(emptyList()) }
-    var isLoading by remember { mutableStateOf(true) }
-    var errorMessage by remember { mutableStateOf<String?>(null) }
-
-    LaunchedEffect(Unit) {
-        scope.launch {
-            try {
-                products = SupabaseConfig.client.postgrest["products"]
-                    .select().decodeList<Product>()
-            } catch (e: Exception) {
-                e.printStackTrace()
-                errorMessage = e.message
-            } finally {
-                isLoading = false
-            }
-        }
-    }
-
-    Scaffold(
-        topBar = {
-            CenterAlignedTopAppBar(
-                title = { Text("CompraFácil") },
-                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.primary,
-                    titleContentColor = MaterialTheme.colorScheme.onPrimary
-                )
-            )
-        }
-    ) { padding ->
-        if (isLoading) {
-            Box(modifier = Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
-                CircularProgressIndicator()
-            }
-        } else if (errorMessage != null) {
-            Box(modifier = Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
-                Text("Erro: $errorMessage", color = MaterialTheme.colorScheme.error)
-            }
-        } else if (products.isEmpty()) {
-            Box(modifier = Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
-                Text("Nenhum produto encontrado.")
-            }
-        } else {
-            LazyVerticalGrid(
-                columns = GridCells.Fixed(2),
-                contentPadding = PaddingValues(8.dp),
-                modifier = Modifier.fillMaxSize().padding(padding),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                items(products) { product ->
-                    ProductCard(product)
+                if (currentUser == null) {
+                    AuthScreen(authViewModel)
+                } else {
+                    StoreNavigation(authViewModel)
                 }
             }
         }
@@ -93,29 +40,109 @@ fun StoreApp() {
 }
 
 @Composable
-fun ProductCard(product: Product) {
-    Card(
-        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
-    ) {
-        Column {
-            AsyncImage(
-                model = product.image_url,
-                contentDescription = product.name,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(150.dp),
-                contentScale = ContentScale.Crop
+fun StoreNavigation(authViewModel: AuthViewModel) {
+    val navController = rememberNavController()
+    val scope = rememberCoroutineScope()
+
+    NavHost(navController = navController, startDestination = "home") {
+        composable("home") {
+            HomeScreen(
+                onProductClick = { product ->
+                    navController.navigate("details/${product.id}")
+                },
+                onCartClick = { navController.navigate("cart") },
+                onProfileClick = { navController.navigate("profile") }
             )
-            Column(modifier = Modifier.padding(8.dp)) {
-                Text(text = product.name, style = MaterialTheme.typography.titleMedium, maxLines = 1)
-                Spacer(modifier = Modifier.height(4.dp))
-                Text(
-                    text = "R$ ${String.format("%.2f", product.price)}",
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = MaterialTheme.colorScheme.primary
+        }
+        composable(
+            "details/{productId}",
+            arguments = listOf(navArgument("productId") { type = NavType.StringType })
+        ) { backStackEntry ->
+            val productId = backStackEntry.arguments?.getString("productId")
+            var product by remember { mutableStateOf<Product?>(null) }
+
+            LaunchedEffect(productId) {
+                scope.launch {
+                    product = SupabaseConfig.client.postgrest["products"]
+                        .select(Columns.raw("*, images:product_images(*)")) {
+                            filter { eq("id", productId!!) }
+                        }.decodeSingleOrNull<Product>()
+                }
+            }
+
+            product?.let {
+                ProductDetailsScreen(
+                    product = it,
+                    onBack = { navController.popBackStack() },
+                    onAddToCart = { quantity ->
+                        scope.launch {
+                            val userId = SupabaseConfig.client.auth.currentUserOrNull()?.id ?: return@launch
+                            val item = CartItem(
+                                user_id = userId,
+                                product_id = it.id!!,
+                                quantity = quantity
+                            )
+                            SupabaseConfig.client.postgrest["cart_items"].insert(item)
+                            navController.navigate("cart")
+                        }
+                    },
+                    onBuyNow = { quantity ->
+                        scope.launch {
+                            val userId = SupabaseConfig.client.auth.currentUserOrNull()?.id ?: return@launch
+                            val item = CartItem(
+                                user_id = userId,
+                                product_id = it.id!!,
+                                quantity = quantity
+                            )
+                            SupabaseConfig.client.postgrest["cart_items"].insert(item)
+                            navController.navigate("cart")
+                        }
+                    }
                 )
             }
+        }
+        composable("cart") {
+            CartScreen(
+                onBack = { navController.popBackStack() },
+                onCheckout = { items, total ->
+                    // For simplicity, we navigate to checkout.
+                    // In a real app we'd pass the total.
+                    navController.navigate("checkout")
+                }
+            )
+        }
+        composable("checkout") {
+            // Fetch cart items again or use a Shared ViewModel
+            var cartItems by remember { mutableStateOf<List<CartItem>>(emptyList()) }
+            var total by remember { mutableStateOf(0.0) }
+
+            LaunchedEffect(Unit) {
+                scope.launch {
+                    val userId = SupabaseConfig.client.auth.currentUserOrNull()?.id ?: return@launch
+                    cartItems = SupabaseConfig.client.postgrest["cart_items"]
+                        .select(Columns.raw("*, product:products(*, images:product_images(*))")) {
+                            filter { eq("user_id", userId) }
+                        }.decodeList<CartItem>()
+                    total = cartItems.sumOf { (it.product?.price ?: 0.0) * it.quantity }
+                }
+            }
+
+            CheckoutScreen(
+                cartItems = cartItems,
+                total = total,
+                onBack = { navController.popBackStack() },
+                onOrderConfirmed = {
+                    navController.navigate("home") {
+                        popUpTo("home") { inclusive = true }
+                    }
+                }
+            )
+        }
+        composable("profile") {
+            ProfileScreen(
+                authViewModel = authViewModel,
+                onBack = { navController.popBackStack() }
+            )
         }
     }
 }

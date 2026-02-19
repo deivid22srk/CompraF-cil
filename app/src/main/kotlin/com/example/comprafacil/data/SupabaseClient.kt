@@ -1,6 +1,7 @@
 package com.example.comprafacil.data
 
 import io.github.jan.supabase.createSupabaseClient
+import io.github.jan.supabase.gotrue.Auth
 import io.github.jan.supabase.postgrest.Postgrest
 import io.github.jan.supabase.storage.Storage
 
@@ -11,5 +12,6 @@ object SupabaseConfig {
     val client = createSupabaseClient(URL, KEY) {
         install(Postgrest)
         install(Storage)
+        install(Auth)
     }
 }
