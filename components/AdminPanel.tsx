@@ -89,12 +89,17 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onBack }) => {
     if (!formData.name) return alert('Dê um nome ao produto primeiro');
     setAiGenerating(true);
     try {
-      const ai = new GoogleGenAI({ apiKey: process.env.API_KEY || '' });
-      const response = await ai.models.generateContent({
-        model: 'gemini-3-flash-preview',
-        contents: `Escreva uma descrição de marketing curta e atraente para o produto: ${formData.name}. Categoria: ${formData.category}. Em português do Brasil. Máximo de 150 caracteres.`,
-      });
-      setFormData(prev => ({ ...prev, description: response.text || '' }));
+      const apiKey = (import.meta as any).env?.VITE_GEMINI_API_KEY || '';
+      const genAI = new GoogleGenAI(apiKey);
+      const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+
+      const prompt = `Escreva uma descrição de marketing curta e atraente para o produto: ${formData.name}. Categoria: ${formData.category}. Em português do Brasil. Máximo de 150 caracteres.`;
+
+      const result = await model.generateContent(prompt);
+      const response = await result.response;
+      const text = response.text();
+
+      setFormData(prev => ({ ...prev, description: text || '' }));
     } catch (err) {
       console.error(err);
     } finally {
