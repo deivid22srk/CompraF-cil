@@ -1,10 +1,13 @@
 import React, { useEffect, useState } from 'react';
-import { StyleSheet, View, Text, FlatList, TouchableOpacity, ActivityIndicator, Alert } from 'react-native';
+import { StyleSheet, View, FlatList, Alert } from 'react-native';
+import { List, Avatar, IconButton, FAB, ActivityIndicator, Divider, Text, Searchbar } from 'react-native-paper';
 import { supabase } from '../lib/supabase';
 
 export default function DashboardScreen({ navigation }) {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [filteredProducts, setFilteredProducts] = useState([]);
 
   useEffect(() => {
     const unsubscribe = navigation.addListener('focus', () => {
@@ -23,12 +26,21 @@ export default function DashboardScreen({ navigation }) {
 
       if (error) throw error;
       setProducts(data);
+      setFilteredProducts(data);
     } catch (error) {
       console.error('Error:', error.message);
     } finally {
       setLoading(false);
     }
   }
+
+  const onChangeSearch = query => {
+    setSearchQuery(query);
+    const filtered = products.filter(product =>
+      product.name.toLowerCase().includes(query.toLowerCase())
+    );
+    setFilteredProducts(filtered);
+  };
 
   async function deleteProduct(id) {
     Alert.alert(
@@ -46,47 +58,52 @@ export default function DashboardScreen({ navigation }) {
   }
 
   const renderItem = ({ item }) => (
-    <View style={styles.item}>
-      <View>
-        <Text style={styles.name}>{item.name}</Text>
-        <Text style={styles.price}>R$ {parseFloat(item.price).toFixed(2)}</Text>
-      </View>
-      <View style={styles.actions}>
-        <TouchableOpacity
-          onPress={() => navigation.navigate('AddProduct', { product: item })}
-          style={styles.editButton}
-        >
-          <Text style={styles.buttonText}>Editar</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          onPress={() => deleteProduct(item.id)}
-          style={styles.deleteButton}
-        >
-          <Text style={styles.buttonText}>Excluir</Text>
-        </TouchableOpacity>
-      </View>
-    </View>
+    <List.Item
+      title={item.name}
+      description={`R$ ${parseFloat(item.price).toFixed(2)}`}
+      left={props => <Avatar.Image {...props} size={50} source={{ uri: item.image_url || 'https://via.placeholder.com/50' }} />}
+      right={props => (
+        <View style={styles.actions}>
+          <IconButton
+            icon="pencil"
+            onPress={() => navigation.navigate('AddProduct', { product: item })}
+          />
+          <IconButton
+            icon="delete"
+            onPress={() => deleteProduct(item.id)}
+            iconColor="#dc3545"
+          />
+        </View>
+      )}
+      style={styles.listItem}
+    />
   );
 
   return (
     <View style={styles.container}>
-      <TouchableOpacity
-        style={styles.addButton}
-        onPress={() => navigation.navigate('AddProduct')}
-      >
-        <Text style={styles.addButtonText}>+ Adicionar Novo Produto</Text>
-      </TouchableOpacity>
-
-      {loading ? (
+      <Searchbar
+        placeholder="Pesquisar..."
+        onChangeText={onChangeSearch}
+        value={searchQuery}
+        style={styles.searchBar}
+      />
+      {loading && products.length === 0 ? (
         <ActivityIndicator size="large" color="#333" style={{ marginTop: 20 }} />
       ) : (
         <FlatList
-          data={products}
+          data={filteredProducts}
           renderItem={renderItem}
           keyExtractor={item => item.id}
+          ItemSeparatorComponent={Divider}
           contentContainerStyle={styles.list}
         />
       )}
+      <FAB
+        icon="plus"
+        style={styles.fab}
+        onPress={() => navigation.navigate('AddProduct')}
+        label="Novo Produto"
+      />
     </View>
   );
 }
@@ -94,58 +111,26 @@ export default function DashboardScreen({ navigation }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F5F5F5',
-    padding: 15,
+    backgroundColor: '#fff',
   },
-  addButton: {
-    backgroundColor: '#28a745',
-    padding: 15,
-    borderRadius: 8,
-    alignItems: 'center',
-    marginBottom: 20,
-  },
-  addButtonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: 'bold',
+  searchBar: {
+    margin: 10,
+    backgroundColor: '#f0f0f0',
   },
   list: {
-    paddingBottom: 20,
+    paddingBottom: 80,
   },
-  item: {
-    backgroundColor: '#fff',
-    padding: 15,
-    borderRadius: 8,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 10,
-    elevation: 2,
-  },
-  name: {
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  price: {
-    color: '#666',
-    marginTop: 2,
+  listItem: {
+    paddingVertical: 10,
   },
   actions: {
     flexDirection: 'row',
   },
-  editButton: {
-    backgroundColor: '#007bff',
-    padding: 8,
-    borderRadius: 4,
-    marginRight: 5,
-  },
-  deleteButton: {
-    backgroundColor: '#dc3545',
-    padding: 8,
-    borderRadius: 4,
-  },
-  buttonText: {
-    color: '#fff',
-    fontSize: 12,
+  fab: {
+    position: 'absolute',
+    margin: 16,
+    right: 0,
+    bottom: 0,
+    backgroundColor: '#28a745',
   }
 });

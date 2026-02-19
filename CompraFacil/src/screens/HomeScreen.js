@@ -1,10 +1,13 @@
 import React, { useEffect, useState } from 'react';
-import { StyleSheet, View, Text, FlatList, Image, TouchableOpacity, ActivityIndicator } from 'react-native';
+import { StyleSheet, View, FlatList, ActivityIndicator } from 'react-native';
+import { Card, Title, Paragraph, Searchbar, FAB, Text } from 'react-native-paper';
 import { supabase } from '../lib/supabase';
 
 export default function HomeScreen({ navigation }) {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [filteredProducts, setFilteredProducts] = useState([]);
 
   useEffect(() => {
     fetchProducts();
@@ -19,6 +22,7 @@ export default function HomeScreen({ navigation }) {
 
       if (error) throw error;
       setProducts(data);
+      setFilteredProducts(data);
     } catch (error) {
       console.error('Error fetching products:', error.message);
     } finally {
@@ -26,35 +30,45 @@ export default function HomeScreen({ navigation }) {
     }
   }
 
+  const onChangeSearch = query => {
+    setSearchQuery(query);
+    const filtered = products.filter(product =>
+      product.name.toLowerCase().includes(query.toLowerCase())
+    );
+    setFilteredProducts(filtered);
+  };
+
   const renderItem = ({ item }) => (
-    <TouchableOpacity
+    <Card
       style={styles.card}
       onPress={() => navigation.navigate('ProductDetail', { product: item })}
     >
-      <Image
-        source={{ uri: item.image_url || 'https://via.placeholder.com/150' }}
-        style={styles.image}
-      />
-      <View style={styles.info}>
-        <Text style={styles.name}>{item.name}</Text>
-        <Text style={styles.price}>R$ {parseFloat(item.price).toFixed(2)}</Text>
-      </View>
-    </TouchableOpacity>
+      <Card.Cover source={{ uri: item.image_url || 'https://via.placeholder.com/150' }} />
+      <Card.Content style={styles.cardContent}>
+        <Title numberOfLines={1} style={styles.title}>{item.name}</Title>
+        <Paragraph style={styles.price}>R$ {parseFloat(item.price).toFixed(2)}</Paragraph>
+      </Card.Content>
+    </Card>
   );
 
   if (loading) {
     return (
       <View style={styles.center}>
-        <ActivityIndicator size="large" color="#007bff" />
+        <ActivityIndicator size="large" color="#6200ee" />
       </View>
     );
   }
 
   return (
     <View style={styles.container}>
-      <Text style={styles.header}>Destaques</Text>
+      <Searchbar
+        placeholder="Buscar produtos..."
+        onChangeText={onChangeSearch}
+        value={searchQuery}
+        style={styles.searchBar}
+      />
       <FlatList
-        data={products}
+        data={filteredProducts}
         renderItem={renderItem}
         keyExtractor={item => item.id}
         numColumns={2}
@@ -67,46 +81,32 @@ export default function HomeScreen({ navigation }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F5F5F5',
-    padding: 10,
+    backgroundColor: '#f6f6f6',
   },
-  header: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    marginVertical: 15,
-    marginLeft: 5,
+  searchBar: {
+    margin: 10,
+    elevation: 4,
   },
   list: {
-    paddingBottom: 20,
+    padding: 5,
   },
   card: {
-    backgroundColor: '#fff',
-    flex: 1,
+    flex: 0.5,
     margin: 5,
-    borderRadius: 10,
-    overflow: 'hidden',
     elevation: 3,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
+    borderRadius: 12,
   },
-  image: {
-    width: '100%',
-    height: 150,
+  cardContent: {
+    paddingVertical: 10,
   },
-  info: {
-    padding: 10,
-  },
-  name: {
+  title: {
     fontSize: 16,
-    fontWeight: '600',
+    lineHeight: 20,
   },
   price: {
     fontSize: 14,
-    color: '#007bff',
+    color: '#6200ee',
     fontWeight: 'bold',
-    marginTop: 5,
   },
   center: {
     flex: 1,

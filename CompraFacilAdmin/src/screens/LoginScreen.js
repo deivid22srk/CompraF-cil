@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { StyleSheet, View, Text, TouchableOpacity, ActivityIndicator, Alert } from 'react-native';
+import { StyleSheet, View, Alert } from 'react-native';
+import { Text, Button, ActivityIndicator, Surface } from 'react-native-paper';
 import { supabase } from '../lib/supabase';
 import * as Google from 'expo-auth-session/providers/google';
 import * as WebBrowser from 'expo-web-browser';
@@ -9,7 +10,6 @@ WebBrowser.maybeCompleteAuthSession();
 export default function LoginScreen({ navigation }) {
   const [loading, setLoading] = useState(false);
 
-  // Note: Client IDs are required for real device testing
   const [request, response, promptAsync] = Google.useAuthRequest({
     androidClientId: 'YOUR_ANDROID_CLIENT_ID',
     iosClientId: 'YOUR_IOS_CLIENT_ID',
@@ -28,10 +28,6 @@ export default function LoginScreen({ navigation }) {
         });
         if (error) throw error;
         navigation.navigate('Dashboard');
-      } else if (result?.type === 'cancel') {
-        // User cancelled
-      } else {
-        throw new Error('Falha ao autenticar com o Google');
       }
     } catch (error) {
       Alert.alert('Erro', error.message);
@@ -41,55 +37,69 @@ export default function LoginScreen({ navigation }) {
   }
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>CompraFácil Admin</Text>
-      <Text style={styles.subtitle}>Painel de Gerenciamento</Text>
+    <Surface style={styles.container}>
+      <View style={styles.header}>
+        <Text style={styles.title}>CompraFácil Admin</Text>
+        <Text style={styles.subtitle}>Painel de Gerenciamento</Text>
+      </View>
 
-      <TouchableOpacity
-        style={styles.button}
-        onPress={signInWithGoogle}
-        disabled={loading || !request}
-      >
-        {loading ? (
-          <ActivityIndicator color="#fff" />
-        ) : (
-          <Text style={styles.buttonText}>Entrar com Google</Text>
-        )}
-      </TouchableOpacity>
-    </View>
+      <View style={styles.content}>
+        <Button
+          mode="contained"
+          onPress={signInWithGoogle}
+          disabled={loading || !request}
+          style={styles.button}
+          contentStyle={styles.buttonContent}
+          icon="google"
+          buttonColor="#333"
+        >
+          {loading ? <ActivityIndicator color="#fff" /> : 'Entrar com Google'}
+        </Button>
+
+        {/* Demo bypass - remove in production */}
+        <Button
+          mode="text"
+          onPress={() => navigation.navigate('Dashboard')}
+          style={{ marginTop: 10 }}
+        >
+          Demo Bypass (Remover em produção)
+        </Button>
+      </View>
+    </Surface>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
-    alignItems: 'center',
     justifyContent: 'center',
     padding: 20,
+    backgroundColor: '#fff',
+  },
+  header: {
+    alignItems: 'center',
+    marginBottom: 50,
   },
   title: {
-    fontSize: 28,
+    fontSize: 32,
     fontWeight: 'bold',
     color: '#333',
-    marginBottom: 10,
+    textAlign: 'center',
   },
   subtitle: {
     fontSize: 18,
     color: '#666',
-    marginBottom: 40,
+    marginTop: 10,
+    textAlign: 'center',
+  },
+  content: {
+    width: '100%',
   },
   button: {
-    backgroundColor: '#333',
-    paddingVertical: 15,
-    paddingHorizontal: 30,
     borderRadius: 8,
-    width: '100%',
-    alignItems: 'center',
+    elevation: 2,
   },
-  buttonText: {
-    color: '#fff',
-    fontSize: 18,
-    fontWeight: '600',
+  buttonContent: {
+    height: 50,
   },
 });

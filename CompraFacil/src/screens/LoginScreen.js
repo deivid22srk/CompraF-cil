@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { StyleSheet, View, Text, TouchableOpacity, ActivityIndicator, Alert } from 'react-native';
+import { StyleSheet, View, Image, Alert } from 'react-native';
+import { Text, Button, ActivityIndicator, Surface } from 'react-native-paper';
 import { supabase } from '../lib/supabase';
 import * as Google from 'expo-auth-session/providers/google';
 import * as WebBrowser from 'expo-web-browser';
@@ -9,9 +10,6 @@ WebBrowser.maybeCompleteAuthSession();
 export default function LoginScreen({ navigation }) {
   const [loading, setLoading] = useState(false);
 
-  // You would need to provide your client IDs here
-  // For the sake of this example, we'll assume a simplified login or
-  // instructions on how to set it up.
   const [request, response, promptAsync] = Google.useAuthRequest({
     androidClientId: 'YOUR_ANDROID_CLIENT_ID',
     iosClientId: 'YOUR_IOS_CLIENT_ID',
@@ -38,70 +36,69 @@ export default function LoginScreen({ navigation }) {
   }
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>CompraFácil</Text>
-      <Text style={styles.subtitle}>Sua loja local em um só lugar</Text>
+    <Surface style={styles.container}>
+      <View style={styles.header}>
+        <Text style={styles.title}>CompraFácil</Text>
+        <Text style={styles.subtitle}>Sua loja local em um só lugar</Text>
+      </View>
 
-      <TouchableOpacity
-        style={styles.button}
-        onPress={signInWithGoogle}
-        disabled={loading || !request}
-      >
-        {loading ? (
-          <ActivityIndicator color="#fff" />
-        ) : (
-          <Text style={styles.buttonText}>Entrar com Google</Text>
-        )}
-      </TouchableOpacity>
+      <View style={styles.content}>
+        <Button
+          mode="contained"
+          onPress={signInWithGoogle}
+          disabled={loading || !request}
+          style={styles.button}
+          contentStyle={styles.buttonContent}
+          icon="google"
+        >
+          {loading ? <ActivityIndicator color="#fff" /> : 'Entrar com Google'}
+        </Button>
 
-      <TouchableOpacity
-        onPress={() => navigation.navigate('Home')}
-        style={styles.skipButton}
-      >
-        <Text style={styles.skipText}>Continuar sem login</Text>
-      </TouchableOpacity>
-    </View>
+        <Button
+          mode="text"
+          onPress={() => navigation.navigate('Home')}
+          style={styles.skipButton}
+        >
+          Continuar sem login
+        </Button>
+      </View>
+    </Surface>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
-    alignItems: 'center',
     justifyContent: 'center',
     padding: 20,
+    backgroundColor: '#fff',
+  },
+  header: {
+    alignItems: 'center',
+    marginBottom: 50,
   },
   title: {
-    fontSize: 32,
+    fontSize: 36,
     fontWeight: 'bold',
-    color: '#007bff',
-    marginBottom: 10,
+    color: '#6200ee',
   },
   subtitle: {
     fontSize: 18,
     color: '#666',
-    marginBottom: 40,
+    marginTop: 10,
     textAlign: 'center',
   },
-  button: {
-    backgroundColor: '#007bff',
-    paddingVertical: 15,
-    paddingHorizontal: 30,
-    borderRadius: 8,
+  content: {
     width: '100%',
-    alignItems: 'center',
   },
-  buttonText: {
-    color: '#fff',
-    fontSize: 18,
-    fontWeight: '600',
+  button: {
+    borderRadius: 8,
+    elevation: 2,
+  },
+  buttonContent: {
+    height: 50,
   },
   skipButton: {
-    marginTop: 20,
-  },
-  skipText: {
-    color: '#007bff',
-    fontSize: 16,
+    marginTop: 15,
   },
 });

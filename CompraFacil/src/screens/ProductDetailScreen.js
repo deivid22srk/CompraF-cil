@@ -1,26 +1,31 @@
 import React from 'react';
-import { StyleSheet, View, Text, Image, ScrollView, TouchableOpacity } from 'react-native';
+import { StyleSheet, View, ScrollView } from 'react-native';
+import { Card, Title, Paragraph, Button, Divider, Text } from 'react-native-paper';
 
 export default function ProductDetailScreen({ route }) {
   const { product } = route.params;
 
   return (
     <ScrollView style={styles.container}>
-      <Image
-        source={{ uri: product.image_url || 'https://via.placeholder.com/300' }}
-        style={styles.image}
-      />
-      <View style={styles.content}>
-        <Text style={styles.name}>{product.name}</Text>
-        <Text style={styles.price}>R$ {parseFloat(product.price).toFixed(2)}</Text>
-        <View style={styles.divider} />
-        <Text style={styles.descriptionTitle}>Descrição</Text>
-        <Text style={styles.description}>{product.description || 'Sem descrição disponível.'}</Text>
-
-        <TouchableOpacity style={styles.buyButton}>
-          <Text style={styles.buyButtonText}>Adicionar ao Carrinho</Text>
-        </TouchableOpacity>
-      </View>
+      <Card style={styles.card}>
+        <Card.Cover source={{ uri: product.image_url || 'https://via.placeholder.com/300' }} style={styles.image} />
+        <Card.Content>
+          <Title style={styles.name}>{product.name}</Title>
+          <Paragraph style={styles.price}>R$ {parseFloat(product.price).toFixed(2)}</Paragraph>
+          <Divider style={styles.divider} />
+          <Title style={styles.descriptionTitle}>Descrição</Title>
+          <Paragraph style={styles.description}>{product.description || 'Sem descrição disponível.'}</Paragraph>
+        </Card.Content>
+        <Card.Actions style={styles.actions}>
+          <Button
+            mode="contained"
+            onPress={() => console.log('Add to cart')}
+            style={styles.button}
+          >
+            Adicionar ao Carrinho
+          </Button>
+        </Card.Actions>
+      </Card>
     </ScrollView>
   );
 }
@@ -28,50 +33,42 @@ export default function ProductDetailScreen({ route }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: '#f6f6f6',
+  },
+  card: {
+    margin: 10,
+    borderRadius: 15,
+    overflow: 'hidden',
   },
   image: {
-    width: '100%',
     height: 300,
-  },
-  content: {
-    padding: 20,
   },
   name: {
     fontSize: 24,
-    fontWeight: 'bold',
+    marginTop: 15,
   },
   price: {
     fontSize: 20,
-    color: '#007bff',
+    color: '#6200ee',
     fontWeight: 'bold',
-    marginVertical: 10,
+    marginBottom: 10,
   },
   divider: {
-    height: 1,
-    backgroundColor: '#EEE',
     marginVertical: 15,
   },
   descriptionTitle: {
     fontSize: 18,
-    fontWeight: '600',
-    marginBottom: 5,
   },
   description: {
     fontSize: 16,
     color: '#666',
     lineHeight: 24,
   },
-  buyButton: {
-    backgroundColor: '#007bff',
+  actions: {
     padding: 15,
-    borderRadius: 8,
-    alignItems: 'center',
-    marginTop: 30,
   },
-  buyButtonText: {
-    color: '#fff',
-    fontSize: 18,
-    fontWeight: 'bold',
+  button: {
+    flex: 1,
+    paddingVertical: 5,
   },
 });

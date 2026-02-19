@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from 'react';
-import { StyleSheet, View, Text, TextInput, TouchableOpacity, Image, ScrollView, Alert, ActivityIndicator } from 'react-native';
+import React, { useState } from 'react';
+import { StyleSheet, View, ScrollView, Image, Alert } from 'react-native';
+import { TextInput, Button, Title, HelperText, ActivityIndicator, Surface, Text } from 'react-native-paper';
 import * as ImagePicker from 'expo-image-picker';
 import { supabase } from '../lib/supabase';
 import { decode } from 'base64-arraybuffer';
@@ -11,6 +12,7 @@ export default function AddProductScreen({ route, navigation }) {
   const [description, setDescription] = useState(editingProduct?.description || '');
   const [price, setPrice] = useState(editingProduct?.price?.toString() || '');
   const [image, setImage] = useState(editingProduct?.image_url || null);
+  const [imageBase64, setImageBase64] = useState(null);
   const [uploading, setUploading] = useState(false);
 
   const pickImage = async () => {
@@ -28,8 +30,6 @@ export default function AddProductScreen({ route, navigation }) {
     }
   };
 
-  const [imageBase64, setImageBase64] = useState(null);
-
   async function handleSave() {
     if (!name || !price) {
       Alert.alert('Erro', 'Nome e preço são obrigatórios.');
@@ -42,7 +42,7 @@ export default function AddProductScreen({ route, navigation }) {
 
       if (imageBase64) {
         const fileName = `${Date.now()}.jpg`;
-        const { data: uploadData, error: uploadError } = await supabase.storage
+        const { error: uploadError } = await supabase.storage
           .from('product-images')
           .upload(fileName, decode(imageBase64), {
             contentType: 'image/jpeg'
@@ -88,53 +88,62 @@ export default function AddProductScreen({ route, navigation }) {
 
   return (
     <ScrollView style={styles.container}>
-      <Text style={styles.label}>Nome do Produto</Text>
-      <TextInput
-        style={styles.input}
-        value={name}
-        onChangeText={setName}
-        placeholder="Ex: Camiseta Branca"
-      />
+      <Surface style={styles.form}>
+        <Title style={styles.formTitle}>{editingProduct ? 'Editar Produto' : 'Novo Produto'}</Title>
 
-      <Text style={styles.label}>Descrição</Text>
-      <TextInput
-        style={[styles.input, styles.textArea]}
-        value={description}
-        onChangeText={setDescription}
-        multiline
-        numberOfLines={4}
-        placeholder="Descreva o produto..."
-      />
+        <TextInput
+          label="Nome do Produto"
+          value={name}
+          onChangeText={setName}
+          mode="outlined"
+          style={styles.input}
+        />
 
-      <Text style={styles.label}>Preço (R$)</Text>
-      <TextInput
-        style={styles.input}
-        value={price}
-        onChangeText={setPrice}
-        keyboardType="numeric"
-        placeholder="0.00"
-      />
+        <TextInput
+          label="Descrição"
+          value={description}
+          onChangeText={setDescription}
+          mode="outlined"
+          multiline
+          numberOfLines={4}
+          style={styles.input}
+        />
 
-      <Text style={styles.label}>Imagem</Text>
-      <TouchableOpacity style={styles.imagePicker} onPress={pickImage}>
-        {image ? (
-          <Image source={{ uri: image }} style={styles.preview} />
-        ) : (
-          <Text style={styles.imagePickerText}>Selecionar Imagem</Text>
-        )}
-      </TouchableOpacity>
+        <TextInput
+          label="Preço (R$)"
+          value={price}
+          onChangeText={setPrice}
+          mode="outlined"
+          keyboardType="numeric"
+          style={styles.input}
+          left={<TextInput.Affix text="R$ " />}
+        />
 
-      <TouchableOpacity
-        style={styles.saveButton}
-        onPress={handleSave}
-        disabled={uploading}
-      >
-        {uploading ? (
-          <ActivityIndicator color="#fff" />
-        ) : (
-          <Text style={styles.saveButtonText}>Salvar Produto</Text>
-        )}
-      </TouchableOpacity>
+        <Title style={styles.label}>Imagem do Produto</Title>
+        <View style={styles.imageContainer}>
+          {image ? (
+            <Image source={{ uri: image }} style={styles.preview} />
+          ) : (
+            <View style={styles.placeholder}>
+              <Text>Nenhuma imagem selecionada</Text>
+            </View>
+          )}
+          <Button mode="outlined" onPress={pickImage} style={styles.pickButton}>
+            {image ? 'Trocar Imagem' : 'Selecionar Imagem'}
+          </Button>
+        </View>
+
+        <Button
+          mode="contained"
+          onPress={handleSave}
+          disabled={uploading}
+          style={styles.saveButton}
+          contentStyle={styles.saveButtonContent}
+          buttonColor="#28a745"
+        >
+          {uploading ? <ActivityIndicator color="#fff" /> : 'Salvar Produto'}
+        </Button>
+      </Surface>
     </ScrollView>
   );
 }
@@ -142,55 +151,54 @@ export default function AddProductScreen({ route, navigation }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: '#f6f6f6',
+  },
+  form: {
+    margin: 15,
     padding: 20,
+    borderRadius: 15,
+    elevation: 4,
+  },
+  formTitle: {
+    marginBottom: 20,
+    textAlign: 'center',
+  },
+  input: {
+    marginBottom: 15,
   },
   label: {
     fontSize: 16,
-    fontWeight: '600',
-    marginBottom: 5,
-    marginTop: 15,
-  },
-  input: {
-    borderWidth: 1,
-    borderColor: '#ddd',
-    borderRadius: 8,
-    padding: 12,
-    fontSize: 16,
-  },
-  textArea: {
-    height: 100,
-    textAlignVertical: 'top',
-  },
-  imagePicker: {
-    height: 200,
-    borderWidth: 1,
-    borderColor: '#ddd',
-    borderStyle: 'dashed',
-    borderRadius: 8,
-    justifyContent: 'center',
-    alignItems: 'center',
     marginTop: 10,
-    overflow: 'hidden',
+    marginBottom: 10,
   },
-  imagePickerText: {
-    color: '#666',
+  imageContainer: {
+    alignItems: 'center',
+    marginBottom: 20,
   },
   preview: {
     width: '100%',
-    height: '100%',
+    height: 200,
+    borderRadius: 10,
+  },
+  placeholder: {
+    width: '100%',
+    height: 200,
+    borderRadius: 10,
+    backgroundColor: '#eee',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#ccc',
+    borderStyle: 'dashed',
+  },
+  pickButton: {
+    marginTop: 10,
   },
   saveButton: {
-    backgroundColor: '#28a745',
-    padding: 15,
+    marginTop: 10,
     borderRadius: 8,
-    alignItems: 'center',
-    marginTop: 30,
-    marginBottom: 50,
   },
-  saveButtonText: {
-    color: '#fff',
-    fontSize: 18,
-    fontWeight: 'bold',
+  saveButtonContent: {
+    height: 50,
   },
 });
