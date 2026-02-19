@@ -37,12 +37,12 @@ jobs:
       run: chmod +x gradlew
       working-directory: ${{ matrix.app }}/android
 
-    - name: Build with Gradle (Release)
-      run: ./gradlew assembleRelease
+    - name: Build with Gradle (Debug)
+      run: ./gradlew assembleDebug
       working-directory: ${{ matrix.app }}/android
 
     - name: Uploading an Artifact
       uses: actions/upload-artifact@v4
       with:
-        name: ${{ matrix.app }}-Release-APK
-        path: ${{ matrix.app }}/android/app/build/outputs/apk/release/*.apk
+        name: ${{ matrix.app }}-Debug-APK
+        path: ${{ matrix.app }}/android/app/build/outputs/apk/debug/*.apk

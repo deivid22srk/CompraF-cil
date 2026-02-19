@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { StyleSheet, View, Alert } from 'react-native';
-import { Text, Button, ActivityIndicator, Surface } from 'react-native-paper';
+import { StyleSheet, View } from 'react-native';
+import { Text, Button, ActivityIndicator, Surface, useTheme } from 'react-native-paper';
 import { supabase } from '../lib/supabase';
 import * as Google from 'expo-auth-session/providers/google';
 import * as WebBrowser from 'expo-web-browser';
@@ -9,6 +9,7 @@ WebBrowser.maybeCompleteAuthSession();
 
 export default function LoginScreen({ navigation }) {
   const [loading, setLoading] = useState(false);
+  const theme = useTheme();
 
   const [request, response, promptAsync] = Google.useAuthRequest({
     androidClientId: 'YOUR_ANDROID_CLIENT_ID',
@@ -30,7 +31,7 @@ export default function LoginScreen({ navigation }) {
         navigation.navigate('Dashboard');
       }
     } catch (error) {
-      Alert.alert('Erro', error.message);
+      console.error('Login Error:', error.message);
     } finally {
       setLoading(false);
     }
@@ -39,8 +40,8 @@ export default function LoginScreen({ navigation }) {
   return (
     <Surface style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.title}>CompraFácil Admin</Text>
-        <Text style={styles.subtitle}>Painel de Gerenciamento</Text>
+        <Text variant="headlineMedium" style={styles.title}>Painel do Lojista</Text>
+        <Text variant="titleMedium" style={styles.subtitle}>Gerencie seu negócio com facilidade</Text>
       </View>
 
       <View style={styles.content}>
@@ -51,18 +52,17 @@ export default function LoginScreen({ navigation }) {
           style={styles.button}
           contentStyle={styles.buttonContent}
           icon="google"
-          buttonColor="#333"
         >
-          {loading ? <ActivityIndicator color="#fff" /> : 'Entrar com Google'}
+          {loading ? <ActivityIndicator color="#fff" /> : 'Entrar como Lojista'}
         </Button>
 
-        {/* Demo bypass - remove in production */}
         <Button
           mode="text"
           onPress={() => navigation.navigate('Dashboard')}
-          style={{ marginTop: 10 }}
+          style={styles.demoButton}
+          textColor="#6C757D"
         >
-          Demo Bypass (Remover em produção)
+          Acesso de Demonstração
         </Button>
       </View>
     </Surface>
@@ -73,22 +73,19 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     justifyContent: 'center',
-    padding: 20,
-    backgroundColor: '#fff',
+    padding: 30,
+    backgroundColor: '#FFFFFF',
   },
   header: {
     alignItems: 'center',
-    marginBottom: 50,
+    marginBottom: 60,
   },
   title: {
-    fontSize: 32,
-    fontWeight: 'bold',
-    color: '#333',
-    textAlign: 'center',
+    fontWeight: '800',
+    color: '#212529',
   },
   subtitle: {
-    fontSize: 18,
-    color: '#666',
+    color: '#6C757D',
     marginTop: 10,
     textAlign: 'center',
   },
@@ -96,10 +93,13 @@ const styles = StyleSheet.create({
     width: '100%',
   },
   button: {
-    borderRadius: 8,
-    elevation: 2,
+    borderRadius: 14,
+    elevation: 0,
   },
   buttonContent: {
-    height: 50,
+    height: 60,
   },
+  demoButton: {
+    marginTop: 20,
+  }
 });

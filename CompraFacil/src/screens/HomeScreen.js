@@ -1,13 +1,16 @@
 import React, { useEffect, useState } from 'react';
-import { StyleSheet, View, FlatList, ActivityIndicator } from 'react-native';
-import { Card, Title, Paragraph, Searchbar, FAB, Text } from 'react-native-paper';
+import { StyleSheet, View, FlatList, ActivityIndicator, Dimensions } from 'react-native';
+import { Card, Title, Paragraph, Searchbar, Text, useTheme } from 'react-native-paper';
 import { supabase } from '../lib/supabase';
+
+const { width } = Dimensions.get('window');
 
 export default function HomeScreen({ navigation }) {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [filteredProducts, setFilteredProducts] = useState([]);
+  const theme = useTheme();
 
   useEffect(() => {
     fetchProducts();
@@ -42,11 +45,14 @@ export default function HomeScreen({ navigation }) {
     <Card
       style={styles.card}
       onPress={() => navigation.navigate('ProductDetail', { product: item })}
+      mode="elevated"
     >
-      <Card.Cover source={{ uri: item.image_url || 'https://via.placeholder.com/150' }} />
+      <Card.Cover source={{ uri: item.image_url || 'https://via.placeholder.com/150' }} style={styles.cardImage} />
       <Card.Content style={styles.cardContent}>
-        <Title numberOfLines={1} style={styles.title}>{item.name}</Title>
-        <Paragraph style={styles.price}>R$ {parseFloat(item.price).toFixed(2)}</Paragraph>
+        <Text variant="titleMedium" numberOfLines={1} style={styles.title}>{item.name}</Text>
+        <Text variant="bodyLarge" style={[styles.price, { color: theme.colors.primary }]}>
+          R$ {parseFloat(item.price).toFixed(2)}
+        </Text>
       </Card.Content>
     </Card>
   );
@@ -54,7 +60,7 @@ export default function HomeScreen({ navigation }) {
   if (loading) {
     return (
       <View style={styles.center}>
-        <ActivityIndicator size="large" color="#6200ee" />
+        <ActivityIndicator size="large" color={theme.colors.primary} />
       </View>
     );
   }
@@ -66,6 +72,7 @@ export default function HomeScreen({ navigation }) {
         onChangeText={onChangeSearch}
         value={searchQuery}
         style={styles.searchBar}
+        elevation={0}
       />
       <FlatList
         data={filteredProducts}
@@ -73,6 +80,7 @@ export default function HomeScreen({ navigation }) {
         keyExtractor={item => item.id}
         numColumns={2}
         contentContainerStyle={styles.list}
+        showsVerticalScrollIndicator={false}
       />
     </View>
   );
@@ -81,32 +89,37 @@ export default function HomeScreen({ navigation }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f6f6f6',
+    backgroundColor: '#F8F9FA',
   },
   searchBar: {
-    margin: 10,
-    elevation: 4,
+    margin: 15,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#E9ECEF',
   },
   list: {
-    padding: 5,
+    padding: 10,
   },
   card: {
-    flex: 0.5,
-    margin: 5,
-    elevation: 3,
-    borderRadius: 12,
+    flex: 1,
+    margin: 6,
+    borderRadius: 16,
+    backgroundColor: '#FFFFFF',
+    overflow: 'hidden',
+  },
+  cardImage: {
+    height: 160,
   },
   cardContent: {
-    paddingVertical: 10,
+    padding: 12,
   },
   title: {
-    fontSize: 16,
-    lineHeight: 20,
+    fontWeight: '600',
+    marginBottom: 4,
   },
   price: {
-    fontSize: 14,
-    color: '#6200ee',
-    fontWeight: 'bold',
+    fontWeight: '700',
   },
   center: {
     flex: 1,

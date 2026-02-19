@@ -1,31 +1,46 @@
 import React from 'react';
-import { StyleSheet, View, ScrollView } from 'react-native';
-import { Card, Title, Paragraph, Button, Divider, Text } from 'react-native-paper';
+import { StyleSheet, View, ScrollView, Image, Dimensions } from 'react-native';
+import { Title, Paragraph, Button, Divider, Text, Surface, useTheme } from 'react-native-paper';
+
+const { width } = Dimensions.get('window');
 
 export default function ProductDetailScreen({ route }) {
   const { product } = route.params;
+  const theme = useTheme();
 
   return (
-    <ScrollView style={styles.container}>
-      <Card style={styles.card}>
-        <Card.Cover source={{ uri: product.image_url || 'https://via.placeholder.com/300' }} style={styles.image} />
-        <Card.Content>
-          <Title style={styles.name}>{product.name}</Title>
-          <Paragraph style={styles.price}>R$ {parseFloat(product.price).toFixed(2)}</Paragraph>
-          <Divider style={styles.divider} />
-          <Title style={styles.descriptionTitle}>Descrição</Title>
-          <Paragraph style={styles.description}>{product.description || 'Sem descrição disponível.'}</Paragraph>
-        </Card.Content>
-        <Card.Actions style={styles.actions}>
+    <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
+      <Image
+        source={{ uri: product.image_url || 'https://via.placeholder.com/400' }}
+        style={styles.image}
+      />
+
+      <Surface style={styles.content} elevation={0}>
+        <View style={styles.header}>
+          <Text variant="headlineSmall" style={styles.name}>{product.name}</Text>
+          <Text variant="headlineMedium" style={[styles.price, { color: theme.colors.primary }]}>
+            R$ {parseFloat(product.price).toFixed(2)}
+          </Text>
+        </View>
+
+        <Divider style={styles.divider} />
+
+        <Text variant="titleMedium" style={styles.sectionTitle}>Descrição</Text>
+        <Text variant="bodyLarge" style={styles.description}>
+          {product.description || 'Sem descrição disponível.'}
+        </Text>
+
+        <View style={styles.footer}>
           <Button
             mode="contained"
             onPress={() => console.log('Add to cart')}
             style={styles.button}
+            contentStyle={styles.buttonContent}
           >
             Adicionar ao Carrinho
           </Button>
-        </Card.Actions>
-      </Card>
+        </View>
+      </Surface>
     </ScrollView>
   );
 }
@@ -33,42 +48,53 @@ export default function ProductDetailScreen({ route }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f6f6f6',
-  },
-  card: {
-    margin: 10,
-    borderRadius: 15,
-    overflow: 'hidden',
+    backgroundColor: '#FFFFFF',
   },
   image: {
-    height: 300,
+    width: width,
+    height: width,
+  },
+  content: {
+    padding: 24,
+    borderTopLeftRadius: 30,
+    borderTopRightRadius: 30,
+    marginTop: -30,
+    backgroundColor: '#FFFFFF',
+  },
+  header: {
+    marginBottom: 20,
   },
   name: {
-    fontSize: 24,
-    marginTop: 15,
+    fontWeight: '700',
+    color: '#212529',
   },
   price: {
-    fontSize: 20,
-    color: '#6200ee',
-    fontWeight: 'bold',
-    marginBottom: 10,
+    fontWeight: '800',
+    marginTop: 8,
   },
   divider: {
-    marginVertical: 15,
+    marginBottom: 24,
   },
-  descriptionTitle: {
-    fontSize: 18,
+  sectionTitle: {
+    fontWeight: '600',
+    marginBottom: 8,
+    color: '#495057',
   },
   description: {
-    fontSize: 16,
-    color: '#666',
+    color: '#6C757D',
     lineHeight: 24,
+    marginBottom: 100,
   },
-  actions: {
-    padding: 15,
+  footer: {
+    position: 'absolute',
+    bottom: 24,
+    left: 24,
+    right: 24,
   },
   button: {
-    flex: 1,
-    paddingVertical: 5,
+    borderRadius: 12,
+  },
+  buttonContent: {
+    height: 54,
   },
 });

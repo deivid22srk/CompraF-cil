@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { StyleSheet, View, Image, Alert } from 'react-native';
-import { Text, Button, ActivityIndicator, Surface } from 'react-native-paper';
+import { StyleSheet, View, Image } from 'react-native';
+import { Text, Button, ActivityIndicator, Surface, useTheme } from 'react-native-paper';
 import { supabase } from '../lib/supabase';
 import * as Google from 'expo-auth-session/providers/google';
 import * as WebBrowser from 'expo-web-browser';
@@ -9,6 +9,7 @@ WebBrowser.maybeCompleteAuthSession();
 
 export default function LoginScreen({ navigation }) {
   const [loading, setLoading] = useState(false);
+  const theme = useTheme();
 
   const [request, response, promptAsync] = Google.useAuthRequest({
     androidClientId: 'YOUR_ANDROID_CLIENT_ID',
@@ -27,9 +28,10 @@ export default function LoginScreen({ navigation }) {
           token: authentication.idToken,
         });
         if (error) throw error;
+        navigation.navigate('Home');
       }
     } catch (error) {
-      Alert.alert('Erro', error.message);
+      console.error('Login Error:', error.message);
     } finally {
       setLoading(false);
     }
@@ -38,8 +40,8 @@ export default function LoginScreen({ navigation }) {
   return (
     <Surface style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.title}>CompraFácil</Text>
-        <Text style={styles.subtitle}>Sua loja local em um só lugar</Text>
+        <Text variant="displaySmall" style={[styles.title, { color: theme.colors.primary }]}>CompraFácil</Text>
+        <Text variant="titleMedium" style={styles.subtitle}>Sua loja local favorita</Text>
       </View>
 
       <View style={styles.content}>
@@ -55,11 +57,12 @@ export default function LoginScreen({ navigation }) {
         </Button>
 
         <Button
-          mode="text"
+          mode="outlined"
           onPress={() => navigation.navigate('Home')}
-          style={styles.skipButton}
+          style={[styles.skipButton, { borderColor: theme.colors.primary }]}
+          textColor={theme.colors.primary}
         >
-          Continuar sem login
+          Explorar sem conta
         </Button>
       </View>
     </Surface>
@@ -70,35 +73,34 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     justifyContent: 'center',
-    padding: 20,
-    backgroundColor: '#fff',
+    padding: 24,
+    backgroundColor: '#FFFFFF',
   },
   header: {
     alignItems: 'center',
-    marginBottom: 50,
+    marginBottom: 60,
   },
   title: {
-    fontSize: 36,
-    fontWeight: 'bold',
-    color: '#6200ee',
+    fontWeight: '900',
   },
   subtitle: {
-    fontSize: 18,
-    color: '#666',
-    marginTop: 10,
+    color: '#6C757D',
+    marginTop: 8,
     textAlign: 'center',
   },
   content: {
     width: '100%',
   },
   button: {
-    borderRadius: 8,
-    elevation: 2,
+    borderRadius: 14,
+    elevation: 0,
   },
   buttonContent: {
-    height: 50,
+    height: 56,
   },
   skipButton: {
-    marginTop: 15,
+    marginTop: 16,
+    borderRadius: 14,
+    borderWidth: 1.5,
   },
 });
