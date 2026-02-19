@@ -1,0 +1,7 @@
+{
+  "name": "CompraFácil",
+  "description": "Uma plataforma de e-commerce completa com loja para clientes e painel administrativo, integrada com Supabase e IA para geração de descrições.",
+  "requestFramePermissions": [
+    "camera"
+  ]
+}
