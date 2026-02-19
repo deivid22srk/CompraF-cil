@@ -1,0 +1,31 @@
+{
+  "name": "comprafacil-admin",
+  "version": "1.0.0",
+  "main": "expo-router/entry",
+  "scripts": {
+    "start": "expo start",
+    "android": "expo start --android",
+    "ios": "expo start --ios",
+    "web": "expo start --web"
+  },
+  "dependencies": {
+    "@react-native-async-storage/async-storage": "1.23.1",
+    "@supabase/supabase-js": "^2.45.4",
+    "base64-arraybuffer": "^1.0.2",
+    "expo": "~52.0.25",
+    "expo-auth-session": "~6.0.2",
+    "expo-constants": "~17.0.3",
+    "expo-crypto": "~14.0.2",
+    "expo-image-picker": "~16.0.3",
+    "expo-linking": "~7.0.3",
+    "expo-router": "~4.0.15",
+    "expo-status-bar": "~2.0.0",
+    "expo-web-browser": "~14.0.1",
+    "react": "18.3.1",
+    "react-native": "0.76.5",
+    "react-native-paper": "^5.12.3",
+    "react-native-url-polyfill": "^2.1.0",
+    "react-native-vector-icons": "^10.2.0"
+  },
+  "private": true
+}
