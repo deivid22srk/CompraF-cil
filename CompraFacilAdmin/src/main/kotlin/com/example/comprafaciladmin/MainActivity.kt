@@ -108,9 +108,15 @@ fun AdminNavigation() {
 @Composable
 fun AdminLoginScreen() {
     val scope = rememberCoroutineScope()
+    val snackbarHostState = remember { SnackbarHostState() }
+
+    Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) }
+    ) { padding ->
     Box(
         modifier = Modifier
             .fillMaxSize()
+            .padding(padding)
             .background(
                 Brush.verticalGradient(
                     colors = listOf(MaterialTheme.colorScheme.primary, Color(0xFF4A378B))
@@ -151,6 +157,10 @@ fun AdminLoginScreen() {
                                 Supabase.client.auth.signInWith(Google)
                             } catch (e: Exception) {
                                 e.printStackTrace()
+                                snackbarHostState.showSnackbar(
+                                    message = "Erro ao fazer login: ${e.localizedMessage ?: "Tente novamente"}",
+                                    duration = SnackbarDuration.Long
+                                )
                             }
                         }
                     },
@@ -161,6 +171,7 @@ fun AdminLoginScreen() {
                 }
             }
         }
+    }
     }
 }
 

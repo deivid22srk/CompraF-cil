@@ -104,9 +104,15 @@ fun AppNavigation() {
 @Composable
 fun LoginScreen() {
     val scope = rememberCoroutineScope()
+    val snackbarHostState = remember { SnackbarHostState() }
+
+    Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) }
+    ) { padding ->
     Box(
         modifier = Modifier
             .fillMaxSize()
+            .padding(padding)
             .background(
                 Brush.verticalGradient(
                     colors = listOf(MaterialTheme.colorScheme.primary, MaterialTheme.colorScheme.primaryContainer)
@@ -148,6 +154,10 @@ fun LoginScreen() {
                                 Supabase.client.auth.signInWith(Google)
                             } catch (e: Exception) {
                                 e.printStackTrace()
+                                snackbarHostState.showSnackbar(
+                                    message = "Erro ao fazer login: ${e.localizedMessage ?: "Tente novamente"}",
+                                    duration = SnackbarDuration.Long
+                                )
                             }
                         }
                     },
@@ -158,6 +168,7 @@ fun LoginScreen() {
                 }
             }
         }
+    }
     }
 }
 
