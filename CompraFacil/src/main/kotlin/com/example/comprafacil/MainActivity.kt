@@ -7,28 +7,29 @@ import androidx.activity.compose.setContent
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.ExitToApp
-import androidx.compose.material.icons.filled.ShoppingCart
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.lifecycleScope
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
@@ -87,18 +88,22 @@ fun AppNavigation() {
         }
     }
 
-    NavHost(navController = navController, startDestination = "login") {
-        composable("login") {
-            LoginScreen()
+    Scaffold(
+        bottomBar = {
+            if (currentRoute == "home" || currentRoute?.startsWith("product_detail") == true) {
+                CustomBottomNavigation()
+            }
         }
-        composable("home") {
-            HomeScreen(onProductClick = { productId ->
-                navController.navigate("product_detail/$productId")
-            })
-        }
-        composable("product_detail/{productId}") { backStackEntry ->
-            val productId = backStackEntry.arguments?.getString("productId")
-            ProductDetailScreen(productId, onBack = { navController.popBackStack() })
+    ) { padding ->
+        NavHost(navController = navController, startDestination = "login", modifier = Modifier.padding(padding)) {
+            composable("login") { LoginScreen() }
+            composable("home") {
+                HomeScreen(onProductClick = { id -> navController.navigate("product_detail/$id") })
+            }
+            composable("product_detail/{productId}") { backStackEntry ->
+                val productId = backStackEntry.arguments?.getString("productId")?.toLongOrNull()
+                ProductDetailScreen(productId, onBack = { navController.popBackStack() })
+            }
         }
     }
 }
@@ -110,140 +115,129 @@ fun LoginScreen() {
 
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
+    var isSignUp by remember { mutableStateOf(false) }
     var loading by remember { mutableStateOf(false) }
 
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) }
     ) { padding ->
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(padding)
-            .background(
-                Brush.verticalGradient(
-                    colors = listOf(MaterialTheme.colorScheme.primary, MaterialTheme.colorScheme.primaryContainer)
-                )
-            ),
-        contentAlignment = Alignment.Center
-    ) {
-        Card(
-            modifier = Modifier.padding(24.dp),
-            shape = RoundedCornerShape(24.dp),
-            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding)
+                .background(Brush.verticalGradient(listOf(Color(0xFF2D3B87), Color(0xFF1A237E)))),
+            contentAlignment = Alignment.Center
         ) {
             Column(
-                modifier = Modifier.padding(24.dp),
+                modifier = Modifier.padding(32.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Icon(
-                    imageVector = Icons.Default.ShoppingCart,
-                    contentDescription = null,
-                    modifier = Modifier.size(48.dp),
-                    tint = MaterialTheme.colorScheme.primary
-                )
-                Spacer(modifier = Modifier.height(16.dp))
                 Text(
                     "CompraFácil",
-                    style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
-                    color = MaterialTheme.colorScheme.onSurface
+                    fontSize = 42.sp,
+                    fontWeight = FontWeight.Black,
+                    color = Color.White
                 )
-                Spacer(modifier = Modifier.height(24.dp))
-
-                OutlinedTextField(
-                    value = email,
-                    onValueChange = { email = it },
-                    label = { Text("Email") },
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(12.dp),
-                    singleLine = true
-                )
-                Spacer(modifier = Modifier.height(8.dp))
-                OutlinedTextField(
-                    value = password,
-                    onValueChange = { password = it },
-                    label = { Text("Senha") },
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(12.dp),
-                    visualTransformation = PasswordVisualTransformation(),
-                    singleLine = true
+                Text(
+                    "Sua loja em qualquer lugar",
+                    fontSize = 16.sp,
+                    color = Color.White.copy(alpha = 0.7f)
                 )
 
-                Spacer(modifier = Modifier.height(24.dp))
+                Spacer(modifier = Modifier.height(48.dp))
 
-                if (loading) {
-                    CircularProgressIndicator()
-                } else {
-                    Button(
-                        onClick = {
-                            scope.launch {
-                                loading = true
-                                try {
-                                    Supabase.client.auth.signInWith(Email) {
-                                        this.email = email
-                                        this.password = password
+                Card(
+                    shape = RoundedCornerShape(24.dp),
+                    colors = CardDefaults.cardColors(containerColor = Color.White),
+                    modifier = Modifier.fillMaxWidth().shadow(12.dp, RoundedCornerShape(24.dp))
+                ) {
+                    Column(modifier = Modifier.padding(24.dp)) {
+                        Text(
+                            if (isSignUp) "Criar Conta" else "Bem-vindo",
+                            style = MaterialTheme.typography.headlineSmall,
+                            fontWeight = FontWeight.Bold,
+                            color = Color(0xFF2D3B87)
+                        )
+                        Spacer(modifier = Modifier.height(16.dp))
+
+                        OutlinedTextField(
+                            value = email,
+                            onValueChange = { email = it },
+                            label = { Text("Email") },
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(12.dp)
+                        )
+                        Spacer(modifier = Modifier.height(12.dp))
+                        OutlinedTextField(
+                            value = password,
+                            onValueChange = { password = it },
+                            label = { Text("Senha") },
+                            modifier = Modifier.fillMaxWidth(),
+                            visualTransformation = PasswordVisualTransformation(),
+                            shape = RoundedCornerShape(12.dp)
+                        )
+
+                        Spacer(modifier = Modifier.height(24.dp))
+
+                        if (loading) {
+                            CircularProgressIndicator(modifier = Modifier.align(Alignment.CenterHorizontally))
+                        } else {
+                            Button(
+                                onClick = {
+                                    scope.launch {
+                                        loading = true
+                                        try {
+                                            if (isSignUp) {
+                                                Supabase.client.auth.signUpWith(Email) {
+                                                    this.email = email
+                                                    this.password = password
+                                                }
+                                            } else {
+                                                Supabase.client.auth.signInWith(Email) {
+                                                    this.email = email
+                                                    this.password = password
+                                                }
+                                            }
+                                        } catch (e: Exception) {
+                                            snackbarHostState.showSnackbar(e.localizedMessage ?: "Erro")
+                                        } finally {
+                                            loading = false
+                                        }
                                     }
-                                } catch (e: Exception) {
-                                    e.printStackTrace()
-                                    snackbarHostState.showSnackbar(
-                                        message = "Erro ao entrar: ${e.localizedMessage ?: "Verifique seus dados"}",
-                                        duration = SnackbarDuration.Long
-                                    )
-                                } finally {
-                                    loading = false
-                                }
+                                },
+                                modifier = Modifier.fillMaxWidth().height(56.dp),
+                                shape = RoundedCornerShape(12.dp),
+                                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2D3B87))
+                            ) {
+                                Text(if (isSignUp) "Cadastrar" else "Entrar", fontWeight = FontWeight.Bold)
                             }
-                        },
-                        modifier = Modifier.fillMaxWidth().height(50.dp),
-                        shape = RoundedCornerShape(12.dp),
-                        enabled = email.isNotBlank() && password.isNotBlank()
-                    ) {
-                        Text("Entrar", fontSize = 16.sp)
-                    }
 
-                    Spacer(modifier = Modifier.height(8.dp))
-
-                    TextButton(
-                        onClick = {
-                            scope.launch {
-                                loading = true
-                                try {
-                                    Supabase.client.auth.signUpWith(Email) {
-                                        this.email = email
-                                        this.password = password
-                                    }
-                                    snackbarHostState.showSnackbar("Conta criada! Verifique seu email se necessário.")
-                                } catch (e: Exception) {
-                                    e.printStackTrace()
-                                    snackbarHostState.showSnackbar(
-                                        message = "Erro ao criar conta: ${e.localizedMessage}",
-                                        duration = SnackbarDuration.Long
-                                    )
-                                } finally {
-                                    loading = false
-                                }
+                            TextButton(
+                                onClick = { isSignUp = !isSignUp },
+                                modifier = Modifier.align(Alignment.CenterHorizontally)
+                            ) {
+                                Text(if (isSignUp) "Já tem conta? Entrar" else "Não tem conta? Cadastre-se")
                             }
                         }
-                    ) {
-                        Text("Criar Nova Conta")
                     }
                 }
             }
         }
     }
-    }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun HomeScreen(onProductClick: (String) -> Unit) {
+fun HomeScreen(onProductClick: (Long) -> Unit) {
     val scope = rememberCoroutineScope()
     var products by remember { mutableStateOf<List<Product>>(emptyList()) }
+    var categories by remember { mutableStateOf<List<Category>>(emptyList()) }
     var loading by remember { mutableStateOf(true) }
 
     LaunchedEffect(Unit) {
         scope.launch {
             try {
                 products = Supabase.client.postgrest["products"].select().decodeList<Product>()
+                categories = Supabase.client.postgrest["categories"].select().decodeList<Category>()
             } catch (e: Exception) {
                 e.printStackTrace()
             } finally {
@@ -252,36 +246,77 @@ fun HomeScreen(onProductClick: (String) -> Unit) {
         }
     }
 
-    Scaffold(
-        topBar = {
-            CenterAlignedTopAppBar(
-                title = { Text("CompraFácil", fontWeight = FontWeight.Bold) },
-                actions = {
-                    IconButton(onClick = { scope.launch { Supabase.client.auth.signOut() } }) {
-                        Icon(Icons.Default.ExitToApp, contentDescription = "Sair")
-                    }
-                },
-                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.primaryContainer,
-                    titleContentColor = MaterialTheme.colorScheme.onPrimaryContainer
-                )
-            )
+    Column(modifier = Modifier.fillMaxSize().background(Color(0xFFF5F7FB))) {
+        // Custom Search Bar
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(24.dp)
+                .height(56.dp)
+                .shadow(4.dp, RoundedCornerShape(16.dp))
+                .background(Color.White, RoundedCornerShape(16.dp))
+                .padding(horizontal = 16.dp),
+            contentAlignment = Alignment.CenterStart
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(Icons.Default.Search, contentDescription = null, tint = Color.Gray)
+                Spacer(modifier = Modifier.width(12.dp))
+                Text("O que você está procurando?", color = Color.Gray)
+            }
         }
-    ) { padding ->
+
+        // Categories
+        LazyRow(
+            contentPadding = PaddingValues(horizontal = 24.dp),
+            horizontalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            items(categories) { category ->
+                CategoryItem(category)
+            }
+        }
+
+        Spacer(modifier = Modifier.height(24.dp))
+
+        // Promo Banner
+        Box(
+            modifier = Modifier
+                .padding(horizontal = 24.dp)
+                .fillMaxWidth()
+                .height(150.dp)
+                .clip(RoundedCornerShape(24.dp))
+                .background(Brush.horizontalGradient(listOf(Color(0xFFFDCB58), Color(0xFFF9A825))))
+        ) {
+            Row(modifier = Modifier.padding(24.dp)) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Surface(
+                        color = Color.White.copy(alpha = 0.3f),
+                        shape = RoundedCornerShape(8.dp)
+                    ) {
+                        Text("Oferta Especial", modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp), fontSize = 12.sp, color = Color.White)
+                    }
+                    Text("Desconto de 50%", fontSize = 24.sp, fontWeight = FontWeight.ExtraBold, color = Color.White)
+                    Text("Em toda a loja!", color = Color.White.copy(alpha = 0.9f))
+                }
+                Icon(Icons.Default.LocalOffer, contentDescription = null, modifier = Modifier.size(80.dp), tint = Color.White.copy(alpha = 0.2f))
+            }
+        }
+
+        Spacer(modifier = Modifier.height(24.dp))
+
+        // Products Grid
         if (loading) {
             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                CircularProgressIndicator()
+                CircularProgressIndicator(color = Color(0xFF2D3B87))
             }
         } else {
             LazyVerticalGrid(
                 columns = GridCells.Fixed(2),
-                modifier = Modifier.padding(padding).padding(8.dp),
-                contentPadding = PaddingValues(8.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp),
-                horizontalArrangement = Arrangement.spacedBy(16.dp)
+                contentPadding = PaddingValues(horizontal = 24.dp, vertical = 8.dp),
+                horizontalArrangement = Arrangement.spacedBy(16.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 items(products) { product ->
-                    EnhancedProductCard(product, onClick = { product.id?.let { onProductClick(it) } })
+                    ProductCard(product, onClick = { product.id?.let { onProductClick(it) } })
                 }
             }
         }
@@ -289,14 +324,39 @@ fun HomeScreen(onProductClick: (String) -> Unit) {
 }
 
 @Composable
-fun EnhancedProductCard(product: Product, onClick: () -> Unit) {
+fun CategoryItem(category: Category) {
+    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        Box(
+            modifier = Modifier
+                .size(64.dp)
+                .shadow(2.dp, CircleShape)
+                .background(Color.White, CircleShape),
+            contentAlignment = Alignment.Center
+        ) {
+            val nameLower = category.name.lowercase()
+            val icon = when {
+                nameLower.contains("celular") || nameLower.contains("smartphone") -> Icons.Default.Devices
+                nameLower.contains("roupa") || nameLower.contains("vestuario") -> Icons.Default.Checkroom
+                nameLower.contains("esporte") -> Icons.Default.DirectionsRun
+                nameLower.contains("relogio") -> Icons.Default.Watch
+                else -> Icons.Default.Storefront
+            }
+            Icon(icon, contentDescription = null, tint = Color(0xFF2D3B87))
+        }
+        Spacer(modifier = Modifier.height(8.dp))
+        Text(category.name, fontSize = 12.sp, fontWeight = FontWeight.Medium, color = Color.DarkGray)
+    }
+}
+
+@Composable
+fun ProductCard(product: Product, onClick: () -> Unit) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable { onClick() },
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+            .clickable(onClick = onClick),
+        shape = RoundedCornerShape(20.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.White),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
         Column {
             AsyncImage(
@@ -304,130 +364,121 @@ fun EnhancedProductCard(product: Product, onClick: () -> Unit) {
                 contentDescription = null,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(150.dp)
-                    .clip(RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp)),
+                    .height(130.dp)
+                    .clip(RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp)),
                 contentScale = ContentScale.Crop
             )
             Column(modifier = Modifier.padding(12.dp)) {
-                Text(
-                    text = product.name,
-                    style = MaterialTheme.typography.titleMedium,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                    fontWeight = FontWeight.SemiBold
-                )
-                Spacer(modifier = Modifier.height(4.dp))
-                Text(
-                    text = "R$ ${String.format("%.2f", product.price)}",
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = MaterialTheme.colorScheme.primary,
-                    fontWeight = FontWeight.Bold
-                )
+                Text(product.name, fontWeight = FontWeight.Bold, maxLines = 1)
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text("R$", fontSize = 12.sp, color = Color(0xFF2D3B87), fontWeight = FontWeight.Bold)
+                    Spacer(modifier = Modifier.width(2.dp))
+                    Text(String.format("%.2f", product.price), fontWeight = FontWeight.Black, fontSize = 16.sp, color = Color(0xFF2D3B87))
+                }
             }
         }
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ProductDetailScreen(productId: String?, onBack: () -> Unit) {
+fun ProductDetailScreen(productId: Long?, onBack: () -> Unit) {
     var product by remember { mutableStateOf<Product?>(null) }
     var loading by remember { mutableStateOf(true) }
-    val scope = rememberCoroutineScope()
 
     LaunchedEffect(productId) {
         if (productId != null) {
-            scope.launch {
-                try {
-                    product = Supabase.client.postgrest["products"]
-                        .select {
-                            filter {
-                                eq("id", productId)
-                            }
+            try {
+                product = Supabase.client.postgrest["products"]
+                    .select {
+                        filter {
+                            eq("id", productId)
                         }
-                        .decodeSingle<Product>()
-                } catch (e: Exception) {
-                    e.printStackTrace()
-                } finally {
-                    loading = false
-                }
+                    }
+                    .decodeSingle<Product>()
+            } catch (e: Exception) {
+                e.printStackTrace()
+            } finally {
+                loading = false
             }
         }
     }
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text("Detalhes") },
-                navigationIcon = {
-                    IconButton(onClick = { onBack() }) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Voltar")
+    if (loading) {
+        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            CircularProgressIndicator()
+        }
+    } else {
+        product?.let { p ->
+            Column(modifier = Modifier.fillMaxSize().background(Color.White)) {
+                Box {
+                    AsyncImage(
+                        model = p.image_url,
+                        contentDescription = null,
+                        modifier = Modifier.fillMaxWidth().height(350.dp),
+                        contentScale = ContentScale.Crop
+                    )
+                    IconButton(
+                        onClick = onBack,
+                        modifier = Modifier.padding(16.dp).background(Color.White.copy(alpha = 0.5f), CircleShape)
+                    ) {
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Voltar")
                     }
                 }
-            )
-        }
-    ) { padding ->
-        if (loading) {
-            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                CircularProgressIndicator()
-            }
-        } else product?.let { p ->
-            Column(
-                modifier = Modifier
-                    .padding(padding)
-                    .fillMaxSize()
-                    .background(MaterialTheme.colorScheme.background)
-            ) {
-                AsyncImage(
-                    model = p.image_url,
-                    contentDescription = null,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(350.dp)
-                        .clip(RoundedCornerShape(bottomStart = 32.dp, bottomEnd = 32.dp)),
-                    contentScale = ContentScale.Crop
-                )
 
                 Column(modifier = Modifier.padding(24.dp)) {
-                    Text(
-                        text = p.name,
-                        style = MaterialTheme.typography.headlineMedium,
-                        fontWeight = FontWeight.Bold
-                    )
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Text(
-                        text = "R$ ${String.format("%.2f", p.price)}",
-                        style = MaterialTheme.typography.headlineSmall,
-                        color = MaterialTheme.colorScheme.primary,
-                        fontWeight = FontWeight.Bold
-                    )
+                    Text(p.name, fontSize = 28.sp, fontWeight = FontWeight.Bold)
+                    Text("R$ ${String.format("%.2f", p.price)}", fontSize = 24.sp, color = Color(0xFF2D3B87), fontWeight = FontWeight.ExtraBold)
                     Spacer(modifier = Modifier.height(16.dp))
-                    Text(
-                        text = "Descrição",
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.SemiBold
-                    )
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Text(
-                        text = p.description,
-                        style = MaterialTheme.typography.bodyLarge,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        lineHeight = 24.sp
-                    )
+                    Text("Descrição", fontWeight = FontWeight.Bold, fontSize = 18.sp)
+                    Text(p.description, color = Color.Gray, lineHeight = 22.sp)
 
                     Spacer(modifier = Modifier.weight(1f))
 
                     Button(
-                        onClick = { /* Add to cart logic */ },
-                        modifier = Modifier.fillMaxWidth().height(56.dp),
-                        shape = RoundedCornerShape(16.dp)
+                        onClick = { /* Add to cart */ },
+                        modifier = Modifier.fillMaxWidth().height(64.dp),
+                        shape = RoundedCornerShape(20.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2D3B87))
                     ) {
-                        Icon(Icons.Default.ShoppingCart, contentDescription = null)
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text("Adicionar ao Carrinho", fontSize = 18.sp)
+                        Text("Adicionar ao Carrinho", fontSize = 18.sp, fontWeight = FontWeight.Bold)
                     }
                 }
             }
+        }
+    }
+}
+
+@Composable
+fun CustomBottomNavigation() {
+    Surface(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(80.dp)
+            .shadow(16.dp),
+        color = Color.White
+    ) {
+        Row(
+            modifier = Modifier.fillMaxSize(),
+            horizontalArrangement = Arrangement.SpaceAround,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(Icons.Default.Home, contentDescription = null, tint = Color(0xFF2D3B87))
+            Icon(Icons.Default.FavoriteBorder, contentDescription = null, tint = Color.Gray)
+
+            // Central highlighted button
+            Surface(
+                modifier = Modifier.size(56.dp).offset(y = (-20).dp),
+                shape = CircleShape,
+                color = Color(0xFF2D3B87),
+                shadowElevation = 8.dp
+            ) {
+                Box(contentAlignment = Alignment.Center) {
+                    Icon(Icons.Default.ShoppingCart, contentDescription = null, tint = Color.White)
+                }
+            }
+
+            Icon(Icons.Default.Notifications, contentDescription = null, tint = Color.Gray)
+            Icon(Icons.Default.Person, contentDescription = null, tint = Color.Gray)
         }
     }
 }

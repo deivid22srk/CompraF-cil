@@ -28,14 +28,14 @@ jobs:
     - name: Build with Gradle
       run: ./gradlew assembleDebug
 
-    - name: Upload CompraFácil User APK
+    - name: Upload CompraFacil APK
       uses: actions/upload-artifact@v4
       with:
-        name: CompraFacil-User-Debug-APK
-        path: CompraFacil/build/outputs/apk/debug/CompraFacil-debug.apk
+        name: CompraFacil-User-Debug
+        path: ./CompraFacil/build/outputs/apk/debug/CompraFacil-debug.apk
 
-    - name: Upload CompraFácil Admin APK
+    - name: Upload CompraFacilAdmin APK
       uses: actions/upload-artifact@v4
       with:
-        name: CompraFacil-Admin-Debug-APK
-        path: CompraFacilAdmin/build/outputs/apk/debug/CompraFacilAdmin-debug.apk
+        name: CompraFacil-Admin-Debug
+        path: ./CompraFacilAdmin/build/outputs/apk/debug/CompraFacilAdmin-debug.apk

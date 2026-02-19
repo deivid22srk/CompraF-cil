@@ -1,28 +1,38 @@
-# Configuração do CompraFácil
+# Configuração do Projeto CompraFácil
 
-Para que o sistema funcione corretamente, você precisa configurar seu projeto no Supabase.
+Este projeto utiliza **Supabase** para Autenticação, Banco de Dados e Armazenamento.
 
-## 1. Habilitar Autenticação por Email e Senha
+## 1. Supabase SQL Schema
+Execute o conteúdo do arquivo `supabase_schema.sql` no **SQL Editor** do seu painel Supabase. Isso criará as tabelas `categories` e `products`, além das políticas de segurança (RLS).
 
-1. Vá para o [Painel do Supabase](https://supabase.com/dashboard).
-2. Selecione seu projeto.
-3. No menu lateral, vá em **Authentication** > **Providers**.
-4. Encontre **Email** na lista e clique para expandir.
-5. Certifique-se de que está **Enabled**.
-6. (Opcional) Desative "Confirm email" se quiser que os usuários entrem imediatamente sem confirmar o email (bom para testes).
+## 2. Supabase Storage
+No painel do Supabase:
+1. Vá para **Storage**.
+2. Crie um novo bucket chamado `product-images`.
+3. Defina-o como **Public** (Público).
 
-## 2. Configurar Redirect URLs no Supabase (Para recuperação de senha, se habilitado)
+## 3. Autenticação (Email/Senha)
+O app está configurado para usar **Email e Senha**.
+1. Vá para **Authentication** -> **Providers**.
+2. Certifique-se de que o provider **Email** está habilitado.
+3. Desabilite "Confirm Email" se desejar testar rapidamente sem precisar validar o email.
 
-Ainda no painel do Supabase em **Authentication** > **URL Configuration**:
+## 4. Inserindo Categorias (Opcional)
+Você pode inserir algumas categorias iniciais para o app do usuário exibir ícones corretamente:
+```sql
+INSERT INTO categories (name) VALUES ('Smartphones'), ('Vestuário'), ('Esportes'), ('Relógios');
+```
 
-1. Em **Redirect URLs**, adicione os esquemas personalizados dos aplicativos:
-   - `comprafacil://login-callback` (Para o app do usuário)
-   - `comprafacil-admin://login-callback` (Para o app do admin)
+## 5. Configuração do App
+As chaves do Supabase já estão configuradas no arquivo `Supabase.kt` de ambos os apps:
+- URL: `https://zlykhkpycrsukoaxhfzn.supabase.co`
+- API Key: `sb_publishable_...`
 
-## 3. Executar o Script SQL
-
-Certifique-se de ter executado o conteúdo do arquivo `supabase_schema.sql` no **SQL Editor** do Supabase para criar as tabelas e políticas de segurança necessárias.
-
----
-
-Agora o login com Email e Senha funcionará corretamente em ambos os aplicativos.
+## 6. Build
+Para gerar os APKs localmente, execute:
+```bash
+./gradlew assembleDebug
+```
+Os APKs estarão em:
+- `CompraFacil/build/outputs/apk/debug/CompraFacil-debug.apk`
+- `CompraFacilAdmin/build/outputs/apk/debug/CompraFacilAdmin-debug.apk`

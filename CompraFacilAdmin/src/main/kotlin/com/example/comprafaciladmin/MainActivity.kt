@@ -14,13 +14,14 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ExitToApp
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
@@ -28,7 +29,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.lifecycleScope
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
@@ -124,32 +124,29 @@ fun AdminLoginScreen() {
         modifier = Modifier
             .fillMaxSize()
             .padding(padding)
-            .background(
-                Brush.verticalGradient(
-                    colors = listOf(MaterialTheme.colorScheme.primary, Color(0xFF4A378B))
-                )
-            ),
+            .background(Color(0xFF2D3B87)),
         contentAlignment = Alignment.Center
     ) {
         Card(
-            modifier = Modifier.padding(24.dp),
-            shape = RoundedCornerShape(24.dp),
-            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+            modifier = Modifier.padding(24.dp).fillMaxWidth(),
+            shape = RoundedCornerShape(32.dp),
+            colors = CardDefaults.cardColors(containerColor = Color.White)
         ) {
             Column(
-                modifier = Modifier.padding(24.dp),
+                modifier = Modifier.padding(32.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Icon(
                     imageVector = Icons.Default.Settings,
                     contentDescription = null,
                     modifier = Modifier.size(48.dp),
-                    tint = MaterialTheme.colorScheme.primary
+                    tint = Color(0xFF2D3B87)
                 )
                 Spacer(modifier = Modifier.height(16.dp))
                 Text(
                     "Painel Admin",
-                    style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold)
+                    style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
+                    color = Color(0xFF2D3B87)
                 )
                 Spacer(modifier = Modifier.height(24.dp))
 
@@ -158,24 +155,22 @@ fun AdminLoginScreen() {
                     onValueChange = { email = it },
                     label = { Text("Email Admin") },
                     modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(12.dp),
-                    singleLine = true
+                    shape = RoundedCornerShape(16.dp)
                 )
-                Spacer(modifier = Modifier.height(8.dp))
+                Spacer(modifier = Modifier.height(16.dp))
                 OutlinedTextField(
                     value = password,
                     onValueChange = { password = it },
                     label = { Text("Senha") },
                     modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(12.dp),
-                    visualTransformation = PasswordVisualTransformation(),
-                    singleLine = true
+                    shape = RoundedCornerShape(16.dp),
+                    visualTransformation = PasswordVisualTransformation()
                 )
 
-                Spacer(modifier = Modifier.height(24.dp))
+                Spacer(modifier = Modifier.height(32.dp))
 
                 if (loading) {
-                    CircularProgressIndicator()
+                    CircularProgressIndicator(color = Color(0xFF2D3B87))
                 } else {
                     Button(
                         onClick = {
@@ -187,21 +182,17 @@ fun AdminLoginScreen() {
                                         this.password = password
                                     }
                                 } catch (e: Exception) {
-                                    e.printStackTrace()
-                                    snackbarHostState.showSnackbar(
-                                        message = "Erro ao entrar: ${e.localizedMessage ?: "Verifique seus dados"}",
-                                        duration = SnackbarDuration.Long
-                                    )
+                                    snackbarHostState.showSnackbar("Erro: ${e.localizedMessage}")
                                 } finally {
                                     loading = false
                                 }
                             }
                         },
-                        modifier = Modifier.fillMaxWidth().height(50.dp),
-                        shape = RoundedCornerShape(12.dp),
-                        enabled = email.isNotBlank() && password.isNotBlank()
+                        modifier = Modifier.fillMaxWidth().height(56.dp),
+                        shape = RoundedCornerShape(16.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2D3B87))
                     ) {
-                        Text("Entrar no Painel")
+                        Text("Entrar no Painel", fontWeight = FontWeight.Bold)
                     }
                 }
             }
@@ -231,16 +222,16 @@ fun DashboardScreen(onAddProduct: () -> Unit, onLogout: suspend () -> Unit) {
 
     Scaffold(
         topBar = {
-            LargeTopAppBar(
+            CenterAlignedTopAppBar(
                 title = { Text("Gerenciamento", fontWeight = FontWeight.Bold) },
                 actions = {
                     IconButton(onClick = { scope.launch { onLogout() } }) {
-                        Icon(Icons.Default.ExitToApp, contentDescription = "Sair")
+                        Icon(Icons.AutoMirrored.Filled.ExitToApp, contentDescription = "Sair")
                     }
                 },
-                colors = TopAppBarDefaults.largeTopAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.surface,
-                    titleContentColor = MaterialTheme.colorScheme.onSurface
+                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
+                    containerColor = Color.White,
+                    titleContentColor = Color(0xFF2D3B87)
                 )
             )
         },
@@ -249,23 +240,24 @@ fun DashboardScreen(onAddProduct: () -> Unit, onLogout: suspend () -> Unit) {
                 onClick = onAddProduct,
                 icon = { Icon(Icons.Default.Add, contentDescription = null) },
                 text = { Text("Novo Produto") },
-                containerColor = MaterialTheme.colorScheme.primary,
-                contentColor = MaterialTheme.colorScheme.onPrimary
+                containerColor = Color(0xFF2D3B87),
+                contentColor = Color.White,
+                shape = RoundedCornerShape(16.dp)
             )
         }
     ) { padding ->
         if (loading) {
             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                CircularProgressIndicator()
+                CircularProgressIndicator(color = Color(0xFF2D3B87))
             }
         } else {
             LazyColumn(
-                modifier = Modifier.padding(padding),
-                contentPadding = PaddingValues(16.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
+                modifier = Modifier.padding(padding).background(Color(0xFFF5F7FB)).fillMaxSize(),
+                contentPadding = PaddingValues(24.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 items(products) { product ->
-                    AdminProductItem(product)
+                    AdminProductCard(product)
                 }
             }
         }
@@ -273,31 +265,33 @@ fun DashboardScreen(onAddProduct: () -> Unit, onLogout: suspend () -> Unit) {
 }
 
 @Composable
-fun AdminProductItem(product: Product) {
+fun AdminProductCard(product: Product) {
     Card(
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(12.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
+        shape = RoundedCornerShape(20.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.White),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
         Row(
-            modifier = Modifier.padding(12.dp),
+            modifier = Modifier.padding(16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             AsyncImage(
                 model = product.image_url,
                 contentDescription = null,
                 modifier = Modifier
-                    .size(64.dp)
-                    .clip(RoundedCornerShape(8.dp)),
-                contentScale = ContentScale.Crop
+                    .size(60.dp)
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(Color(0xFFF5F7FB)),
+                contentScale = ContentScale.Fit
             )
             Spacer(modifier = Modifier.width(16.dp))
             Column(modifier = Modifier.weight(1f)) {
                 Text(product.name, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                Text("R$ ${String.format("%.2f", product.price)}", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.primary)
+                Text("R$ ${String.format("%.2f", product.price)}", style = MaterialTheme.typography.bodyMedium, color = Color(0xFF2D3B87), fontWeight = FontWeight.Bold)
             }
-            IconButton(onClick = { /* Edit logic */ }) {
-                Icon(Icons.Default.Edit, contentDescription = "Editar", tint = MaterialTheme.colorScheme.primary)
+            IconButton(onClick = { /* Edit */ }) {
+                Icon(Icons.Default.Edit, contentDescription = "Editar", tint = Color(0xFF2D3B87))
             }
         }
     }
@@ -309,6 +303,10 @@ fun AddProductScreen(onProductAdded: () -> Unit, onBack: () -> Unit) {
     var name by remember { mutableStateOf("") }
     var description by remember { mutableStateOf("") }
     var price by remember { mutableStateOf("") }
+    var categories by remember { mutableStateOf<List<Category>>(emptyList()) }
+    var selectedCategory by remember { mutableStateOf<Category?>(null) }
+    var expanded by remember { mutableStateOf(false) }
+
     var imageUri by remember { mutableStateOf<Uri?>(null) }
     var uploading by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
@@ -320,13 +318,23 @@ fun AddProductScreen(onProductAdded: () -> Unit, onBack: () -> Unit) {
         imageUri = uri
     }
 
+    LaunchedEffect(Unit) {
+        scope.launch {
+            try {
+                categories = Supabase.client.postgrest["categories"].select().decodeList<Category>()
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
+    }
+
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Novo Produto") },
+                title = { Text("Novo Produto", fontWeight = FontWeight.Bold) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.Default.ArrowBack, contentDescription = "Voltar")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Voltar")
                     }
                 }
             )
@@ -336,62 +344,95 @@ fun AddProductScreen(onProductAdded: () -> Unit, onBack: () -> Unit) {
             modifier = Modifier
                 .padding(padding)
                 .padding(24.dp)
-                .fillMaxWidth()
+                .fillMaxSize()
         ) {
-            OutlinedTextField(
-                value = name,
-                onValueChange = { name = it },
-                label = { Text("Nome do Produto") },
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(12.dp)
-            )
-            Spacer(modifier = Modifier.height(16.dp))
-            OutlinedTextField(
-                value = description,
-                onValueChange = { description = it },
-                label = { Text("Descrição") },
-                modifier = Modifier.fillMaxWidth(),
-                minLines = 3,
-                shape = RoundedCornerShape(12.dp)
-            )
-            Spacer(modifier = Modifier.height(16.dp))
-            OutlinedTextField(
-                value = price,
-                onValueChange = { price = it },
-                label = { Text("Preço (R$)") },
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(12.dp)
-            )
-            Spacer(modifier = Modifier.height(24.dp))
-
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(200.dp)
-                    .clip(RoundedCornerShape(16.dp))
-                    .background(MaterialTheme.colorScheme.surfaceVariant)
+                    .height(150.dp)
+                    .clip(RoundedCornerShape(24.dp))
+                    .background(Color(0xFFF5F7FB))
                     .clickable { launcher.launch("image/*") },
                 contentAlignment = Alignment.Center
             ) {
                 if (imageUri == null) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(48.dp))
-                        Text("Selecionar Foto")
+                        Icon(Icons.Default.AddAPhoto, contentDescription = null, modifier = Modifier.size(48.dp), tint = Color.Gray)
+                        Text("Selecionar Foto", color = Color.Gray)
                     }
                 } else {
                     AsyncImage(
                         model = imageUri,
                         contentDescription = null,
-                        modifier = Modifier.fillMaxSize(),
-                        contentScale = ContentScale.Crop
+                        modifier = Modifier.fillMaxSize().padding(16.dp),
+                        contentScale = ContentScale.Fit
                     )
                 }
             }
 
+            Spacer(modifier = Modifier.height(16.dp))
+
+            OutlinedTextField(
+                value = name,
+                onValueChange = { name = it },
+                label = { Text("Nome do Produto") },
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(16.dp)
+            )
+            Spacer(modifier = Modifier.height(12.dp))
+
+            // Category Dropdown
+            ExposedDropdownMenuBox(
+                expanded = expanded,
+                onExpandedChange = { expanded = it },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                OutlinedTextField(
+                    value = selectedCategory?.name ?: "Selecionar Categoria",
+                    onValueChange = {},
+                    readOnly = true,
+                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
+                    modifier = Modifier.menuAnchor().fillMaxWidth(),
+                    shape = RoundedCornerShape(16.dp)
+                )
+                ExposedDropdownMenu(
+                    expanded = expanded,
+                    onDismissRequest = { expanded = false }
+                ) {
+                    categories.forEach { category ->
+                        DropdownMenuItem(
+                            text = { Text(category.name) },
+                            onClick = {
+                                selectedCategory = category
+                                expanded = false
+                            }
+                        )
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(12.dp))
+            OutlinedTextField(
+                value = description,
+                onValueChange = { description = it },
+                label = { Text("Descrição") },
+                modifier = Modifier.fillMaxWidth(),
+                minLines = 2,
+                shape = RoundedCornerShape(16.dp)
+            )
+            Spacer(modifier = Modifier.height(12.dp))
+            OutlinedTextField(
+                value = price,
+                onValueChange = { price = it },
+                label = { Text("Preço (R$)") },
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(16.dp)
+            )
+
             Spacer(modifier = Modifier.weight(1f))
 
             if (uploading) {
-                CircularProgressIndicator(modifier = Modifier.align(Alignment.CenterHorizontally))
+                CircularProgressIndicator(modifier = Modifier.align(Alignment.CenterHorizontally), color = Color(0xFF2D3B87))
             } else {
                 Button(
                     onClick = {
@@ -414,7 +455,8 @@ fun AddProductScreen(onProductAdded: () -> Unit, onBack: () -> Unit) {
                                     name = name,
                                     description = description,
                                     price = price.toDoubleOrNull() ?: 0.0,
-                                    image_url = imageUrl
+                                    image_url = imageUrl,
+                                    category_id = selectedCategory?.id
                                 )
                                 Supabase.client.postgrest["products"].insert(product)
                                 onProductAdded()
@@ -425,11 +467,12 @@ fun AddProductScreen(onProductAdded: () -> Unit, onBack: () -> Unit) {
                             }
                         }
                     },
-                    modifier = Modifier.fillMaxWidth().height(56.dp),
+                    modifier = Modifier.fillMaxWidth().height(64.dp),
                     enabled = name.isNotBlank() && price.isNotBlank(),
-                    shape = RoundedCornerShape(16.dp)
+                    shape = RoundedCornerShape(20.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2D3B87))
                 ) {
-                    Text("Salvar Produto", fontSize = 18.sp)
+                    Text("Salvar Produto", fontSize = 18.sp, fontWeight = FontWeight.Bold)
                 }
             }
         }
