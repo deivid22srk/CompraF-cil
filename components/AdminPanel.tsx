@@ -1,9 +1,10 @@
 
 import React, { useState, useEffect } from 'react';
-import { Plus, Trash2, LayoutGrid, Image as ImageIcon, Sparkles, LogOut, ArrowLeft, Package, Check, RefreshCw, User as UserIcon } from 'lucide-react';
+import { Plus, Trash2, LayoutGrid, Image as ImageIcon, Sparkles, LogOut, ArrowLeft, Package, Check, RefreshCw, User as UserIcon, Camera } from 'lucide-react';
 import { supabase } from '../supabaseClient';
 import { Product, Order } from '../types';
 import { GoogleGenAI } from "@google/genai";
+import { Camera as CapCamera, CameraResultType, CameraSource } from '@capacitor/camera';
 
 interface AdminPanelProps {
   onBack: () => void;
@@ -85,11 +86,28 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onBack }) => {
     setLoading(false);
   };
 
+  const pickImage = async (source: CameraSource) => {
+    try {
+      const image = await CapCamera.getPhoto({
+        quality: 90,
+        allowEditing: false,
+        resultType: CameraResultType.Uri,
+        source: source
+      });
+
+      if (image.webPath) {
+        setFormData(prev => ({ ...prev, image_url: image.webPath || '' }));
+      }
+    } catch (err) {
+      console.error('Erro ao capturar imagem:', err);
+    }
+  };
+
   const generateAiDescription = async () => {
     if (!formData.name) return alert('Dê um nome ao produto primeiro');
     setAiGenerating(true);
     try {
-      const apiKey = (import.meta as any).env?.VITE_GEMINI_API_KEY || '';
+      const apiKey = (import.meta as any).env?.VITE_GEMINI_API_KEY || (process as any).env?.GEMINI_API_KEY || '';
       const genAI = new GoogleGenAI(apiKey);
       const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
@@ -227,15 +245,29 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onBack }) => {
               </div>
 
               <div className="space-y-2">
-                <label className="text-xs font-bold text-slate-400 uppercase">URL Imagem</label>
+                <label className="text-xs font-bold text-slate-400 uppercase">Imagem do Produto</label>
                 <div className="flex gap-2">
                   <input
                     required
                     className="flex-1 p-4 bg-slate-50 rounded-2xl border-none focus:ring-2 focus:ring-indigo-500 text-xs"
                     value={formData.image_url}
                     onChange={e => setFormData({...formData, image_url: e.target.value})}
+                    placeholder="URL ou use os botões ao lado"
                   />
-                  <button type="button" className="p-4 bg-slate-100 rounded-2xl text-slate-400">
+                  <button
+                    type="button"
+                    onClick={() => pickImage(CameraSource.Camera)}
+                    className="p-4 bg-slate-100 rounded-2xl text-slate-600 hover:bg-slate-200"
+                    title="Tirar Foto"
+                  >
+                    <Camera size={20} />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => pickImage(CameraSource.Photos)}
+                    className="p-4 bg-slate-100 rounded-2xl text-slate-600 hover:bg-slate-200"
+                    title="Galeria"
+                  >
                     <ImageIcon size={20} />
                   </button>
                 </div>
