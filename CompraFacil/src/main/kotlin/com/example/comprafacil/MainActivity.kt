@@ -10,7 +10,6 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
@@ -25,6 +24,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -37,7 +37,7 @@ import coil.compose.AsyncImage
 import io.github.jan.supabase.gotrue.SessionStatus
 import io.github.jan.supabase.gotrue.auth
 import io.github.jan.supabase.gotrue.handleDeeplinks
-import io.github.jan.supabase.gotrue.providers.Google
+import io.github.jan.supabase.gotrue.providers.builtin.Email
 import io.github.jan.supabase.postgrest.postgrest
 import kotlinx.coroutines.launch
 
@@ -79,8 +79,10 @@ fun AppNavigation() {
                 }
             }
         } else if (sessionStatus is SessionStatus.NotAuthenticated) {
-            navController.navigate("login") {
-                popUpTo(0)
+            if (currentRoute != "login") {
+                navController.navigate("login") {
+                    popUpTo(0)
+                }
             }
         }
     }
@@ -106,6 +108,10 @@ fun LoginScreen() {
     val scope = rememberCoroutineScope()
     val snackbarHostState = remember { SnackbarHostState() }
 
+    var email by remember { mutableStateOf("") }
+    var password by remember { mutableStateOf("") }
+    var loading by remember { mutableStateOf(false) }
+
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) }
     ) { padding ->
@@ -121,50 +127,105 @@ fun LoginScreen() {
         contentAlignment = Alignment.Center
     ) {
         Card(
-            modifier = Modifier.padding(32.dp),
+            modifier = Modifier.padding(24.dp),
             shape = RoundedCornerShape(24.dp),
             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
         ) {
             Column(
-                modifier = Modifier.padding(32.dp),
+                modifier = Modifier.padding(24.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Icon(
                     imageVector = Icons.Default.ShoppingCart,
                     contentDescription = null,
-                    modifier = Modifier.size(64.dp),
+                    modifier = Modifier.size(48.dp),
                     tint = MaterialTheme.colorScheme.primary
                 )
                 Spacer(modifier = Modifier.height(16.dp))
                 Text(
                     "CompraFácil",
-                    style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold),
+                    style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
                     color = MaterialTheme.colorScheme.onSurface
                 )
-                Text(
-                    "Sua loja em qualquer lugar",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                Spacer(modifier = Modifier.height(24.dp))
+
+                OutlinedTextField(
+                    value = email,
+                    onValueChange = { email = it },
+                    label = { Text("Email") },
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(12.dp),
+                    singleLine = true
                 )
-                Spacer(modifier = Modifier.height(32.dp))
-                Button(
-                    onClick = {
-                        scope.launch {
-                            try {
-                                Supabase.client.auth.signInWith(Google)
-                            } catch (e: Exception) {
-                                e.printStackTrace()
-                                snackbarHostState.showSnackbar(
-                                    message = "Erro ao fazer login: ${e.localizedMessage ?: "Tente novamente"}",
-                                    duration = SnackbarDuration.Long
-                                )
+                Spacer(modifier = Modifier.height(8.dp))
+                OutlinedTextField(
+                    value = password,
+                    onValueChange = { password = it },
+                    label = { Text("Senha") },
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(12.dp),
+                    visualTransformation = PasswordVisualTransformation(),
+                    singleLine = true
+                )
+
+                Spacer(modifier = Modifier.height(24.dp))
+
+                if (loading) {
+                    CircularProgressIndicator()
+                } else {
+                    Button(
+                        onClick = {
+                            scope.launch {
+                                loading = true
+                                try {
+                                    Supabase.client.auth.signInWith(Email) {
+                                        this.email = email
+                                        this.password = password
+                                    }
+                                } catch (e: Exception) {
+                                    e.printStackTrace()
+                                    snackbarHostState.showSnackbar(
+                                        message = "Erro ao entrar: ${e.localizedMessage ?: "Verifique seus dados"}",
+                                        duration = SnackbarDuration.Long
+                                    )
+                                } finally {
+                                    loading = false
+                                }
+                            }
+                        },
+                        modifier = Modifier.fillMaxWidth().height(50.dp),
+                        shape = RoundedCornerShape(12.dp),
+                        enabled = email.isNotBlank() && password.isNotBlank()
+                    ) {
+                        Text("Entrar", fontSize = 16.sp)
+                    }
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    TextButton(
+                        onClick = {
+                            scope.launch {
+                                loading = true
+                                try {
+                                    Supabase.client.auth.signUpWith(Email) {
+                                        this.email = email
+                                        this.password = password
+                                    }
+                                    snackbarHostState.showSnackbar("Conta criada! Verifique seu email se necessário.")
+                                } catch (e: Exception) {
+                                    e.printStackTrace()
+                                    snackbarHostState.showSnackbar(
+                                        message = "Erro ao criar conta: ${e.localizedMessage}",
+                                        duration = SnackbarDuration.Long
+                                    )
+                                } finally {
+                                    loading = false
+                                }
                             }
                         }
-                    },
-                    modifier = Modifier.fillMaxWidth().height(56.dp),
-                    shape = RoundedCornerShape(12.dp)
-                ) {
-                    Text("Entrar com Google", fontSize = 16.sp)
+                    ) {
+                        Text("Criar Nova Conta")
+                    }
                 }
             }
         }
@@ -299,7 +360,7 @@ fun ProductDetailScreen(productId: String?, onBack: () -> Unit) {
             TopAppBar(
                 title = { Text("Detalhes") },
                 navigationIcon = {
-                    IconButton(onClick = onBack) {
+                    IconButton(onClick = { onBack() }) {
                         Icon(Icons.Default.ArrowBack, contentDescription = "Voltar")
                     }
                 }

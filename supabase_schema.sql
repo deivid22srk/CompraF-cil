@@ -1,3 +1,6 @@
+-- Enable the necessary extensions
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+
 -- Categories table
 CREATE TABLE categories (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
