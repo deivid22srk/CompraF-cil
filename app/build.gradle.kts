@@ -53,11 +53,13 @@ dependencies {
     implementation(libs.androidx.material.icons.extended)
     implementation(libs.google.play.services.location)
     implementation(libs.kotlinx.coroutines.play.services)
+    implementation(libs.androidx.work.runtime.ktx)
 
     // Supabase
     implementation(libs.supabase.postgrest)
     implementation(libs.supabase.storage)
     implementation(libs.supabase.auth)
+    implementation(libs.supabase.realtime)
     implementation(libs.ktor.client.android)
     implementation(libs.ktor.client.cio)
 

@@ -1,8 +1,13 @@
 package com.example.comprafacil
 
+import android.Manifest
+import android.content.pm.PackageManager
+import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Home
@@ -13,6 +18,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
+import androidx.core.content.ContextCompat
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavType
@@ -20,21 +26,66 @@ import androidx.navigation.compose.*
 import androidx.navigation.navArgument
 import com.example.comprafacil.ui.screens.*
 import com.example.comprafacil.ui.theme.CompraFacilTheme
+import com.example.comprafacil.utils.NotificationHelper
 import io.github.jan.supabase.gotrue.auth
+import io.github.jan.supabase.realtime.*
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        val notificationHelper = NotificationHelper(this)
+        val workRequest = androidx.work.PeriodicWorkRequestBuilder<com.example.comprafacil.utils.OrderUpdateWorker>(15, java.util.concurrent.TimeUnit.MINUTES).build()
+        androidx.work.WorkManager.getInstance(this).enqueueUniquePeriodicWork("order_tracking", androidx.work.ExistingPeriodicWorkPolicy.KEEP, workRequest)
 
         setContent {
             CompraFacilTheme {
                 val navController = rememberNavController()
                 val navBackStackEntry by navController.currentBackStackEntryAsState()
                 val currentDestination = navBackStackEntry?.destination
+                val scope = rememberCoroutineScope()
 
                 // Check for existing session
                 val startDestination = remember {
                     if (SupabaseConfig.client.auth.currentUserOrNull() != null) "home" else "auth"
+                }
+
+                // Notification Permission
+                val permissionLauncher = rememberLauncherForActivityResult(
+                    ActivityResultContracts.RequestPermission()
+                ) { /* Handle result */ }
+
+                LaunchedEffect(Unit) {
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                        if (ContextCompat.checkSelfPermission(this@MainActivity, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
+                            permissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                        }
+                    }
+
+                    // Setup Realtime Listener for Order Updates
+                    val userId = SupabaseConfig.client.auth.currentUserOrNull()?.id
+                    if (userId != null) {
+                        val channel = SupabaseConfig.client.realtime.channel("orders_channel")
+                        val changeFlow = channel.postgresChangeFlow<PostgresAction.Update>(schema = "public") {
+                            table = "orders"
+                        }
+
+                        changeFlow.onEach { change ->
+                            val newStatus = change.record["status"]?.toString()
+                            val orderId = change.record["id"]?.toString()?.takeLast(6)
+                            if (change.record["user_id"]?.toString() == userId) {
+                                notificationHelper.showNotification(
+                                    "Atualização no Pedido",
+                                    "O status do seu pedido #$orderId mudou para: $newStatus"
+                                )
+                            }
+                        }.launchIn(this)
+
+                        channel.subscribe()
+                    }
                 }
 
                 val items = listOf(
@@ -43,7 +94,6 @@ class MainActivity : ComponentActivity() {
                     Screen.Profile
                 )
 
-                // Hide bottom bar on auth, detail, and orders screens
                 val showBottomBar = currentDestination?.route in items.map { it.route }
 
                 Scaffold(

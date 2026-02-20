@@ -19,6 +19,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -31,15 +32,12 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.lifecycleScope
 import coil.compose.AsyncImage
 import com.example.comprafacil.SupabaseConfig
 import com.example.comprafacil.admin.data.*
 import io.github.jan.supabase.postgrest.from
 import io.github.jan.supabase.storage.storage
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import java.util.UUID
 
 class MainActivity : ComponentActivity() {
@@ -83,7 +81,7 @@ fun AdminPanel() {
                 NavigationBarItem(
                     selected = selectedTab == 1,
                     onClick = { selectedTab = 1 },
-                    icon = { Icon(Icons.Default.List, contentDescription = null) },
+                    icon = { Icon(Icons.AutoMirrored.Filled.List, contentDescription = null) },
                     label = { Text("Produtos") }
                 )
                 NavigationBarItem(
@@ -150,7 +148,6 @@ fun AddProductScreen() {
 
         Spacer(modifier = Modifier.height(8.dp))
 
-        // Category Selection
         Box(modifier = Modifier.fillMaxWidth()) {
             OutlinedTextField(
                 value = selectedCategory?.name ?: "Selecione uma Categoria",
@@ -226,7 +223,6 @@ fun AddProductScreen() {
                                 "image_url" to (imageUrls.firstOrNull() ?: "")
                             )
 
-                            // Fix: Use decodeSingle<Product> instead of Map<String, Any> to avoid Serializer Any error
                             val insertedProduct = SupabaseConfig.client.from("products").insert(productData) {
                                 select()
                             }.decodeSingle<Product>()
@@ -338,13 +334,22 @@ fun ProductAdminItem(product: Product, onDelete: () -> Unit) {
 fun OrdersAdminScreen() {
     var orders by remember { mutableStateOf<List<Order>>(emptyList()) }
     var loading by remember { mutableStateOf(true) }
+    val scope = rememberCoroutineScope()
+
+    fun fetchOrders() {
+        scope.launch {
+            try {
+                orders = SupabaseConfig.client.from("orders").select {
+                    order("created_at", io.github.jan.supabase.postgrest.query.Order.DESCENDING)
+                }.decodeAs<List<Order>>()
+            } catch (e: Exception) {} finally {
+                loading = false
+            }
+        }
+    }
 
     LaunchedEffect(Unit) {
-        try {
-            orders = SupabaseConfig.client.from("orders").select().decodeAs<List<Order>>()
-        } catch (e: Exception) {} finally {
-            loading = false
-        }
+        fetchOrders()
     }
 
     if (loading) {
@@ -358,16 +363,20 @@ fun OrdersAdminScreen() {
                 Spacer(modifier = Modifier.height(16.dp))
             }
             items(orders) { order ->
-                OrderAdminItem(order)
-                Spacer(modifier = Modifier.height(8.dp))
+                OrderAdminItem(order) {
+                    fetchOrders()
+                }
+                Spacer(modifier = Modifier.height(12.dp))
             }
         }
     }
 }
 
 @Composable
-fun OrderAdminItem(order: Order) {
+fun OrderAdminItem(order: Order, onUpdate: () -> Unit) {
     val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+
     Card(
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(containerColor = Color(0xFF1E1E1E))
@@ -382,21 +391,53 @@ fun OrderAdminItem(order: Order) {
             Text("Endereço: ${order.location}", color = Color.White)
             Text("WhatsApp: ${order.whatsapp}", color = Color.White)
 
-            if (order.latitude != null && order.longitude != null) {
-                Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(12.dp))
+
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                if (order.latitude != null && order.longitude != null) {
+                    Button(
+                        onClick = {
+                            val gmmIntentUri = Uri.parse("geo:${order.latitude},${order.longitude}?q=${order.latitude},${order.longitude}")
+                            val mapIntent = Intent(Intent.ACTION_VIEW, gmmIntentUri)
+                            mapIntent.setPackage("com.google.android.apps.maps")
+                            context.startActivity(mapIntent)
+                        },
+                        modifier = Modifier.weight(1f),
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2196F3))
+                    ) {
+                        Icon(Icons.Default.LocationOn, contentDescription = null)
+                        Text(" MAPA", fontSize = 10.sp)
+                    }
+                }
+
                 Button(
                     onClick = {
-                        val gmmIntentUri = Uri.parse("geo:${order.latitude},${order.longitude}?q=${order.latitude},${order.longitude}")
-                        val mapIntent = Intent(Intent.ACTION_VIEW, gmmIntentUri)
-                        mapIntent.setPackage("com.google.android.apps.maps")
-                        context.startActivity(mapIntent)
+                        scope.launch {
+                            try {
+                                val nextStatus = when(order.status) {
+                                    "pendente" -> "em rota"
+                                    "em rota" -> "entregue"
+                                    else -> "cancelado"
+                                }
+                                SupabaseConfig.client.from("orders").update(
+                                    {
+                                        set("status", nextStatus)
+                                    }
+                                ) {
+                                    filter { eq("id", order.id!!) }
+                                }
+                                onUpdate()
+                                Toast.makeText(context, "Status atualizado!", Toast.LENGTH_SHORT).show()
+                            } catch (e: Exception) {
+                                Toast.makeText(context, "Erro: ${e.message}", Toast.LENGTH_LONG).show()
+                            }
+                        }
                     },
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2196F3))
+                    modifier = Modifier.weight(1f),
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4CAF50))
                 ) {
-                    Icon(Icons.Default.LocationOn, contentDescription = null)
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text("VER LOCALIZAÇÃO NO MAPA")
+                    Icon(Icons.Default.Refresh, contentDescription = null)
+                    Text(" STATUS", fontSize = 10.sp)
                 }
             }
         }

@@ -13,5 +13,6 @@ object SupabaseConfig {
         install(Postgrest)
         install(Auth)
         install(Storage)
+        install(io.github.jan.supabase.realtime.Realtime)
     }
 }

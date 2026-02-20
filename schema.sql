@@ -103,3 +103,6 @@ CREATE POLICY "Allow public select on order_items" ON order_items FOR SELECT USI
 
 -- Initial Categories
 INSERT INTO categories (name) VALUES ('Frutas'), ('Vegetais'), ('Laticínios'), ('Padaria') ON CONFLICT DO NOTHING;
+
+-- Enable Realtime for orders table
+ALTER PUBLICATION supabase_realtime ADD TABLE orders;
