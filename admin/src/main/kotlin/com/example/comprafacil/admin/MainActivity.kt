@@ -1,6 +1,7 @@
 package com.example.comprafacil.admin
 
 import android.Manifest
+import android.app.Activity
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
@@ -31,12 +32,15 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.view.WindowCompat
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
 import coil.compose.AsyncImage
@@ -262,14 +266,27 @@ fun SettingsAdminScreen() {
 
 @Composable
 fun AdminTheme(content: @Composable () -> Unit) {
+    val colorScheme = darkColorScheme(
+        primary = Color(0xFFFF9800),
+        secondary = Color(0xFFFDCB58),
+        surface = Color(0xFF121212),
+        background = Color(0xFF121212),
+        onPrimary = Color.White
+    )
+
+    val view = LocalView.current
+    if (!view.isInEditMode) {
+        SideEffect {
+            val window = (view.context as Activity).window
+            window.statusBarColor = colorScheme.background.toArgb()
+            window.navigationBarColor = colorScheme.background.toArgb()
+            WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars = false
+            WindowCompat.getInsetsController(window, view).isAppearanceLightNavigationBars = false
+        }
+    }
+
     MaterialTheme(
-        colorScheme = darkColorScheme(
-            primary = Color(0xFFFF9800),
-            secondary = Color(0xFFFDCB58),
-            surface = Color(0xFF121212),
-            background = Color(0xFF121212),
-            onPrimary = Color.White
-        ),
+        colorScheme = colorScheme,
         content = content
     )
 }
