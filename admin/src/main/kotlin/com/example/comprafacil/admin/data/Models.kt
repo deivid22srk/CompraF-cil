@@ -31,9 +31,22 @@ data class Category(
 )
 
 @Serializable
+data class Address(
+    val id: String? = null,
+    val user_id: String,
+    val name: String,
+    val phone: String,
+    val address_line: String,
+    val latitude: Double? = null,
+    val longitude: Double? = null,
+    val created_at: String? = null
+)
+
+@Serializable
 data class Order(
     val id: String? = null,
     val user_id: String? = null,
+    val customer_name: String? = null,
     val whatsapp: String,
     val location: String,
     val total_price: Double,

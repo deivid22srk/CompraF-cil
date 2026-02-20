@@ -29,6 +29,7 @@ import com.example.comprafacil.ui.screens.*
 import com.example.comprafacil.ui.theme.CompraFacilTheme
 import com.example.comprafacil.utils.NotificationHelper
 import io.github.jan.supabase.gotrue.auth
+import io.github.jan.supabase.gotrue.SessionStatus
 import io.github.jan.supabase.realtime.*
 import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.coroutines.flow.launchIn
@@ -60,7 +61,9 @@ class MainActivity : ComponentActivity() {
                     ActivityResultContracts.RequestPermission()
                 ) { /* Handle result */ }
 
-                LaunchedEffect(Unit) {
+                val sessionStatus by SupabaseConfig.client.auth.sessionStatus.collectAsState()
+
+                LaunchedEffect(sessionStatus) {
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
                         if (ContextCompat.checkSelfPermission(this@MainActivity, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
                             permissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
@@ -68,9 +71,11 @@ class MainActivity : ComponentActivity() {
                     }
 
                     // Setup Realtime Listener for Order Updates
-                    val userId = SupabaseConfig.client.auth.currentUserOrNull()?.id
+                    val userId = if (sessionStatus is SessionStatus.Authenticated) {
+                        (sessionStatus as SessionStatus.Authenticated).session.user?.id
+                    } else null
                     if (userId != null) {
-                        val channel = SupabaseConfig.client.realtime.channel("orders_channel")
+                        val channel = SupabaseConfig.client.realtime.channel("orders_channel_$userId")
                         val changeFlow = channel.postgresChangeFlow<PostgresAction.Update>(schema = "public") {
                             table = "orders"
                         }
@@ -193,7 +198,15 @@ class MainActivity : ComponentActivity() {
                                 },
                                 onOrdersClick = {
                                     navController.navigate("orders")
+                                },
+                                onAddressesClick = {
+                                    navController.navigate("addresses")
                                 }
+                            )
+                        }
+                        composable("addresses") {
+                            AddressScreen(
+                                onBack = { navController.popBackStack() }
                             )
                         }
                         composable("orders") {

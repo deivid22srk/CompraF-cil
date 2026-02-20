@@ -27,8 +27,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
 import com.example.comprafacil.SupabaseConfig
-import com.example.comprafacil.data.CartItem
-import com.example.comprafacil.data.Order
+import com.example.comprafacil.data.*
 import com.google.android.gms.location.LocationServices
 import com.google.android.gms.location.Priority
 import com.google.android.gms.tasks.CancellationTokenSource
@@ -46,6 +45,7 @@ fun CheckoutScreen(onBack: () -> Unit, onOrderFinished: () -> Unit) {
     val context = LocalContext.current
     val fusedLocationClient = remember { LocationServices.getFusedLocationProviderClient(context) }
 
+    var customerName by remember { mutableStateOf("") }
     var whatsapp by remember { mutableStateOf("") }
     var locationName by remember { mutableStateOf("") }
     var latitude by remember { mutableStateOf<Double?>(null) }
@@ -55,6 +55,10 @@ fun CheckoutScreen(onBack: () -> Unit, onOrderFinished: () -> Unit) {
     var loading by remember { mutableStateOf(true) }
     var fetchingLocation by remember { mutableStateOf(false) }
     var isPlacingOrder by remember { mutableStateOf(false) }
+
+    var addresses by remember { mutableStateOf<List<Address>>(emptyList()) }
+    var expandedAddress by remember { mutableStateOf(false) }
+    var selectedAddress by remember { mutableStateOf<Address?>(null) }
 
     val permissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
@@ -75,8 +79,13 @@ fun CheckoutScreen(onBack: () -> Unit, onOrderFinished: () -> Unit) {
                 val items = client.from("cart_items").select(Columns.raw("*, product:products(*)")) {
                     filter { eq("user_id", userId) }
                 }.decodeAs<List<CartItem>>()
-
                 total = items.sumOf { (it.product?.price ?: 0.0) * it.quantity }
+
+                val profile = client.from("profiles").select { filter { eq("id", userId) } }.decodeSingleOrNull<Profile>()
+                customerName = profile?.full_name ?: ""
+                whatsapp = profile?.whatsapp ?: ""
+
+                addresses = client.from("addresses").select { filter { eq("user_id", userId) } }.decodeAs<List<Address>>()
             } catch (e: Exception) { /* ... */ }
         }
         loading = false
@@ -133,6 +142,54 @@ fun CheckoutScreen(onBack: () -> Unit, onOrderFinished: () -> Unit) {
             Text("Precisamos da sua localização exata para a entrega", color = MaterialTheme.colorScheme.onSurfaceVariant)
 
             Spacer(modifier = Modifier.height(32.dp))
+
+            OutlinedTextField(
+                value = customerName,
+                onValueChange = { customerName = it },
+                label = { Text("Seu Nome") },
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(12.dp)
+            )
+            Spacer(modifier = Modifier.height(16.dp))
+
+            if (addresses.isNotEmpty()) {
+                ExposedDropdownMenuBox(
+                    expanded = expandedAddress,
+                    onExpandedChange = { expandedAddress = !expandedAddress },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    OutlinedTextField(
+                        value = selectedAddress?.name ?: "Selecione um Endereço Salvo",
+                        onValueChange = {},
+                        readOnly = true,
+                        label = { Text("Endereço de Entrega") },
+                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedAddress) },
+                        modifier = Modifier.menuAnchor().fillMaxWidth(),
+                        shape = RoundedCornerShape(12.dp)
+                    )
+                    ExposedDropdownMenu(
+                        expanded = expandedAddress,
+                        onDismissRequest = { expandedAddress = false }
+                    ) {
+                        addresses.forEach { addr ->
+                            DropdownMenuItem(
+                                text = { Text("${addr.name} - ${addr.address_line}") },
+                                onClick = {
+                                    selectedAddress = addr
+                                    locationName = addr.address_line
+                                    whatsapp = addr.phone
+                                    latitude = addr.latitude
+                                    longitude = addr.longitude
+                                    expandedAddress = false
+                                }
+                            )
+                        }
+                    }
+                }
+                Spacer(modifier = Modifier.height(8.dp))
+                Text("Ou preencha um novo abaixo:", fontSize = 12.sp, color = Color.Gray)
+                Spacer(modifier = Modifier.height(8.dp))
+            }
 
             OutlinedTextField(
                 value = whatsapp,
@@ -212,8 +269,8 @@ fun CheckoutScreen(onBack: () -> Unit, onOrderFinished: () -> Unit) {
             } else {
                 Button(
                     onClick = {
-                        if (whatsapp.isBlank() || locationName.isBlank() || latitude == null) {
-                            Toast.makeText(context, "Preencha tudo e capture sua localização", Toast.LENGTH_LONG).show()
+                        if (customerName.isBlank() || whatsapp.isBlank() || locationName.isBlank() || latitude == null) {
+                            Toast.makeText(context, "Preencha seu nome, endereço e capture sua localização", Toast.LENGTH_LONG).show()
                             return@Button
                         }
                         scope.launch {
@@ -222,6 +279,7 @@ fun CheckoutScreen(onBack: () -> Unit, onOrderFinished: () -> Unit) {
                             try {
                                 val order = Order(
                                     user_id = userId,
+                                    customer_name = customerName,
                                     whatsapp = whatsapp,
                                     location = locationName,
                                     total_price = total,

@@ -48,10 +48,23 @@ CREATE TABLE IF NOT EXISTS cart_items (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
+-- Create addresses table
+CREATE TABLE IF NOT EXISTS addresses (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    user_id UUID REFERENCES auth.users ON DELETE CASCADE,
+    name TEXT NOT NULL,
+    phone TEXT NOT NULL,
+    address_line TEXT NOT NULL,
+    latitude DECIMAL(10, 8),
+    longitude DECIMAL(11, 8),
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
 -- Create orders table
 CREATE TABLE IF NOT EXISTS orders (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     user_id UUID REFERENCES auth.users ON DELETE SET NULL,
+    customer_name TEXT,
     whatsapp TEXT NOT NULL,
     location TEXT NOT NULL,
     total_price DECIMAL(10, 2) NOT NULL,
@@ -107,11 +120,18 @@ BEGIN
     IF NOT EXISTS (SELECT 1 FROM pg_tables WHERE tablename = 'order_items' AND rowsecurity = true) THEN
         ALTER TABLE order_items ENABLE ROW LEVEL SECURITY;
     END IF;
+    IF NOT EXISTS (SELECT 1 FROM pg_tables WHERE tablename = 'addresses' AND rowsecurity = true) THEN
+        ALTER TABLE addresses ENABLE ROW LEVEL SECURITY;
+    END IF;
 END $$;
 
 -- Policies
 DO $$
 BEGIN
+    -- Addresses
+    DROP POLICY IF EXISTS "Users can manage their own addresses" ON addresses;
+    CREATE POLICY "Users can manage their own addresses" ON addresses FOR ALL USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
+
     -- Profiles
     DROP POLICY IF EXISTS "Public profiles are viewable by everyone" ON profiles;
     CREATE POLICY "Public profiles are viewable by everyone" ON profiles FOR SELECT USING (true);

@@ -435,14 +435,15 @@ fun OrderAdminItem(order: Order, onUpdate: () -> Unit) {
                 }
             }
             Spacer(modifier = Modifier.height(8.dp))
-            Text("Total: R$ ${order.total_price}", color = Color.White, fontSize = 18.sp, fontWeight = FontWeight.Bold)
-            Text("Endereço: ${order.location}", color = Color.White)
-            Text("WhatsApp: ${order.whatsapp}", color = Color.White)
+            Text("Cliente: ${order.customer_name ?: "Não informado"}", fontWeight = FontWeight.Bold, color = Color.White)
+            Text("Total: R$ ${order.total_price}", color = Color(0xFFFF9800), fontSize = 18.sp, fontWeight = FontWeight.Bold)
+            Text("Endereço: ${order.location}", color = Color.White, fontSize = 14.sp)
+            Text("WhatsApp: ${order.whatsapp}", color = Color.White, fontSize = 14.sp)
             Text("Pagamento: ${order.payment_method.uppercase()}", color = Color(0xFFFDCB58), fontSize = 12.sp, fontWeight = FontWeight.Bold)
 
             Spacer(modifier = Modifier.height(12.dp))
 
-            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
                 if (order.latitude != null && order.longitude != null) {
                     Button(
                         onClick = {
@@ -501,6 +502,22 @@ fun OrderAdminItem(order: Order, onUpdate: () -> Unit) {
                             )
                         }
                     }
+                }
+
+                IconButton(onClick = {
+                    scope.launch {
+                        try {
+                            SupabaseConfig.client.from("orders").delete {
+                                filter { eq("id", order.id!!) }
+                            }
+                            onUpdate()
+                            Toast.makeText(context, "Pedido excluído", Toast.LENGTH_SHORT).show()
+                        } catch (e: Exception) {
+                            Toast.makeText(context, "Erro: ${e.message}", Toast.LENGTH_LONG).show()
+                        }
+                    }
+                }) {
+                    Icon(Icons.Default.Delete, contentDescription = null, tint = Color.Red)
                 }
             }
         }
