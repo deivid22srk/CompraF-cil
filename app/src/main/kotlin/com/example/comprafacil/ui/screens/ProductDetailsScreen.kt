@@ -25,6 +25,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import com.example.comprafacil.SupabaseConfig
+import com.example.comprafacil.data.CartItem
 import com.example.comprafacil.data.Product
 import io.github.jan.supabase.gotrue.auth
 import io.github.jan.supabase.postgrest.from
@@ -80,10 +81,18 @@ fun ProductDetailsScreen(productId: String, onBack: () -> Unit) {
                                 scope.launch {
                                     val userId = client.auth.currentUserOrNull()?.id
                                     if (userId != null) {
-                                        client.from("cart_items").insert(
-                                            mapOf("user_id" to userId, "product_id" to productId, "quantity" to quantity)
+                                        // Fix: Use typed CartItem instead of mapOf to avoid SerializationException
+                                        val cartItem = CartItem(
+                                            user_id = userId,
+                                            product_id = productId,
+                                            quantity = quantity
                                         )
-                                        Toast.makeText(context, "Adicionado ao carrinho!", Toast.LENGTH_SHORT).show()
+                                        try {
+                                            client.from("cart_items").insert(cartItem)
+                                            Toast.makeText(context, "Adicionado ao carrinho!", Toast.LENGTH_SHORT).show()
+                                        } catch (e: Exception) {
+                                            Toast.makeText(context, "Erro ao adicionar: ${e.message}", Toast.LENGTH_LONG).show()
+                                        }
                                     } else {
                                         Toast.makeText(context, "Faça login primeiro", Toast.LENGTH_SHORT).show()
                                     }

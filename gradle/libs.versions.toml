@@ -1,5 +1,4 @@
 [versions]
-androidx-work = "2.9.0"
 agp = "8.6.0"
 kotlin = "2.0.0"
 coreKtx = "1.13.1"
@@ -16,6 +15,8 @@ coil = "2.7.0"
 kotlinx-serialization = "1.6.3"
 google-play-services-location = "21.3.0"
 kotlinx-coroutines-play-services = "1.8.1"
+androidx-work = "2.9.0"
+multiplatform-settings = "1.1.1"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -35,10 +36,15 @@ androidx-material3 = { group = "androidx.compose.material3", name = "material3" 
 androidx-navigation-compose = { group = "androidx.navigation", name = "navigation-compose", version.ref = "navigationCompose" }
 androidx-material-icons-extended = { group = "androidx.compose.material", name = "material-icons-extended" }
 
+# Work Manager
 androidx-work-runtime-ktx = { group = "androidx.work", name = "work-runtime-ktx", version.ref = "androidx-work" }
+
 # Play Services Location
 google-play-services-location = { group = "com.google.android.gms", name = "play-services-location", version.ref = "google-play-services-location" }
 kotlinx-coroutines-play-services = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-play-services", version.ref = "kotlinx-coroutines-play-services" }
+
+# Settings for Session Persistence
+multiplatform-settings = { group = "com.russhwolf", name = "multiplatform-settings", version.ref = "multiplatform-settings" }
 
 # Supabase
 supabase-postgrest = { module = "io.github.jan-tennert.supabase:postgrest-kt", version.ref = "supabase" }
