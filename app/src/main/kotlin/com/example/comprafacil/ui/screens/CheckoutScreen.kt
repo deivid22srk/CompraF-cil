@@ -1,125 +1,142 @@
 package com.example.comprafacil.ui.screens
 
+import android.content.Intent
+import android.net.Uri
+import android.widget.Toast
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.LocationOn
-import androidx.compose.material.icons.filled.Phone
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import com.example.comprafacil.SupabaseConfig
 import com.example.comprafacil.data.CartItem
-import com.example.comprafacil.data.Order
-import com.example.comprafacil.data.SupabaseConfig
 import io.github.jan.supabase.gotrue.auth
-import io.github.jan.supabase.postgrest.postgrest
+import io.github.jan.supabase.postgrest.from
+import io.github.jan.supabase.postgrest.query.Columns
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun CheckoutScreen(cartItems: List<CartItem>, total: Double, onBack: () -> Unit, onOrderConfirmed: () -> Unit) {
+fun CheckoutScreen(onBack: () -> Unit, onOrderFinished: () -> Unit) {
+    val client = SupabaseConfig.client
     val scope = rememberCoroutineScope()
+    val context = LocalContext.current
     var whatsapp by remember { mutableStateOf("") }
     var location by remember { mutableStateOf("") }
-    var isProcessing by remember { mutableStateOf(false) }
+    var total by remember { mutableDoubleStateOf(0.0) }
+    var loading by remember { mutableStateOf(true) }
+
+    LaunchedEffect(Unit) {
+        val userId = client.auth.currentUserOrNull()?.id
+        if (userId != null) {
+            try {
+                val items = client.from("cart_items").select(Columns.raw("*, product:products(*)")) {
+                    filter { eq("user_id", userId) }
+                }.decodeAs<List<CartItem>>()
+
+                total = items.sumOf { (it.product?.price ?: 0.0) * it.quantity }
+            } catch (e: Exception) { /* ... */ }
+        }
+        loading = false
+    }
 
     Scaffold(
         topBar = {
-            CenterAlignedTopAppBar(
-                title = { Text("Checkout") },
+            TopAppBar(
+                title = { Text("Finalizar Pedido") },
                 navigationIcon = {
-                    IconButton(onClick = onBack) { Icon(Icons.Default.ArrowBack, contentDescription = null) }
+                    IconButton(onClick = onBack) {
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = null)
+                    }
                 }
             )
         }
     ) { padding ->
-        Column(modifier = Modifier.padding(padding).padding(16.dp).fillMaxSize()) {
-            Text("Detalhes da Entrega", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
-            Spacer(modifier = Modifier.height(24.dp))
+        Column(
+            modifier = Modifier.padding(padding).fillMaxSize().verticalScroll(rememberScrollState()).padding(24.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Text("Estamos quase lá!", fontSize = 20.sp, fontWeight = FontWeight.Bold)
+            Spacer(modifier = Modifier.height(8.dp))
+            Text("Informe seus dados para entrega via WhatsApp", color = Color.Gray)
+
+            Spacer(modifier = Modifier.height(32.dp))
 
             OutlinedTextField(
                 value = whatsapp,
                 onValueChange = { whatsapp = it },
-                label = { Text("Número do WhatsApp") },
+                label = { Text("WhatsApp (com DDD)") },
                 modifier = Modifier.fillMaxWidth(),
-                leadingIcon = { Icon(Icons.Default.Phone, contentDescription = null) },
                 shape = RoundedCornerShape(12.dp)
             )
             Spacer(modifier = Modifier.height(16.dp))
             OutlinedTextField(
                 value = location,
                 onValueChange = { location = it },
-                label = { Text("Sua Localização Exata") },
+                label = { Text("Endereço de Entrega") },
                 modifier = Modifier.fillMaxWidth(),
-                leadingIcon = { Icon(Icons.Default.LocationOn, contentDescription = null) },
+                minLines = 3,
                 shape = RoundedCornerShape(12.dp)
             )
 
             Spacer(modifier = Modifier.height(32.dp))
 
             Card(
-                colors = CardDefaults.cardColors(containerColor = Color(0xFFF5F5F5)),
-                shape = RoundedCornerShape(12.dp)
+                modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.cardColors(containerColor = Color(0xFFFDCB58).copy(alpha = 0.1f))
             ) {
-                Column(modifier = Modifier.padding(16.dp).fillMaxWidth()) {
-                    Text("Resumo do Pedido", fontWeight = FontWeight.Bold)
-                    Spacer(modifier = Modifier.height(8.dp))
-                    cartItems.forEach { item ->
-                        Row {
-                            Text("${item.quantity}x ${item.product?.name}")
-                            Spacer(modifier = Modifier.weight(1f))
-                            Text("R$ ${String.format("%.2f", (item.product?.price ?: 0.0) * item.quantity)}")
-                        }
-                    }
-                    Divider(modifier = Modifier.padding(vertical = 8.dp))
-                    Row {
-                        Text("Total", fontWeight = FontWeight.Bold)
-                        Spacer(modifier = Modifier.weight(1f))
-                        Text("R$ ${String.format("%.2f", total)}", fontWeight = FontWeight.Bold, color = Color(0xFFF57C00))
-                    }
+                Row(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Text("Total a pagar:", modifier = Modifier.weight(1f))
+                    Text("R$ ${String.format("%.2f", total)}", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = Color(0xFFFF9800))
                 }
             }
 
-            Spacer(modifier = Modifier.weight(1f))
+            Spacer(modifier = Modifier.height(32.dp))
 
             Button(
                 onClick = {
-                    if (whatsapp.isBlank() || location.isBlank()) return@Button
-                    isProcessing = true
+                    if (whatsapp.isBlank() || location.isBlank()) {
+                        Toast.makeText(context, "Preencha todos os campos", Toast.LENGTH_SHORT).show()
+                        return@Button
+                    }
                     scope.launch {
+                        val userId = client.auth.currentUserOrNull()?.id ?: return@launch
                         try {
-                            val userId = SupabaseConfig.client.auth.currentUserOrNull()?.id
-                            val order = Order(
-                                user_id = userId,
-                                whatsapp = whatsapp,
-                                location = location,
-                                total_price = total
+                            // Create Order
+                            client.from("orders").insert(
+                                mapOf("user_id" to userId, "whatsapp" to whatsapp, "location" to location, "total_price" to total)
                             )
-                            SupabaseConfig.client.postgrest["orders"].insert(order)
-
-                            // Clear cart
-                            if (userId != null) {
-                                SupabaseConfig.client.postgrest["cart_items"].delete { filter { eq("user_id", userId) } }
+                            // Clear Cart
+                            client.from("cart_items").delete {
+                                filter { eq("user_id", userId) }
                             }
 
-                            onOrderConfirmed()
+                            // Redirect to WhatsApp
+                            val message = "Olá! Gostaria de finalizar meu pedido de R$ ${String.format("%.2f", total)}. Entrega em: $location"
+                            val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://api.whatsapp.com/send?phone=55${whatsapp}&text=${Uri.encode(message)}"))
+                            context.startActivity(intent)
+
+                            onOrderFinished()
                         } catch (e: Exception) {
-                            e.printStackTrace()
-                        } finally {
-                            isProcessing = false
+                            Toast.makeText(context, "Erro: ${e.message}", Toast.LENGTH_LONG).show()
                         }
                     }
                 },
-                modifier = Modifier.fillMaxWidth().height(50.dp),
+                modifier = Modifier.fillMaxWidth().height(56.dp),
                 shape = RoundedCornerShape(12.dp),
-                enabled = !isProcessing
+                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF25D366)) // WhatsApp Green
             ) {
-                if (isProcessing) CircularProgressIndicator(color = Color.White, modifier = Modifier.size(24.dp))
-                else Text("Confirmar Pedido")
+                Text("FINALIZAR NO WHATSAPP", fontWeight = FontWeight.Bold, color = Color.White)
             }
         }
     }

@@ -35,7 +35,7 @@ androidx-material-icons-extended = { group = "androidx.compose.material", name =
 # Supabase
 supabase-postgrest = { module = "io.github.jan-tennert.supabase:postgrest-kt", version.ref = "supabase" }
 supabase-storage = { module = "io.github.jan-tennert.supabase:storage-kt", version.ref = "supabase" }
-supabase-auth = { module = "io.github.jan-tennert.supabase:gotrue-kt", version.ref = "supabase" }
+supabase-auth = { group = "io.github.jan-tennert.supabase", name = "gotrue-kt", version.ref = "supabase" }
 
 # Ktor (required by Supabase)
 ktor-client-android = { module = "io.ktor:ktor-client-android", version.ref = "ktor" }

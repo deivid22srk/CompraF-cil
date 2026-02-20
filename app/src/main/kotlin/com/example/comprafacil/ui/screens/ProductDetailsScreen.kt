@@ -1,14 +1,17 @@
 package com.example.comprafacil.ui.screens
 
+import android.widget.Toast
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -16,112 +19,108 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
+import com.example.comprafacil.SupabaseConfig
 import com.example.comprafacil.data.Product
-import com.example.comprafacil.data.SupabaseConfig
-import io.github.jan.supabase.postgrest.postgrest
+import io.github.jan.supabase.gotrue.auth
+import io.github.jan.supabase.postgrest.from
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
-fun ProductDetailsScreen(product: Product, onBack: () -> Unit, onAddToCart: (Int) -> Unit, onBuyNow: (Int) -> Unit) {
-    var quantity by remember { mutableStateOf(1) }
-    val pagerState = rememberPagerState(pageCount = { product.images?.size ?: 1 })
+fun ProductDetailsScreen(productId: String, onBack: () -> Unit) {
+    val client = SupabaseConfig.client
+    val scope = rememberCoroutineScope()
+    val context = LocalContext.current
+    var product by remember { mutableStateOf<Product?>(null) }
+    var quantity by remember { mutableIntStateOf(1) }
+    var loading by remember { mutableStateOf(true) }
 
-    Scaffold(
-        topBar = {
-            CenterAlignedTopAppBar(
-                title = { Text("Detalhes") },
-                navigationIcon = {
-                    IconButton(onClick = onBack) { Icon(Icons.Default.ArrowBack, contentDescription = null) }
-                },
-                actions = {
-                    IconButton(onClick = {}) { Icon(Icons.Default.Share, contentDescription = null) }
-                }
-            )
-        },
-        bottomBar = {
-            Surface(tonalElevation = 8.dp) {
-                Row(
-                    modifier = Modifier.padding(16.dp).fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(16.dp)
-                ) {
-                    OutlinedButton(
-                        onClick = { onAddToCart(quantity) },
-                        modifier = Modifier.weight(1f).height(50.dp),
-                        shape = RoundedCornerShape(12.dp)
-                    ) {
-                        Text("Add ao Carrinho")
-                    }
-                    Button(
-                        onClick = { onBuyNow(quantity) },
-                        modifier = Modifier.weight(1f).height(50.dp),
-                        shape = RoundedCornerShape(12.dp),
-                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
-                    ) {
-                        Text("Comprar Agora")
-                    }
-                }
-            }
+    LaunchedEffect(productId) {
+        try {
+            product = client.from("products").select {
+                filter { eq("id", productId) }
+            }.decodeSingle<Product>()
+        } catch (e: Exception) {
+            // handle error
+        } finally {
+            loading = false
         }
-    ) { padding ->
-        Column(modifier = Modifier.padding(padding).fillMaxSize()) {
-            Box(modifier = Modifier.fillMaxWidth().height(300.dp)) {
-                HorizontalPager(state = pagerState) { page ->
-                    val imageUrl = product.images?.getOrNull(page)?.image_url ?: "https://via.placeholder.com/300"
-                    AsyncImage(
-                        model = imageUrl,
-                        contentDescription = null,
-                        modifier = Modifier.fillMaxSize(),
-                        contentScale = ContentScale.Crop
-                    )
-                }
-                if ((product.images?.size ?: 0) > 1) {
+    }
+
+    if (loading) {
+        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            CircularProgressIndicator()
+        }
+    } else if (product != null) {
+        Scaffold(
+            bottomBar = {
+                Surface(tonalElevation = 8.dp) {
                     Row(
-                        Modifier.height(50.dp).fillMaxWidth().align(Alignment.BottomCenter),
-                        horizontalArrangement = Arrangement.Center
+                        modifier = Modifier.padding(16.dp).fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        repeat(product.images?.size ?: 0) { iteration ->
-                            val color = if (pagerState.currentPage == iteration) Color.White else Color.White.copy(alpha = 0.5f)
-                            Box(
-                                modifier = Modifier.padding(2.dp).clip(CircleShape).background(color).size(8.dp)
-                            )
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            IconButton(onClick = { if (quantity > 1) quantity-- }) {
+                                Text("-", fontSize = 24.sp)
+                            }
+                            Text("$quantity", fontSize = 18.sp, fontWeight = FontWeight.Bold)
+                            IconButton(onClick = { quantity++ }) {
+                                Text("+", fontSize = 24.sp)
+                            }
+                        }
+                        Spacer(modifier = Modifier.width(16.dp))
+                        Button(
+                            onClick = {
+                                scope.launch {
+                                    val userId = client.auth.currentUserOrNull()?.id
+                                    if (userId != null) {
+                                        client.from("cart_items").insert(
+                                            mapOf("user_id" to userId, "product_id" to productId, "quantity" to quantity)
+                                        )
+                                        Toast.makeText(context, "Adicionado ao carrinho!", Toast.LENGTH_SHORT).show()
+                                    } else {
+                                        Toast.makeText(context, "Faça login primeiro", Toast.LENGTH_SHORT).show()
+                                    }
+                                }
+                            },
+                            modifier = Modifier.weight(1f).height(56.dp),
+                            shape = RoundedCornerShape(12.dp),
+                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFF9800))
+                        ) {
+                            Text("ADICIONAR R$ ${String.format("%.2f", product!!.price * quantity)}")
                         }
                     }
                 }
             }
-
-            Column(modifier = Modifier.padding(16.dp)) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(product.name, style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
-                    Spacer(modifier = Modifier.weight(1f))
-                    Text("R$ ${String.format("%.2f", product.price)}", style = MaterialTheme.typography.headlineSmall, color = Color(0xFFF57C00))
-                }
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Default.Star, contentDescription = null, tint = Color(0xFFFDCB58))
-                    Text(" 4.5 (120 avaliações)", color = Color.Gray)
-                }
-                Spacer(modifier = Modifier.height(24.dp))
-                Text("Descrição", fontWeight = FontWeight.Bold, fontSize = 18.sp)
-                Spacer(modifier = Modifier.height(8.dp))
-                Text(product.description ?: "Sem descrição disponível.", color = Color.Gray)
-                Spacer(modifier = Modifier.height(24.dp))
-
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text("Quantidade", fontWeight = FontWeight.Bold)
-                    Spacer(modifier = Modifier.weight(1f))
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        IconButton(onClick = { if (quantity > 1) quantity-- }) {
-                            Icon(Icons.Default.RemoveCircleOutline, contentDescription = null)
-                        }
-                        Text("$quantity", fontWeight = FontWeight.Bold, modifier = Modifier.padding(horizontal = 8.dp))
-                        IconButton(onClick = { quantity++ }) {
-                            Icon(Icons.Default.AddCircleOutline, contentDescription = null)
-                        }
+        ) { padding ->
+            Column(modifier = Modifier.padding(padding).verticalScroll(rememberScrollState())) {
+                Box {
+                    val pagerState = rememberPagerState(pageCount = { product!!.images?.size ?: 1 })
+                    HorizontalPager(state = pagerState, modifier = Modifier.height(300.dp)) { page ->
+                        AsyncImage(
+                            model = product!!.images?.getOrNull(page)?.image_url ?: "",
+                            contentDescription = null,
+                            modifier = Modifier.fillMaxSize(),
+                            contentScale = ContentScale.Crop
+                        )
                     }
+                    IconButton(onClick = onBack, modifier = Modifier.padding(16.dp).background(Color.White, CircleShape)) {
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = null)
+                    }
+                }
+
+                Column(modifier = Modifier.padding(24.dp)) {
+                    Text(product!!.name, fontSize = 24.sp, fontWeight = FontWeight.Bold)
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text("R$ ${String.format("%.2f", product!!.price)}", fontSize = 20.sp, color = Color(0xFFFF9800), fontWeight = FontWeight.Bold)
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Text("Descrição", fontWeight = FontWeight.Bold)
+                    Text(product!!.description ?: "Sem descrição disponível.", color = Color.Gray)
                 }
             }
         }
