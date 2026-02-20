@@ -140,14 +140,15 @@ fun AddressScreen(onBack: () -> Unit) {
             AddressDialog(
                 address = editingAddress,
                 onDismiss = { showAddDialog = false },
-                onSave = { name, phone, line, lat, lon ->
+                onSave = { nick, receiver, phone, line, lat, lon ->
                     scope.launch {
                         try {
                             val userId = client.auth.currentUserOrNull()?.id ?: return@launch
                             val newAddress = Address(
                                 id = editingAddress?.id,
                                 user_id = userId,
-                                name = name,
+                                name = nick,
+                                receiver_name = receiver,
                                 phone = phone,
                                 address_line = line,
                                 latitude = lat,
@@ -207,13 +208,14 @@ fun AddressItem(address: Address, onEdit: () -> Unit, onDelete: () -> Unit) {
 fun AddressDialog(
     address: Address?,
     onDismiss: () -> Unit,
-    onSave: (String, String, String, Double?, Double?) -> Unit
+    onSave: (String, String, String, String, Double?, Double?) -> Unit
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val fusedLocationClient = remember { LocationServices.getFusedLocationProviderClient(context) }
 
-    var name by remember { mutableStateOf(address?.name ?: "") }
+    var nickname by remember { mutableStateOf(address?.name ?: "") }
+    var receiverName by remember { mutableStateOf(address?.receiver_name ?: "") }
     var phone by remember { mutableStateOf(address?.phone ?: "") }
     var line by remember { mutableStateOf(address?.address_line ?: "") }
     var lat by remember { mutableStateOf(address?.latitude?.toString() ?: "") }
@@ -259,7 +261,8 @@ fun AddressDialog(
         title = { Text(if (address == null) "Novo Endereço" else "Editar Endereço") },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                OutlinedTextField(value = name, onValueChange = { name = it }, label = { Text("Apelido do Endereço (ex: Minha Casa)") }, modifier = Modifier.fillMaxWidth())
+                OutlinedTextField(value = nickname, onValueChange = { nickname = it }, label = { Text("Apelido (ex: Minha Casa)") }, modifier = Modifier.fillMaxWidth())
+                OutlinedTextField(value = receiverName, onValueChange = { receiverName = it }, label = { Text("Seu Nome / Destinatário") }, modifier = Modifier.fillMaxWidth())
                 OutlinedTextField(value = phone, onValueChange = { phone = it }, label = { Text("Telefone/WhatsApp") }, modifier = Modifier.fillMaxWidth())
                 OutlinedTextField(value = line, onValueChange = { line = it }, label = { Text("Rua, Número, Bairro") }, modifier = Modifier.fillMaxWidth())
 
@@ -292,8 +295,8 @@ fun AddressDialog(
         },
         confirmButton = {
             Button(onClick = {
-                if (name.isNotBlank() && line.isNotBlank()) {
-                    onSave(name, phone, line, lat.toDoubleOrNull(), lon.toDoubleOrNull())
+                if (nickname.isNotBlank() && line.isNotBlank()) {
+                    onSave(nickname, receiverName, phone, line, lat.toDoubleOrNull(), lon.toDoubleOrNull())
                 }
             }) {
                 Text("SALVAR")

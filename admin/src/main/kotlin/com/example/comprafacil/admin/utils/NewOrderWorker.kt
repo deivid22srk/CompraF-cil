@@ -7,6 +7,7 @@ import androidx.work.ListenableWorker.Result
 import com.example.comprafacil.SupabaseConfig
 import com.example.comprafacil.admin.data.Order
 import com.russhwolf.settings.SharedPreferencesSettings
+import io.github.jan.supabase.gotrue.auth
 import io.github.jan.supabase.postgrest.from
 
 class NewOrderWorker(
@@ -18,10 +19,10 @@ class NewOrderWorker(
         SupabaseConfig.initialize(applicationContext)
         val client = SupabaseConfig.client
         val notificationHelper = NotificationHelper(applicationContext)
-        val settings = SharedPreferencesSettings(applicationContext.getSharedPreferences("admin_notifications", Context.MODE_PRIVATE))
+        val settings = SharedPreferencesSettings(applicationContext.getSharedPreferences("admin_order_notifs", Context.MODE_PRIVATE))
 
         try {
-            // Fetch the last 5 orders
+            // Fetch the most recent orders
             val orders = client.from("orders").select {
                 order("created_at", io.github.jan.supabase.postgrest.query.Order.DESCENDING)
                 limit(5)
@@ -29,12 +30,12 @@ class NewOrderWorker(
 
             for (order in orders) {
                 val orderId = order.id ?: continue
-                val alreadyNotified = settings.getBoolean("notified_$orderId", false)
+                val isNotified = settings.getBoolean("notified_$orderId", false)
 
-                if (!alreadyNotified) {
+                if (!isNotified) {
                     notificationHelper.showNotification(
                         "Novo Pedido Recebido!",
-                        "Pedido #${orderId.takeLast(6)} de ${order.customer_name ?: "Cliente"}"
+                        "Pedido #${orderId.takeLast(6)} - R$ ${String.format("%.2f", order.total_price)}"
                     )
                     settings.putBoolean("notified_$orderId", true)
                 }

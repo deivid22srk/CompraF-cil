@@ -9,7 +9,7 @@ import androidx.core.app.NotificationManagerCompat
 
 class NotificationHelper(private val context: Context) {
     companion object {
-        private const val CHANNEL_ID = "new_orders"
+        private const val CHANNEL_ID = "admin_notifications"
         private const val CHANNEL_NAME = "Novos Pedidos"
     }
 
@@ -21,7 +21,7 @@ class NotificationHelper(private val context: Context) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val importance = NotificationManager.IMPORTANCE_HIGH
             val channel = NotificationChannel(CHANNEL_ID, CHANNEL_NAME, importance).apply {
-                description = "Notificações de novos pedidos realizados por clientes"
+                description = "Notificações de novos pedidos recebidos"
             }
             val notificationManager: NotificationManager =
                 context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
@@ -40,7 +40,9 @@ class NotificationHelper(private val context: Context) {
         with(NotificationManagerCompat.from(context)) {
             try {
                 notify(System.currentTimeMillis().toInt(), builder.build())
-            } catch (e: SecurityException) {}
+            } catch (e: SecurityException) {
+                // Handle missing permission
+            }
         }
     }
 }

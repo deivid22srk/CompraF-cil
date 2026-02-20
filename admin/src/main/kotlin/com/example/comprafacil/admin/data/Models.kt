@@ -35,6 +35,7 @@ data class Address(
     val id: String? = null,
     val user_id: String,
     val name: String,
+    val receiver_name: String? = null,
     val phone: String,
     val address_line: String,
     val latitude: Double? = null,

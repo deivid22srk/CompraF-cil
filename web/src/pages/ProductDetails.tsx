@@ -93,7 +93,7 @@ export default function ProductDetails() {
 
   const allImages = [
     { id: 'main', image_url: product.image_url },
-    ...images
+    ...images.filter(img => img.image_url !== product.image_url)
   ]
 
   return (

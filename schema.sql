@@ -60,12 +60,21 @@ CREATE TABLE IF NOT EXISTS addresses (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     user_id UUID REFERENCES auth.users ON DELETE CASCADE,
     name TEXT NOT NULL,
+    receiver_name TEXT,
     phone TEXT NOT NULL,
     address_line TEXT NOT NULL,
     latitude DECIMAL(10, 8),
     longitude DECIMAL(11, 8),
     created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
+
+-- Idempotent receiver_name addition
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='addresses' AND column_name='receiver_name') THEN
+        ALTER TABLE addresses ADD COLUMN receiver_name TEXT;
+    END IF;
+END $$;
 
 -- Create orders table
 CREATE TABLE IF NOT EXISTS orders (

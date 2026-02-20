@@ -160,11 +160,12 @@ class MainActivity : ComponentActivity() {
                     containerColor = MaterialTheme.colorScheme.background,
                     bottomBar = {
                         if (showBottomBar) {
-                            // Fix "floating line": Set tonalElevation to 0 and use a clear surface color
+                            // Fix "floating line": Set tonalElevation to 0, windowInsets to 0 and use a clear surface color
                             NavigationBar(
                                 containerColor = MaterialTheme.colorScheme.background,
                                 contentColor = MaterialTheme.colorScheme.primary,
-                                tonalElevation = 0.dp
+                                tonalElevation = 0.dp,
+                                windowInsets = WindowInsets(0, 0, 0, 0)
                             ) {
                                 items.forEach { screen ->
                                     NavigationBarItem(

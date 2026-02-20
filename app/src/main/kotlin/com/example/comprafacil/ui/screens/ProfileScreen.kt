@@ -44,6 +44,8 @@ fun ProfileScreen(onLogout: () -> Unit, onOrdersClick: () -> Unit, onAddressesCl
     var profile by remember { mutableStateOf<Profile?>(null) }
     var loading by remember { mutableStateOf(true) }
     var uploading by remember { mutableStateOf(false) }
+    var showNameDialog by remember { mutableStateOf(false) }
+    var newName by remember { mutableStateOf("") }
 
     val pickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.PickVisualMedia()
@@ -150,7 +152,20 @@ fun ProfileScreen(onLogout: () -> Unit, onOrdersClick: () -> Unit, onAddressesCl
             }
 
             Spacer(modifier = Modifier.height(16.dp))
-            Text(profile?.full_name ?: "Usuário", fontSize = 22.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onBackground)
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    profile?.full_name ?: "Usuário",
+                    fontSize = 22.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onBackground
+                )
+                IconButton(onClick = {
+                    newName = profile?.full_name ?: ""
+                    showNameDialog = true
+                }) {
+                    Icon(Icons.Default.Edit, contentDescription = null, modifier = Modifier.size(18.dp), tint = MaterialTheme.colorScheme.secondary)
+                }
+            }
             Text(client.auth.currentUserOrNull()?.email ?: "", color = MaterialTheme.colorScheme.onSurfaceVariant)
 
             Spacer(modifier = Modifier.height(32.dp))
@@ -162,6 +177,45 @@ fun ProfileScreen(onLogout: () -> Unit, onOrdersClick: () -> Unit, onAddressesCl
             ProfileMenuItem(Icons.Default.Help, "Ajuda e Suporte") {}
 
             Spacer(modifier = Modifier.height(32.dp))
+
+            if (showNameDialog) {
+                AlertDialog(
+                    onDismissRequest = { showNameDialog = false },
+                    title = { Text("Alterar Nome") },
+                    text = {
+                        OutlinedTextField(
+                            value = newName,
+                            onValueChange = { newName = it },
+                            label = { Text("Seu Nome") },
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                    },
+                    confirmButton = {
+                        Button(onClick = {
+                            scope.launch {
+                                try {
+                                    val userId = client.auth.currentUserOrNull()?.id ?: return@launch
+                                    client.from("profiles").upsert(
+                                        mapOf("id" to userId, "full_name" to newName)
+                                    )
+                                    profile = profile?.copy(full_name = newName) ?: Profile(id = userId, full_name = newName)
+                                    showNameDialog = false
+                                    Toast.makeText(context, "Nome atualizado!", Toast.LENGTH_SHORT).show()
+                                } catch (e: Exception) {
+                                    Toast.makeText(context, "Erro ao salvar", Toast.LENGTH_SHORT).show()
+                                }
+                            }
+                        }) {
+                            Text("SALVAR")
+                        }
+                    },
+                    dismissButton = {
+                        TextButton(onClick = { showNameDialog = false }) {
+                            Text("CANCELAR")
+                        }
+                    }
+                )
+            }
 
             Button(
                 onClick = {
