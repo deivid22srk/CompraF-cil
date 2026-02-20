@@ -31,8 +31,11 @@ class OrderUpdateWorker(
             if (latestOrders.isNotEmpty()) {
                 val latest = latestOrders[0]
                 // Only notify if status is not 'pendente' (meaning it has been processed/changed)
-                if (latest.status != "pendente") {
-                    // notificationHelper.showNotification("Status do Pedido", "O pedido #${latest.id?.takeLast(6)} está ${latest.status}")
+                if (latest.status != "pendente" && latest.status != "concluído") {
+                    notificationHelper.showNotification(
+                        "Status do Pedido",
+                        "O pedido #${latest.id?.takeLast(6)} está ${latest.status}"
+                    )
                 }
             }
         } catch (e: Exception) {

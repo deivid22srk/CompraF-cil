@@ -79,14 +79,39 @@ fun CartScreen(onCheckout: () -> Unit) {
                 LazyColumn(modifier = Modifier.weight(1f).padding(16.dp)) {
                     items(cartItems) { item ->
                         item.product?.let { product ->
-                            CartItemRow(product, item.quantity) {
-                                scope.launch {
-                                    client.from("cart_items").delete {
-                                        filter { eq("id", item.id!!) }
+                            CartItemRow(
+                                product = product,
+                                quantity = item.quantity,
+                                onUpdateQuantity = { newQuantity ->
+                                    if (newQuantity <= 0) {
+                                        scope.launch {
+                                            client.from("cart_items").delete {
+                                                filter { eq("id", item.id!!) }
+                                            }
+                                            cartItems = cartItems.filter { it.id != item.id }
+                                        }
+                                    } else if (newQuantity <= (product.stock_quantity ?: 0)) {
+                                        scope.launch {
+                                            client.from("cart_items").update({
+                                                set("quantity", newQuantity)
+                                            }) {
+                                                filter { eq("id", item.id!!) }
+                                            }
+                                            cartItems = cartItems.map {
+                                                if (it.id == item.id) it.copy(quantity = newQuantity) else it
+                                            }
+                                        }
                                     }
-                                    cartItems = cartItems.filter { it.id != item.id }
+                                },
+                                onDelete = {
+                                    scope.launch {
+                                        client.from("cart_items").delete {
+                                            filter { eq("id", item.id!!) }
+                                        }
+                                        cartItems = cartItems.filter { it.id != item.id }
+                                    }
                                 }
-                            }
+                            )
                             Spacer(modifier = Modifier.height(12.dp))
                         }
                     }
@@ -125,7 +150,7 @@ fun CartScreen(onCheckout: () -> Unit) {
 }
 
 @Composable
-fun CartItemRow(product: Product, quantity: Int, onDelete: () -> Unit) {
+fun CartItemRow(product: Product, quantity: Int, onUpdateQuantity: (Int) -> Unit, onDelete: () -> Unit) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
@@ -136,7 +161,7 @@ fun CartItemRow(product: Product, quantity: Int, onDelete: () -> Unit) {
             verticalAlignment = Alignment.CenterVertically
         ) {
             AsyncImage(
-                model = product.images?.firstOrNull()?.image_url ?: "",
+                model = product.image_url ?: product.images?.firstOrNull()?.image_url ?: "",
                 contentDescription = null,
                 modifier = Modifier.size(70.dp).clip(RoundedCornerShape(8.dp)),
                 contentScale = ContentScale.Crop
@@ -144,8 +169,25 @@ fun CartItemRow(product: Product, quantity: Int, onDelete: () -> Unit) {
             Spacer(modifier = Modifier.width(16.dp))
             Column(modifier = Modifier.weight(1f)) {
                 Text(product.name, fontWeight = FontWeight.Bold, fontSize = 16.sp, color = MaterialTheme.colorScheme.onSurface)
-                Text("Qtd: ${quantity}", color = MaterialTheme.colorScheme.onSurfaceVariant)
-                Text("R$ ${String.format("%.2f", product.price * quantity)}", color = MaterialTheme.colorScheme.secondary, fontWeight = FontWeight.Bold)
+                Text("R$ ${String.format("%.2f", product.price)} cada", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    IconButton(
+                        onClick = { onUpdateQuantity(quantity - 1) },
+                        modifier = Modifier.size(32.dp).background(MaterialTheme.colorScheme.surface, CircleShape)
+                    ) {
+                        Text("-", fontWeight = FontWeight.Bold)
+                    }
+                    Text("$quantity", modifier = Modifier.padding(horizontal = 12.dp), fontWeight = FontWeight.Bold)
+                    IconButton(
+                        onClick = { onUpdateQuantity(quantity + 1) },
+                        modifier = Modifier.size(32.dp).background(MaterialTheme.colorScheme.surface, CircleShape)
+                    ) {
+                        Text("+", fontWeight = FontWeight.Bold)
+                    }
+                }
             }
             IconButton(onClick = onDelete) {
                 Icon(Icons.Default.Delete, contentDescription = null, tint = Color.Red)

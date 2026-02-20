@@ -1,2 +1,0 @@
-app/build/outputs/apk/release/app-release-unsigned.apk
-admin/build/outputs/apk/release/admin-release-unsigned.apk

@@ -57,6 +57,16 @@ data class Order(
     val total_price: Double,
     val latitude: Double? = null,
     val longitude: Double? = null,
+    val payment_method: String = "dinheiro",
     val status: String? = "pendente",
+    val created_at: String? = null
+)
+
+@Serializable
+data class OrderStatusHistory(
+    val id: String? = null,
+    val order_id: String,
+    val status: String,
+    val notes: String? = null,
     val created_at: String? = null
 )

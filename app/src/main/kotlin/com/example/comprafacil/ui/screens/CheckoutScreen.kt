@@ -50,9 +50,11 @@ fun CheckoutScreen(onBack: () -> Unit, onOrderFinished: () -> Unit) {
     var locationName by remember { mutableStateOf("") }
     var latitude by remember { mutableStateOf<Double?>(null) }
     var longitude by remember { mutableStateOf<Double?>(null) }
+    var paymentMethod by remember { mutableStateOf("dinheiro") }
     var total by remember { mutableDoubleStateOf(0.0) }
     var loading by remember { mutableStateOf(true) }
     var fetchingLocation by remember { mutableStateOf(false) }
+    var isPlacingOrder by remember { mutableStateOf(false) }
 
     val permissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
@@ -174,6 +176,25 @@ fun CheckoutScreen(onBack: () -> Unit, onOrderFinished: () -> Unit) {
 
             Spacer(modifier = Modifier.height(32.dp))
 
+            Text("Forma de Pagamento", fontWeight = FontWeight.Bold, modifier = Modifier.align(Alignment.Start))
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                FilterChip(
+                    selected = paymentMethod == "dinheiro",
+                    onClick = { paymentMethod = "dinheiro" },
+                    label = { Text("Dinheiro") },
+                    modifier = Modifier.weight(1f)
+                )
+                FilterChip(
+                    selected = paymentMethod == "pix",
+                    onClick = { paymentMethod = "pix" },
+                    label = { Text("Pix") },
+                    modifier = Modifier.weight(1f)
+                )
+            }
+            Text("Pagamento realizado no ato da entrega.", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+
+            Spacer(modifier = Modifier.height(24.dp))
+
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
@@ -186,49 +207,51 @@ fun CheckoutScreen(onBack: () -> Unit, onOrderFinished: () -> Unit) {
 
             Spacer(modifier = Modifier.height(32.dp))
 
-            Button(
-                onClick = {
-                    if (whatsapp.isBlank() || locationName.isBlank() || latitude == null) {
-                        Toast.makeText(context, "Preencha tudo e capture sua localização", Toast.LENGTH_LONG).show()
-                        return@Button
-                    }
-                    scope.launch {
-                        val userId = client.auth.currentUserOrNull()?.id ?: return@launch
-                        try {
-                            // Create Order object to avoid SerializationException with mapOf
-                            val order = Order(
-                                user_id = userId,
-                                whatsapp = whatsapp,
-                                location = locationName,
-                                total_price = total,
-                                latitude = latitude,
-                                longitude = longitude
-                            )
-
-                            // Create Order
-                            client.from("orders").insert(order)
-
-                            // Clear Cart
-                            client.from("cart_items").delete {
-                                filter { eq("user_id", userId) }
-                            }
-
-                            // Redirect to WhatsApp
-                            val message = "Olá! Gostaria de finalizar meu pedido de R$ ${String.format("%.2f", total)}. Entrega em: $locationName. Localização: https://www.google.com/maps/search/?api=1&query=$latitude,$longitude"
-                            val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://api.whatsapp.com/send?phone=55${whatsapp}&text=${Uri.encode(message)}"))
-                            context.startActivity(intent)
-
-                            onOrderFinished()
-                        } catch (e: Exception) {
-                            Toast.makeText(context, "Erro: ${e.message}", Toast.LENGTH_LONG).show()
+            if (isPlacingOrder) {
+                CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
+            } else {
+                Button(
+                    onClick = {
+                        if (whatsapp.isBlank() || locationName.isBlank() || latitude == null) {
+                            Toast.makeText(context, "Preencha tudo e capture sua localização", Toast.LENGTH_LONG).show()
+                            return@Button
                         }
-                    }
-                },
-                modifier = Modifier.fillMaxWidth().height(56.dp),
-                shape = RoundedCornerShape(12.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF25D366))
-            ) {
-                Text("FINALIZAR NO WHATSAPP", fontWeight = FontWeight.Bold, color = Color.White)
+                        scope.launch {
+                            isPlacingOrder = true
+                            val userId = client.auth.currentUserOrNull()?.id ?: return@launch
+                            try {
+                                val order = Order(
+                                    user_id = userId,
+                                    whatsapp = whatsapp,
+                                    location = locationName,
+                                    total_price = total,
+                                    latitude = latitude,
+                                    longitude = longitude,
+                                    payment_method = paymentMethod,
+                                    status = "pendente"
+                                )
+
+                                client.from("orders").insert(order)
+
+                                client.from("cart_items").delete {
+                                    filter { eq("user_id", userId) }
+                                }
+
+                                Toast.makeText(context, "Pedido realizado com sucesso!", Toast.LENGTH_LONG).show()
+                                onOrderFinished()
+                            } catch (e: Exception) {
+                                Toast.makeText(context, "Erro: ${e.message}", Toast.LENGTH_LONG).show()
+                            } finally {
+                                isPlacingOrder = false
+                            }
+                        }
+                    },
+                    modifier = Modifier.fillMaxWidth().height(56.dp),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
+                ) {
+                    Text("REALIZAR PEDIDO", fontWeight = FontWeight.Bold, color = Color.White)
+                }
             }
         }
     }

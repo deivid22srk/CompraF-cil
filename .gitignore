@@ -1,20 +1,32 @@
-# Gradle files
+# Android
 .gradle/
 build/
-
-# Android Studio files
-*.iml
-.idea/
+app/build/
+admin/build/
 local.properties
-.DS_Store
-captures/
-.externalNativeBuild/
-.cxx/
-
-# Output files
 *.apk
-*.aar
-*.jar
+*.apks
 
-# Log files
+# Web
+node_modules/
+web/node_modules/
+dist/
+web/dist/
+web/dev_server.log
+
+# IDEs
+.idea/
+*.iml
+.vscode/
+
+# Build artifacts and logs
 *.log
+*.txt
+build_output*
+ls_*.txt
+apks.txt
+
+# Verification
+verification/*.png
+verification/verify_web_final.py
+verification/verify_web.py

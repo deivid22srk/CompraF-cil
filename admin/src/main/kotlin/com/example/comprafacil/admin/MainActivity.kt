@@ -399,6 +399,8 @@ fun OrdersAdminScreen() {
 fun OrderAdminItem(order: Order, onUpdate: () -> Unit) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
+    var expanded by remember { mutableStateOf(false) }
+    val statuses = listOf("pendente", "aceito", "saindo para entrega", "concluído", "cancelado")
 
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -407,12 +409,36 @@ fun OrderAdminItem(order: Order, onUpdate: () -> Unit) {
         Column(modifier = Modifier.padding(16.dp)) {
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                 Text("Pedido #${order.id?.takeLast(6)}", fontWeight = FontWeight.Bold, color = Color(0xFFFF9800))
-                Text(order.status ?: "Pendente", color = Color.Gray)
+                Surface(
+                    color = when(order.status) {
+                        "pendente" -> Color.Gray
+                        "aceito" -> Color(0xFF2196F3)
+                        "saindo para entrega" -> Color(0xFFFF9800)
+                        "concluído" -> Color(0xFF4CAF50)
+                        else -> Color.Red
+                    }.copy(alpha = 0.2f),
+                    shape = RoundedCornerShape(4.dp)
+                ) {
+                    Text(
+                        (order.status ?: "pendente").uppercase(),
+                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+                        fontSize = 10.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = when(order.status) {
+                            "pendente" -> Color.Gray
+                            "aceito" -> Color(0xFF2196F3)
+                            "saindo para entrega" -> Color(0xFFFF9800)
+                            "concluído" -> Color(0xFF4CAF50)
+                            else -> Color.Red
+                        }
+                    )
+                }
             }
             Spacer(modifier = Modifier.height(8.dp))
             Text("Total: R$ ${order.total_price}", color = Color.White, fontSize = 18.sp, fontWeight = FontWeight.Bold)
             Text("Endereço: ${order.location}", color = Color.White)
             Text("WhatsApp: ${order.whatsapp}", color = Color.White)
+            Text("Pagamento: ${order.payment_method.uppercase()}", color = Color(0xFFFDCB58), fontSize = 12.sp, fontWeight = FontWeight.Bold)
 
             Spacer(modifier = Modifier.height(12.dp))
 
@@ -428,39 +454,53 @@ fun OrderAdminItem(order: Order, onUpdate: () -> Unit) {
                         modifier = Modifier.weight(1f),
                         colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2196F3))
                     ) {
-                        Icon(Icons.Default.LocationOn, contentDescription = null)
+                        Icon(Icons.Default.LocationOn, contentDescription = null, modifier = Modifier.size(16.dp))
                         Text(" MAPA", fontSize = 10.sp)
                     }
                 }
 
-                Button(
-                    onClick = {
-                        scope.launch {
-                            try {
-                                val nextStatus = when(order.status) {
-                                    "pendente" -> "em rota"
-                                    "em rota" -> "entregue"
-                                    else -> "cancelado"
-                                }
-                                SupabaseConfig.client.from("orders").update(
-                                    {
-                                        set("status", nextStatus)
+                Box(modifier = Modifier.weight(1f)) {
+                    Button(
+                        onClick = { expanded = true },
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = ButtonDefaults.buttonColors(containerColor = Color.DarkGray)
+                    ) {
+                        Icon(Icons.Default.Edit, contentDescription = null, modifier = Modifier.size(16.dp))
+                        Text(" STATUS", fontSize = 10.sp)
+                    }
+                    DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+                        statuses.forEach { status ->
+                            DropdownMenuItem(
+                                text = { Text(status.uppercase()) },
+                                onClick = {
+                                    expanded = false
+                                    scope.launch {
+                                        try {
+                                            // Update Order Status
+                                            SupabaseConfig.client.from("orders").update(
+                                                { set("status", status) }
+                                            ) {
+                                                filter { eq("id", order.id!!) }
+                                            }
+
+                                            // Add to History
+                                            val history = OrderStatusHistory(
+                                                order_id = order.id!!,
+                                                status = status,
+                                                notes = "Atualizado pelo administrador"
+                                            )
+                                            SupabaseConfig.client.from("order_status_history").insert(history)
+
+                                            onUpdate()
+                                            Toast.makeText(context, "Status atualizado!", Toast.LENGTH_SHORT).show()
+                                        } catch (e: Exception) {
+                                            Toast.makeText(context, "Erro: ${e.message}", Toast.LENGTH_LONG).show()
+                                        }
                                     }
-                                ) {
-                                    filter { eq("id", order.id!!) }
                                 }
-                                onUpdate()
-                                Toast.makeText(context, "Status atualizado!", Toast.LENGTH_SHORT).show()
-                            } catch (e: Exception) {
-                                Toast.makeText(context, "Erro: ${e.message}", Toast.LENGTH_LONG).show()
-                            }
+                            )
                         }
-                    },
-                    modifier = Modifier.weight(1f),
-                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4CAF50))
-                ) {
-                    Icon(Icons.Default.Refresh, contentDescription = null)
-                    Text(" STATUS", fontSize = 10.sp)
+                    }
                 }
             }
         }

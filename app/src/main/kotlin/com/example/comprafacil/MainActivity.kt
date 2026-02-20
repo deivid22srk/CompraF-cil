@@ -30,6 +30,7 @@ import com.example.comprafacil.ui.theme.CompraFacilTheme
 import com.example.comprafacil.utils.NotificationHelper
 import io.github.jan.supabase.gotrue.auth
 import io.github.jan.supabase.realtime.*
+import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
@@ -75,9 +76,11 @@ class MainActivity : ComponentActivity() {
                         }
 
                         changeFlow.onEach { change ->
-                            val newStatus = change.record["status"]?.toString()
-                            val orderId = change.record["id"]?.toString()?.takeLast(6)
-                            if (change.record["user_id"]?.toString() == userId) {
+                            val newStatus = change.record["status"]?.jsonPrimitive?.content
+                            val orderId = change.record["id"]?.jsonPrimitive?.content?.takeLast(6)
+                            val orderUserId = change.record["user_id"]?.jsonPrimitive?.content
+
+                            if (orderUserId == userId) {
                                 notificationHelper.showNotification(
                                     "Atualização no Pedido",
                                     "O status do seu pedido #$orderId mudou para: $newStatus"

@@ -57,7 +57,17 @@ CREATE TABLE IF NOT EXISTS orders (
     total_price DECIMAL(10, 2) NOT NULL,
     latitude DECIMAL(10, 8),
     longitude DECIMAL(11, 8),
+    payment_method TEXT DEFAULT 'dinheiro' NOT NULL,
     status TEXT DEFAULT 'pendente' NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
+-- Create order status history table
+CREATE TABLE IF NOT EXISTS order_status_history (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    order_id UUID REFERENCES orders(id) ON DELETE CASCADE,
+    status TEXT NOT NULL,
+    notes TEXT,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
@@ -90,6 +100,9 @@ BEGIN
     END IF;
     IF NOT EXISTS (SELECT 1 FROM pg_tables WHERE tablename = 'orders' AND rowsecurity = true) THEN
         ALTER TABLE orders ENABLE ROW LEVEL SECURITY;
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM pg_tables WHERE tablename = 'order_status_history' AND rowsecurity = true) THEN
+        ALTER TABLE order_status_history ENABLE ROW LEVEL SECURITY;
     END IF;
     IF NOT EXISTS (SELECT 1 FROM pg_tables WHERE tablename = 'order_items' AND rowsecurity = true) THEN
         ALTER TABLE order_items ENABLE ROW LEVEL SECURITY;
@@ -139,6 +152,12 @@ BEGIN
     DROP POLICY IF EXISTS "Allow public select on orders" ON orders;
     CREATE POLICY "Allow public select on orders" ON orders FOR SELECT USING (true);
 
+    -- Order Status History
+    DROP POLICY IF EXISTS "Users can view their own order history" ON order_status_history;
+    CREATE POLICY "Users can view their own order history" ON order_status_history FOR SELECT USING (true); -- Simplified for now
+    DROP POLICY IF EXISTS "Allow anon/auth insert on order status history" ON order_status_history;
+    CREATE POLICY "Allow anon/auth insert on order status history" ON order_status_history FOR INSERT WITH CHECK (true);
+
     -- Order Items
     DROP POLICY IF EXISTS "Anyone can insert order items" ON order_items;
     CREATE POLICY "Anyone can insert order items" ON order_items FOR INSERT WITH CHECK (true);
@@ -163,5 +182,12 @@ BEGIN
         WHERE pubname = 'supabase_realtime' AND tablename = 'orders'
     ) THEN
         ALTER PUBLICATION supabase_realtime ADD TABLE orders;
+    END IF;
+
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_publication_tables
+        WHERE pubname = 'supabase_realtime' AND tablename = 'order_status_history'
+    ) THEN
+        ALTER PUBLICATION supabase_realtime ADD TABLE order_status_history;
     END IF;
 END $$;

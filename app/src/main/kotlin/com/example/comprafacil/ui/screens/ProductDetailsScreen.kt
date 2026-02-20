@@ -15,6 +15,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.Store
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -26,6 +27,7 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import android.content.Intent
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -90,24 +92,58 @@ fun ProductDetailsScreen(productId: String, onBack: () -> Unit) {
                                 Text("-", fontSize = 24.sp, color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.Bold)
                             }
                             Text("$quantity", fontSize = 18.sp, fontWeight = FontWeight.ExtraBold, color = MaterialTheme.colorScheme.onSurface, modifier = Modifier.padding(horizontal = 8.dp))
-                            IconButton(onClick = { quantity++ }) {
+                            IconButton(
+                                onClick = {
+                                    if (quantity < (product?.stock_quantity ?: 0)) {
+                                        quantity++
+                                    } else {
+                                        Toast.makeText(context, "Limite de estoque atingido", Toast.LENGTH_SHORT).show()
+                                    }
+                                }
+                            ) {
                                 Text("+", fontSize = 24.sp, color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.Bold)
                             }
                         }
                         Spacer(modifier = Modifier.width(16.dp))
                         Button(
                             onClick = {
+                                if ((product?.stock_quantity ?: 0) <= 0) {
+                                    Toast.makeText(context, "Produto sem estoque", Toast.LENGTH_SHORT).show()
+                                    return@Button
+                                }
                                 scope.launch {
                                     val userId = client.auth.currentUserOrNull()?.id
                                     if (userId != null) {
-                                        val cartItem = CartItem(
-                                            user_id = userId,
-                                            product_id = productId,
-                                            quantity = quantity
-                                        )
                                         try {
-                                            client.from("cart_items").insert(cartItem)
-                                            Toast.makeText(context, "Adicionado ao carrinho!", Toast.LENGTH_SHORT).show()
+                                            // Check if already in cart
+                                            val existing = client.from("cart_items").select {
+                                                filter {
+                                                    eq("user_id", userId)
+                                                    eq("product_id", productId)
+                                                }
+                                            }.decodeSingleOrNull<CartItem>()
+
+                                            if (existing != null) {
+                                                val newQuantity = existing.quantity + quantity
+                                                if (newQuantity > (product?.stock_quantity ?: 0)) {
+                                                    Toast.makeText(context, "Quantidade total no carrinho excede o estoque", Toast.LENGTH_LONG).show()
+                                                } else {
+                                                    client.from("cart_items").update({
+                                                        set("quantity", newQuantity)
+                                                    }) {
+                                                        filter { eq("id", existing.id!!) }
+                                                    }
+                                                    Toast.makeText(context, "Carrinho atualizado!", Toast.LENGTH_SHORT).show()
+                                                }
+                                            } else {
+                                                val cartItem = CartItem(
+                                                    user_id = userId,
+                                                    product_id = productId,
+                                                    quantity = quantity
+                                                )
+                                                client.from("cart_items").insert(cartItem)
+                                                Toast.makeText(context, "Adicionado ao carrinho!", Toast.LENGTH_SHORT).show()
+                                            }
                                         } catch (e: Exception) {
                                             Toast.makeText(context, "Erro ao adicionar: ${e.message}", Toast.LENGTH_LONG).show()
                                         }
@@ -158,6 +194,26 @@ fun ProductDetailsScreen(productId: String, onBack: () -> Unit) {
                             .size(40.dp)
                     ) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = null, tint = MaterialTheme.colorScheme.onSurface, modifier = Modifier.size(24.dp))
+                    }
+
+                    // Share button
+                    IconButton(
+                        onClick = {
+                            val shareIntent = Intent(Intent.ACTION_SEND).apply {
+                                type = "text/plain"
+                                val shareUrl = "https://comprafacil.ct.ws/#/product/${product!!.id}"
+                                putExtra(Intent.EXTRA_SUBJECT, product!!.name)
+                                putExtra(Intent.EXTRA_TEXT, "Confira este produto no CompraFácil: ${product!!.name}\n\n$shareUrl")
+                            }
+                            context.startActivity(Intent.createChooser(shareIntent, "Compartilhar Produto"))
+                        },
+                        modifier = Modifier
+                            .padding(16.dp)
+                            .align(Alignment.TopEnd)
+                            .background(MaterialTheme.colorScheme.surface.copy(alpha = 0.7f), CircleShape)
+                            .size(40.dp)
+                    ) {
+                        Icon(Icons.Default.Share, contentDescription = "Compartilhar", tint = MaterialTheme.colorScheme.onSurface, modifier = Modifier.size(20.dp))
                     }
 
                     // Pager indicator
