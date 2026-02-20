@@ -107,10 +107,10 @@ const App: React.FC = () => {
     }
   };
 
-  const showNav = currentView !== 'details' && currentView !== 'welcome' && currentView !== 'search' && (currentView !== 'auth' || hasStarted);
+  const showNav = ['home', 'cart', 'profile', 'admin'].includes(currentView);
 
   return (
-    <div className="max-w-md mx-auto min-h-screen bg-white shadow-xl relative overflow-hidden">
+    <div className="max-w-md mx-auto min-h-screen bg-[#0F0F0F] text-white shadow-xl relative overflow-hidden font-sans">
       <div className={showNav ? "pb-24" : ""}>
         {renderView()}
       </div>

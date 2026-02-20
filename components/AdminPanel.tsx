@@ -86,6 +86,29 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onBack }) => {
     setLoading(false);
   };
 
+  const uploadImage = async (uri: string) => {
+    try {
+      const response = await fetch(uri);
+      const blob = await response.blob();
+      const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.jpg`;
+
+      const { data, error } = await supabase.storage
+        .from('product-images')
+        .upload(fileName, blob);
+
+      if (error) throw error;
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('product-images')
+        .getPublicUrl(fileName);
+
+      return publicUrl;
+    } catch (err) {
+      console.error('Erro no upload:', err);
+      return null;
+    }
+  };
+
   const pickImage = async (source: CameraSource) => {
     try {
       const image = await CapCamera.getPhoto({
@@ -96,10 +119,16 @@ const AdminPanel: React.FC<AdminPanelProps> = ({ onBack }) => {
       });
 
       if (image.webPath) {
-        setFormData(prev => ({ ...prev, image_url: image.webPath || '' }));
+        setLoading(true);
+        const uploadedUrl = await uploadImage(image.webPath);
+        if (uploadedUrl) {
+          setFormData(prev => ({ ...prev, image_url: uploadedUrl }));
+        }
+        setLoading(false);
       }
     } catch (err) {
       console.error('Erro ao capturar imagem:', err);
+      setLoading(false);
     }
   };
 

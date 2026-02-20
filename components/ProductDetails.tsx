@@ -11,73 +11,66 @@ interface ProductDetailsProps {
 
 const ProductDetails: React.FC<ProductDetailsProps> = ({ product, onBack, onAddToCart }) => {
   return (
-    <div className="animate-in slide-in-from-right duration-500 min-h-screen bg-white">
-      {/* Top Bar */}
-      <div className="p-4 flex justify-between items-center">
-        <button onClick={onBack} className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center">
-          <ArrowLeft size={20} />
+    <div className="animate-in slide-in-from-right duration-500 min-h-screen bg-[#F8F9FA] text-gray-900">
+      {/* Fixed Top Bar */}
+      <div className="fixed top-0 left-0 right-0 max-w-md mx-auto p-6 flex justify-between items-center z-[100]">
+        <button onClick={onBack} className="w-12 h-12 rounded-full bg-white shadow-sm flex items-center justify-center border border-gray-100">
+          <ArrowLeft size={24} />
         </button>
-        <h2 className="text-lg font-bold">Details</h2>
-        <button className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-red-400">
-          <Heart size={20} />
+        <button className="w-12 h-12 rounded-full bg-white shadow-sm flex items-center justify-center text-gray-400 border border-gray-100">
+          <Heart size={24} />
         </button>
       </div>
 
-      {/* Main Image */}
-      <div className="relative p-8 mb-4">
-        <div className="absolute top-1/2 left-4 flex flex-col gap-4">
-           {['#FF5F5F', '#5F5FFF', '#5FFF5F'].map(color => (
-             <div key={color} className="w-6 h-6 rounded-full border-2 border-white shadow-sm" style={{ backgroundColor: color }}></div>
-           ))}
-        </div>
-        <img src={product.image_url} alt={product.name} className="w-full h-64 object-contain" />
+      {/* Hero Image */}
+      <div className="w-full aspect-square flex items-center justify-center p-12 bg-white rounded-b-[60px] shadow-sm">
+        <img src={product.image_url} alt={product.name} className="w-full h-full object-contain" />
       </div>
 
-      {/* Content Card */}
-      <div className="p-6 pt-10 rounded-t-[40px] bg-white border-t border-slate-100 shadow-[0_-20px_50px_rgba(0,0,0,0.05)]">
-        <div className="flex justify-between items-start mb-2">
-          <h1 className="text-2xl font-black text-slate-800 flex-1">{product.name}</h1>
-          <div className="flex items-center gap-1 bg-yellow-50 px-2 py-1 rounded-lg">
-            <Star className="text-yellow-400 fill-yellow-400" size={16} />
-            <span className="text-sm font-bold text-slate-800">{product.rating} <span className="text-slate-400 font-normal">({product.rating_count})</span></span>
+      {/* Content Section */}
+      <div className="px-8 py-10 space-y-8">
+        <div>
+          <h1 className="text-3xl font-black text-gray-900 leading-tight mb-2">{product.name}</h1>
+          <div className="flex items-center gap-4">
+             <div className="flex items-center gap-1 bg-[#FDCB58]/10 px-3 py-1 rounded-full">
+               <Star className="text-[#FDCB58] fill-[#FDCB58]" size={14} />
+               <span className="text-xs font-black text-[#FDCB58]">{product.rating}</span>
+             </div>
+             <span className="text-xs font-bold text-gray-300 uppercase tracking-widest">{product.category}</span>
           </div>
         </div>
 
-        <div className="flex items-baseline gap-2 mb-6">
-           <span className="text-2xl font-black text-indigo-600">R$ {product.price.toLocaleString('pt-BR')}</span>
-           {product.original_price && <span className="text-slate-300 line-through">R$ {product.original_price}</span>}
+        <div>
+          <p className="text-4xl font-black text-[#E67E22]">R$ {product.price.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+          {product.original_price && <p className="text-sm text-gray-300 line-through mt-1">De R$ {product.original_price}</p>}
         </div>
 
-        <div className="bg-slate-50 p-4 rounded-2xl mb-6">
-          <p className="text-xs font-bold text-slate-800 mb-1">Special request</p>
-          <p className="text-[10px] text-slate-400">Special requests are welcome, but can't always be accommodated.</p>
+        <div className="space-y-3">
+           <h3 className="text-lg font-bold">Sobre este item</h3>
+           <p className="text-gray-500 text-sm leading-relaxed">
+             {product.description || "Este produto premium oferece qualidade superior e design moderno, ideal para quem busca o melhor custo-benefício do mercado."}
+           </p>
         </div>
 
-        <div className="mb-24">
-          <h3 className="text-lg font-bold mb-2">Description</h3>
-          <p className="text-sm text-slate-500 leading-relaxed">
-            {product.description || "Este produto premium oferece qualidade superior e design moderno, ideal para quem busca o melhor custo-benefício do mercado."}
-          </p>
-          <div className="mt-4 flex gap-8">
-            <div>
-              <p className="text-xs text-slate-400">Brand</p>
-              <p className="text-sm font-bold">{product.category}</p>
-            </div>
-            <div>
-              <p className="text-xs text-slate-400">Model Name</p>
-              <p className="text-sm font-bold">{product.name.split(' ')[0]}</p>
-            </div>
-          </div>
+        <div className="grid grid-cols-2 gap-4 pb-32">
+           <div className="bg-white p-4 rounded-3xl border border-gray-100 shadow-sm">
+              <p className="text-[10px] text-gray-400 font-bold uppercase mb-1">Estoque</p>
+              <p className="text-sm font-black">Disponível</p>
+           </div>
+           <div className="bg-white p-4 rounded-3xl border border-gray-100 shadow-sm">
+              <p className="text-[10px] text-gray-400 font-bold uppercase mb-1">Envio</p>
+              <p className="text-sm font-black text-emerald-500">Grátis</p>
+           </div>
         </div>
       </div>
 
-      {/* Bottom Action */}
-      <div className="fixed bottom-0 left-0 right-0 max-w-md mx-auto p-4 bg-white/80 backdrop-blur-md">
+      {/* Bottom Sticky Action */}
+      <div className="fixed bottom-0 left-0 right-0 max-w-md mx-auto p-6 bg-white/80 backdrop-blur-xl border-t border-gray-100 flex gap-4 z-[90]">
         <button
-          onClick={() => onAddToCart(product)}
-          className="w-full bg-indigo-600 text-white font-black py-4 rounded-2xl shadow-xl shadow-indigo-200 uppercase tracking-widest"
+          onClick={() => { onAddToCart(product); onBack(); }}
+          className="flex-1 bg-[#2D3B87] text-white font-black py-5 rounded-[24px] shadow-xl shadow-blue-100 uppercase tracking-widest active:scale-95 transition-transform"
         >
-          Add to Cart
+          Comprar Agora
         </button>
       </div>
     </div>

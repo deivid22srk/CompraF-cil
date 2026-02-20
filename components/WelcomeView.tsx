@@ -9,37 +9,37 @@ interface WelcomeViewProps {
 
 const WelcomeView: React.FC<WelcomeViewProps> = ({ onStartAsGuest, onGoToAuth }) => {
   return (
-    <div className="min-h-screen bg-white flex flex-col p-8 justify-between animate-in fade-in duration-700">
-      <div className="mt-20 text-center">
-        <div className="w-24 h-24 bg-indigo-600 rounded-[32px] flex items-center justify-center mx-auto mb-8 shadow-2xl shadow-indigo-200 animate-bounce">
-          <ShoppingBag size={40} className="text-white" />
+    <div className="min-h-screen bg-[#0F0F0F] flex flex-col p-10 justify-between animate-in fade-in duration-700 text-white">
+      <div className="mt-24 text-center">
+        <div className="w-28 h-28 bg-[#FDCB58] rounded-[48px] flex items-center justify-center mx-auto mb-10 shadow-2xl shadow-yellow-500/20 rotate-12">
+          <ShoppingBag size={48} className="text-[#2D3B87]" fill="currentColor" />
         </div>
-        <h1 className="text-4xl font-black text-slate-900 mb-4 tracking-tight">CompraFácil</h1>
-        <p className="text-slate-400 max-w-[250px] mx-auto text-sm leading-relaxed">
-          Sua loja de produtos favoritos, agora na palma da sua mão.
+        <h1 className="text-5xl font-black mb-4 tracking-tighter">Compra Fácil</h1>
+        <p className="text-gray-400 max-w-[280px] mx-auto text-md leading-relaxed">
+          Sua nova experiência de compras online, rápida e segura.
         </p>
       </div>
 
-      <div className="space-y-4 mb-8">
+      <div className="space-y-5 mb-10">
         <button
           onClick={onGoToAuth}
-          className="w-full bg-indigo-600 text-white font-black py-4 rounded-3xl shadow-xl shadow-indigo-100 flex items-center justify-center gap-3 transition-transform active:scale-95 group"
+          className="w-full bg-[#2D3B87] text-white font-black py-5 rounded-[28px] shadow-xl shadow-blue-900/20 flex items-center justify-center gap-3 transition-transform active:scale-95 group"
         >
-          <UserCircle2 size={20} />
-          Começar Agora
-          <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />
+          <UserCircle2 size={22} />
+          <span className="tracking-widest uppercase text-sm">Entrar na Conta</span>
+          <ArrowRight size={20} className="group-hover:translate-x-2 transition-transform" />
         </button>
 
         <button
           onClick={onStartAsGuest}
-          className="w-full bg-slate-50 text-slate-600 font-bold py-4 rounded-3xl flex items-center justify-center gap-3 transition-transform active:scale-95"
+          className="w-full bg-white/5 text-gray-300 font-bold py-5 rounded-[28px] flex items-center justify-center gap-3 transition-transform active:scale-95 border border-white/10"
         >
-          Entrar como Visitante
+          Explorar como Visitante
         </button>
 
-        <div className="pt-4 flex items-center justify-center gap-2 text-[10px] text-slate-300 font-bold uppercase tracking-widest">
-          <ShieldCheck size={12} />
-          Pagamento 100% Seguro
+        <div className="pt-6 flex items-center justify-center gap-3 text-[10px] text-gray-500 font-black uppercase tracking-[0.2em]">
+          <ShieldCheck size={14} className="text-emerald-500" />
+          Segurança Garantida
         </div>
       </div>
     </div>

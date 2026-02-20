@@ -38,111 +38,101 @@ const ProfileView: React.FC<ProfileViewProps> = ({ user, onBack, onAuthClick }) 
 
   if (!user) {
     return (
-      <div className="min-h-screen bg-slate-50 p-6 flex flex-col items-center justify-center text-center">
-        <div className="w-20 h-20 bg-white rounded-3xl shadow-sm flex items-center justify-center mb-6">
-          <User size={32} className="text-slate-200" />
+      <div className="min-h-screen bg-[#F8F9FA] p-8 flex flex-col items-center justify-center text-center">
+        <div className="w-24 h-24 bg-white rounded-[40px] shadow-sm flex items-center justify-center mb-8 border border-gray-100">
+          <User size={40} className="text-gray-200" />
         </div>
-        <h2 className="text-xl font-black mb-2">Ops! Você não está logado</h2>
-        <p className="text-slate-400 text-sm mb-8 px-8">Entre para acompanhar seus pedidos e gerenciar sua conta.</p>
+        <h2 className="text-2xl font-black mb-3">Sua conta</h2>
+        <p className="text-gray-400 text-sm mb-10 px-6 leading-relaxed">Faça login para gerenciar seus pedidos e ter uma experiência personalizada.</p>
         <button
           onClick={onAuthClick}
-          className="w-full bg-indigo-600 text-white font-black py-4 rounded-3xl shadow-xl shadow-indigo-100 uppercase tracking-widest"
+          className="w-full bg-[#2D3B87] text-white font-black py-5 rounded-[24px] shadow-xl shadow-blue-100 uppercase tracking-widest active:scale-95 transition-transform"
         >
-          Fazer Login
+          Entrar Agora
         </button>
-        <button onClick={onBack} className="mt-6 text-sm font-bold text-slate-400">Voltar para a Loja</button>
+        <button onClick={onBack} className="mt-6 text-sm font-bold text-gray-300">Voltar para a Loja</button>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 pb-12">
+    <div className="min-h-screen bg-[#F8F9FA] pb-32">
       {/* Header Profile */}
-      <div className="bg-indigo-600 p-8 pt-12 rounded-b-[48px] text-white relative">
-        <button onClick={onBack} className="absolute top-8 left-4 p-2 hover:bg-white/10 rounded-xl transition-colors">
+      <div className="bg-[#2D3B87] p-10 pt-16 rounded-b-[60px] text-white relative shadow-2xl">
+        <button onClick={onBack} className="absolute top-8 left-6 p-2 bg-white/10 rounded-full transition-colors">
           <ArrowLeft size={20} />
         </button>
-        <div className="flex items-center gap-4 mb-6">
-          <div className="w-20 h-20 rounded-3xl bg-white/20 backdrop-blur-md flex items-center justify-center text-3xl shadow-2xl">
-            👤
+
+        <div className="flex flex-col items-center text-center">
+          <div className="w-24 h-24 rounded-[40px] bg-white p-1 mb-4 shadow-xl">
+             <div className="w-full h-full rounded-[36px] bg-[#FDCB58] flex items-center justify-center text-3xl">
+               👤
+             </div>
           </div>
-          <div>
-            <h2 className="text-xl font-black">{user.email?.split('@')[0]}</h2>
-            <p className="text-xs text-white/60">{user.email}</p>
-          </div>
-          <button onClick={handleLogout} className="ml-auto p-3 bg-white/10 rounded-2xl text-white">
-            <LogOut size={20} />
-          </button>
-        </div>
-        <div className="flex justify-between items-center bg-white/10 backdrop-blur-md p-4 rounded-3xl">
-          <div className="text-center border-r border-white/10 flex-1">
-            <p className="text-[10px] text-white/50 font-bold uppercase mb-1">Meus Pedidos</p>
-            <p className="text-lg font-black">{orders.length}</p>
-          </div>
-          <div className="text-center flex-1">
-            <p className="text-[10px] text-white/50 font-bold uppercase mb-1">Carteira</p>
-            <p className="text-lg font-black">R$ 0,00</p>
+          <h2 className="text-2xl font-black mb-1">{user.email?.split('@')[0]}</h2>
+          <p className="text-sm text-white/50 mb-8">{user.email}</p>
+
+          <div className="flex w-full gap-4">
+             <div className="flex-1 bg-white/10 backdrop-blur-md rounded-3xl p-4">
+                <p className="text-[10px] text-white/40 font-black uppercase mb-1">Pedidos</p>
+                <p className="text-xl font-black">{orders.length}</p>
+             </div>
+             <div className="flex-1 bg-white/10 backdrop-blur-md rounded-3xl p-4">
+                <p className="text-[10px] text-white/40 font-black uppercase mb-1">Créditos</p>
+                <p className="text-xl font-black">R$ 0,00</p>
+             </div>
           </div>
         </div>
       </div>
 
-      <div className="p-6 -mt-6">
-        <div className="flex justify-between items-center mb-6">
-          <h3 className="text-lg font-black text-slate-800">Rastreio de Pedidos</h3>
-          <button className="p-2 bg-white rounded-xl shadow-sm"><Bell size={18} className="text-indigo-600" /></button>
+      <div className="p-8">
+        <div className="flex justify-between items-center mb-8">
+          <h3 className="text-xl font-black text-gray-900">Rastreio Ativo</h3>
+          <button onClick={handleLogout} className="flex items-center gap-2 text-red-400 font-bold text-xs uppercase tracking-widest">
+            Sair <LogOut size={16} />
+          </button>
         </div>
 
         {loading ? (
-          <div className="flex justify-center py-20"><Loader2 className="animate-spin text-indigo-600" /></div>
+          <div className="flex justify-center py-20"><Loader2 className="animate-spin text-[#2D3B87]" /></div>
         ) : orders.length === 0 ? (
-          <div className="bg-white p-8 rounded-[32px] shadow-sm text-center">
-            <Package size={40} className="text-slate-100 mx-auto mb-4" />
-            <p className="text-xs font-bold text-slate-400">Você ainda não tem nenhum pedido em trânsito.</p>
+          <div className="bg-white p-10 rounded-[40px] shadow-sm text-center border border-gray-50">
+            <Package size={48} className="text-gray-100 mx-auto mb-4" />
+            <p className="text-sm font-bold text-gray-300">Nenhum pedido em trânsito no momento.</p>
           </div>
         ) : (
-          <div className="space-y-4">
+          <div className="space-y-6">
             {orders.map(order => (
-              <div key={order.id} className="bg-white p-5 rounded-[32px] shadow-sm border border-slate-50 group">
-                <div className="flex justify-between items-start mb-4">
+              <div key={order.id} className="bg-white p-6 rounded-[40px] shadow-sm border border-gray-50 animate-in slide-in-from-bottom duration-500">
+                <div className="flex justify-between items-start mb-6">
                   <div>
-                    <span className={`text-[10px] font-black uppercase px-2 py-1 rounded-lg ${
-                      order.status === 'Entregue' ? 'bg-emerald-100 text-emerald-600' : 'bg-indigo-100 text-indigo-600'
+                    <span className={`text-[10px] font-black uppercase px-3 py-1.5 rounded-full ${
+                      order.status === 'Entregue' ? 'bg-emerald-50 text-emerald-500' : 'bg-blue-50 text-[#2D3B87]'
                     }`}>
                       {order.status}
                     </span>
-                    <h4 className="text-sm font-bold mt-2 text-slate-800 line-clamp-1">{order.product_names}</h4>
+                    <h4 className="text-md font-black mt-3 text-gray-900 line-clamp-1 leading-tight">{order.product_names}</h4>
                   </div>
-                  <p className="text-xs font-black text-slate-300">#{order.id.slice(0, 8)}</p>
                 </div>
 
-                <div className="space-y-3">
-                  <div className="flex gap-3">
-                    <div className="flex flex-col items-center">
-                      <div className="w-2 h-2 rounded-full bg-indigo-600"></div>
-                      <div className="w-0.5 h-6 bg-slate-100 my-1"></div>
-                      <div className="w-2 h-2 rounded-full bg-slate-200"></div>
-                    </div>
-                    <div className="flex-1">
-                      <div className="flex justify-between items-start mb-4">
-                        <div className="flex gap-2">
-                           <MapPin size={14} className="text-indigo-600" />
-                           <div>
-                             <p className="text-[10px] text-slate-400 font-bold uppercase">Localização Atual</p>
-                             <p className="text-xs font-bold text-slate-800">{order.last_location || 'Aguardando atualização'}</p>
-                           </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
+                <div className="flex items-center gap-4 bg-[#F8F9FA] p-4 rounded-3xl">
+                   <div className="w-10 h-10 rounded-2xl bg-white flex items-center justify-center shadow-sm">
+                      <MapPin size={20} className="text-[#E67E22]" />
+                   </div>
+                   <div className="flex-1">
+                      <p className="text-[10px] text-gray-400 font-black uppercase">Última Parada</p>
+                      <p className="text-xs font-bold text-gray-700">{order.last_location || 'Processando envio'}</p>
+                   </div>
+                   <ChevronRight size={20} className="text-gray-200" />
                 </div>
 
                 {order.tracking_code && (
-                  <div className="mt-4 pt-4 border-t border-slate-50 flex justify-between items-center">
-                    <div className="text-[10px] font-bold text-slate-400 tracking-widest uppercase">
-                      Cod: {order.tracking_code}
+                  <div className="mt-6 flex items-center justify-between bg-[#2D3B87] p-4 rounded-3xl text-white">
+                    <div className="text-[10px] font-black uppercase opacity-60 tracking-widest">
+                      {order.tracking_code}
                     </div>
-                    <button className="text-xs font-bold text-indigo-600 flex items-center gap-1">
-                      Ver no Mapa <ChevronRight size={14} />
+                    <button className="text-[10px] font-black uppercase tracking-widest bg-white/20 px-3 py-1 rounded-lg">
+                      Copiar
                     </button>
                   </div>
                 )}
