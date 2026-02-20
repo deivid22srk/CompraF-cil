@@ -1,5 +1,4 @@
 package com.example.comprafacil.ui.screens
-import io.github.jan.supabase.gotrue.auth
 
 import android.net.Uri
 import android.widget.Toast
@@ -30,6 +29,7 @@ import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import com.example.comprafacil.SupabaseConfig
 import com.example.comprafacil.data.Profile
+import io.github.jan.supabase.gotrue.auth
 import io.github.jan.supabase.postgrest.from
 import io.github.jan.supabase.storage.storage
 import kotlinx.coroutines.launch
@@ -97,8 +97,8 @@ fun ProfileScreen(onLogout: () -> Unit) {
             TopAppBar(
                 title = { Text("Meu Perfil", fontWeight = FontWeight.Bold) },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = Color(0xFFFDCB58),
-                    titleContentColor = Color.Black
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    titleContentColor = MaterialTheme.colorScheme.onPrimary
                 )
             )
         }
@@ -107,6 +107,7 @@ fun ProfileScreen(onLogout: () -> Unit) {
             modifier = Modifier
                 .padding(padding)
                 .fillMaxSize()
+                .background(MaterialTheme.colorScheme.background)
                 .verticalScroll(rememberScrollState())
                 .padding(24.dp),
             horizontalAlignment = Alignment.CenterHorizontally
@@ -115,7 +116,7 @@ fun ProfileScreen(onLogout: () -> Unit) {
                 modifier = Modifier
                     .size(120.dp)
                     .clip(CircleShape)
-                    .background(Color.LightGray)
+                    .background(MaterialTheme.colorScheme.surfaceVariant)
                     .clickable { pickerLauncher.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) },
                 contentAlignment = Alignment.Center
             ) {
@@ -127,11 +128,11 @@ fun ProfileScreen(onLogout: () -> Unit) {
                         contentScale = ContentScale.Crop
                     )
                 } else {
-                    Icon(Icons.Default.Person, contentDescription = null, modifier = Modifier.size(64.dp), tint = Color.Gray)
+                    Icon(Icons.Default.Person, contentDescription = null, modifier = Modifier.size(64.dp), tint = MaterialTheme.colorScheme.outline)
                 }
 
                 if (uploading) {
-                    CircularProgressIndicator(color = Color(0xFFFF9800))
+                    CircularProgressIndicator(color = MaterialTheme.colorScheme.secondary)
                 }
 
                 Box(
@@ -141,15 +142,15 @@ fun ProfileScreen(onLogout: () -> Unit) {
                     Icon(
                         Icons.Default.Edit,
                         contentDescription = null,
-                        modifier = Modifier.size(24.dp).background(Color(0xFFFF9800), CircleShape).padding(4.dp),
-                        tint = Color.White
+                        modifier = Modifier.size(24.dp).background(MaterialTheme.colorScheme.secondary, CircleShape).padding(4.dp),
+                        tint = MaterialTheme.colorScheme.onSecondary
                     )
                 }
             }
 
             Spacer(modifier = Modifier.height(16.dp))
-            Text(profile?.full_name ?: "Usuário", fontSize = 22.sp, fontWeight = FontWeight.Bold)
-            Text(client.auth.currentUserOrNull()?.email ?: "", color = Color.Gray)
+            Text(profile?.full_name ?: "Usuário", fontSize = 22.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onBackground)
+            Text(client.auth.currentUserOrNull()?.email ?: "", color = MaterialTheme.colorScheme.onSurfaceVariant)
 
             Spacer(modifier = Modifier.height(32.dp))
 
@@ -189,9 +190,9 @@ fun ProfileMenuItem(icon: ImageVector, title: String, onClick: () -> Unit) {
             .padding(vertical = 16.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Icon(icon, contentDescription = null, tint = Color(0xFFFF9800), modifier = Modifier.size(24.dp))
+        Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.secondary, modifier = Modifier.size(24.dp))
         Spacer(modifier = Modifier.width(16.dp))
-        Text(title, modifier = Modifier.weight(1f), fontSize = 16.sp)
-        Icon(Icons.Default.ChevronRight, contentDescription = null, tint = Color.LightGray)
+        Text(title, modifier = Modifier.weight(1f), fontSize = 16.sp, color = MaterialTheme.colorScheme.onBackground)
+        Icon(Icons.Default.ChevronRight, contentDescription = null, tint = MaterialTheme.colorScheme.outline)
     }
 }

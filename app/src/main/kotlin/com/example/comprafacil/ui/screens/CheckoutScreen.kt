@@ -3,6 +3,7 @@ package com.example.comprafacil.ui.screens
 import android.content.Intent
 import android.net.Uri
 import android.widget.Toast
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -51,6 +52,7 @@ fun CheckoutScreen(onBack: () -> Unit, onOrderFinished: () -> Unit) {
     }
 
     Scaffold(
+        containerColor = MaterialTheme.colorScheme.background,
         topBar = {
             TopAppBar(
                 title = { Text("Finalizar Pedido") },
@@ -58,7 +60,12 @@ fun CheckoutScreen(onBack: () -> Unit, onOrderFinished: () -> Unit) {
                     IconButton(onClick = onBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = null)
                     }
-                }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    titleContentColor = MaterialTheme.colorScheme.onPrimary,
+                    navigationIconContentColor = MaterialTheme.colorScheme.onPrimary
+                )
             )
         }
     ) { padding ->
@@ -66,9 +73,9 @@ fun CheckoutScreen(onBack: () -> Unit, onOrderFinished: () -> Unit) {
             modifier = Modifier.padding(padding).fillMaxSize().verticalScroll(rememberScrollState()).padding(24.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Text("Estamos quase lá!", fontSize = 20.sp, fontWeight = FontWeight.Bold)
+            Text("Estamos quase lá!", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onBackground)
             Spacer(modifier = Modifier.height(8.dp))
-            Text("Informe seus dados para entrega via WhatsApp", color = Color.Gray)
+            Text("Informe seus dados para entrega via WhatsApp", color = MaterialTheme.colorScheme.onSurfaceVariant)
 
             Spacer(modifier = Modifier.height(32.dp))
 
@@ -77,7 +84,11 @@ fun CheckoutScreen(onBack: () -> Unit, onOrderFinished: () -> Unit) {
                 onValueChange = { whatsapp = it },
                 label = { Text("WhatsApp (com DDD)") },
                 modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(12.dp)
+                shape = RoundedCornerShape(12.dp),
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedTextColor = MaterialTheme.colorScheme.onBackground,
+                    unfocusedTextColor = MaterialTheme.colorScheme.onBackground
+                )
             )
             Spacer(modifier = Modifier.height(16.dp))
             OutlinedTextField(
@@ -86,18 +97,22 @@ fun CheckoutScreen(onBack: () -> Unit, onOrderFinished: () -> Unit) {
                 label = { Text("Endereço de Entrega") },
                 modifier = Modifier.fillMaxWidth(),
                 minLines = 3,
-                shape = RoundedCornerShape(12.dp)
+                shape = RoundedCornerShape(12.dp),
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedTextColor = MaterialTheme.colorScheme.onBackground,
+                    unfocusedTextColor = MaterialTheme.colorScheme.onBackground
+                )
             )
 
             Spacer(modifier = Modifier.height(32.dp))
 
             Card(
                 modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.cardColors(containerColor = Color(0xFFFDCB58).copy(alpha = 0.1f))
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
             ) {
                 Row(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Text("Total a pagar:", modifier = Modifier.weight(1f))
-                    Text("R$ ${String.format("%.2f", total)}", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = Color(0xFFFF9800))
+                    Text("Total a pagar:", modifier = Modifier.weight(1f), color = MaterialTheme.colorScheme.onSurface)
+                    Text("R$ ${String.format("%.2f", total)}", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.secondary)
                 }
             }
 

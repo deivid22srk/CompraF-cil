@@ -11,8 +11,6 @@ import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavDestination.Companion.hierarchy
@@ -26,10 +24,6 @@ import com.example.comprafacil.ui.theme.CompraFacilTheme
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
-        // Modern translucent orange status bar
-        window.statusBarColor = Color(0xFFFDCB58).toArgb()
-        window.navigationBarColor = Color(0xFFFF9800).toArgb()
 
         setContent {
             CompraFacilTheme {
@@ -50,8 +44,8 @@ class MainActivity : ComponentActivity() {
                     bottomBar = {
                         if (showBottomBar) {
                             NavigationBar(
-                                containerColor = Color.White,
-                                contentColor = Color(0xFFFF9800),
+                                containerColor = MaterialTheme.colorScheme.surface,
+                                contentColor = MaterialTheme.colorScheme.primary,
                                 tonalElevation = 8.dp
                             ) {
                                 items.forEach { screen ->
@@ -69,9 +63,11 @@ class MainActivity : ComponentActivity() {
                                             }
                                         },
                                         colors = NavigationBarItemDefaults.colors(
-                                            selectedIconColor = Color(0xFFFF9800),
-                                            selectedTextColor = Color(0xFFFF9800),
-                                            indicatorColor = Color(0xFFFDCB58).copy(alpha = 0.2f)
+                                            selectedIconColor = MaterialTheme.colorScheme.secondary,
+                                            selectedTextColor = MaterialTheme.colorScheme.secondary,
+                                            indicatorColor = MaterialTheme.colorScheme.secondary.copy(alpha = 0.2f),
+                                            unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                                            unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant
                                         )
                                     )
                                 }

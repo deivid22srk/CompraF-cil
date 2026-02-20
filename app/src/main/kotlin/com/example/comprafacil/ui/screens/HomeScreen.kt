@@ -33,7 +33,7 @@ fun HomeScreen(onProductClick: (String) -> Unit) {
 
     LaunchedEffect(Unit) {
         try {
-            products = SupabaseConfig.client.from("products").select().decodeAs<List<Product>>()
+            products = SupabaseConfig.client.from("products").select(io.github.jan.supabase.postgrest.query.Columns.raw("*, images:product_images(*)")).decodeAs<List<Product>>()
         } catch (e: Exception) {
             // handle error
         } finally {
@@ -41,9 +41,9 @@ fun HomeScreen(onProductClick: (String) -> Unit) {
         }
     }
 
-    Column(modifier = Modifier.fillMaxSize().background(Color(0xFFF9F9F9))) {
+    Column(modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
         // Search Bar
-        Box(modifier = Modifier.fillMaxWidth().background(Color(0xFFFDCB58)).padding(16.dp)) {
+        Box(modifier = Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.primary).padding(16.dp)) {
             OutlinedTextField(
                 value = searchQuery,
                 onValueChange = { searchQuery = it },
@@ -52,17 +52,19 @@ fun HomeScreen(onProductClick: (String) -> Unit) {
                 leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
                 shape = RoundedCornerShape(12.dp),
                 colors = OutlinedTextFieldDefaults.colors(
-                    focusedContainerColor = Color.White,
-                    unfocusedContainerColor = Color.White,
+                    focusedContainerColor = MaterialTheme.colorScheme.surface,
+                    unfocusedContainerColor = MaterialTheme.colorScheme.surface,
                     focusedBorderColor = Color.Transparent,
-                    unfocusedBorderColor = Color.Transparent
+                    unfocusedBorderColor = Color.Transparent,
+                    focusedTextColor = MaterialTheme.colorScheme.onSurface,
+                    unfocusedTextColor = MaterialTheme.colorScheme.onSurface
                 )
             )
         }
 
         if (loading) {
             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                CircularProgressIndicator(color = Color(0xFFFF9800))
+                CircularProgressIndicator(color = MaterialTheme.colorScheme.secondary)
             }
         } else {
             LazyVerticalGrid(
@@ -84,7 +86,7 @@ fun ProductCard(product: Product, onClick: () -> Unit) {
     Card(
         modifier = Modifier.fillMaxWidth().clickable(onClick = onClick),
         shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
         Column {
@@ -95,8 +97,8 @@ fun ProductCard(product: Product, onClick: () -> Unit) {
                 contentScale = ContentScale.Crop
             )
             Column(modifier = Modifier.padding(12.dp)) {
-                Text(product.name, fontWeight = FontWeight.Bold, maxLines = 1)
-                Text("R$ ${String.format("%.2f", product.price)}", color = Color(0xFFFF9800), fontWeight = FontWeight.ExtraBold)
+                Text(product.name, fontWeight = FontWeight.Bold, maxLines = 1, color = MaterialTheme.colorScheme.onSurface)
+                Text("R$ ${String.format("%.2f", product.price)}", color = MaterialTheme.colorScheme.secondary, fontWeight = FontWeight.ExtraBold)
             }
         }
     }

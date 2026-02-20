@@ -42,7 +42,7 @@ fun ProductDetailsScreen(productId: String, onBack: () -> Unit) {
 
     LaunchedEffect(productId) {
         try {
-            product = client.from("products").select {
+            product = client.from("products").select(io.github.jan.supabase.postgrest.query.Columns.raw("*, images:product_images(*)")) {
                 filter { eq("id", productId) }
             }.decodeSingle<Product>()
         } catch (e: Exception) {
@@ -54,23 +54,24 @@ fun ProductDetailsScreen(productId: String, onBack: () -> Unit) {
 
     if (loading) {
         Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-            CircularProgressIndicator()
+            CircularProgressIndicator(color = MaterialTheme.colorScheme.secondary)
         }
     } else if (product != null) {
         Scaffold(
+            containerColor = MaterialTheme.colorScheme.background,
             bottomBar = {
-                Surface(tonalElevation = 8.dp) {
+                Surface(tonalElevation = 8.dp, color = MaterialTheme.colorScheme.surface) {
                     Row(
                         modifier = Modifier.padding(16.dp).fillMaxWidth(),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             IconButton(onClick = { if (quantity > 1) quantity-- }) {
-                                Text("-", fontSize = 24.sp)
+                                Text("-", fontSize = 24.sp, color = MaterialTheme.colorScheme.onSurface)
                             }
-                            Text("$quantity", fontSize = 18.sp, fontWeight = FontWeight.Bold)
+                            Text("$quantity", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
                             IconButton(onClick = { quantity++ }) {
-                                Text("+", fontSize = 24.sp)
+                                Text("+", fontSize = 24.sp, color = MaterialTheme.colorScheme.onSurface)
                             }
                         }
                         Spacer(modifier = Modifier.width(16.dp))
@@ -90,9 +91,9 @@ fun ProductDetailsScreen(productId: String, onBack: () -> Unit) {
                             },
                             modifier = Modifier.weight(1f).height(56.dp),
                             shape = RoundedCornerShape(12.dp),
-                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFF9800))
+                            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.secondary)
                         ) {
-                            Text("ADICIONAR R$ ${String.format("%.2f", product!!.price * quantity)}")
+                            Text("ADICIONAR R$ ${String.format("%.2f", product!!.price * quantity)}", color = MaterialTheme.colorScheme.onSecondary)
                         }
                     }
                 }
@@ -109,18 +110,18 @@ fun ProductDetailsScreen(productId: String, onBack: () -> Unit) {
                             contentScale = ContentScale.Crop
                         )
                     }
-                    IconButton(onClick = onBack, modifier = Modifier.padding(16.dp).background(Color.White, CircleShape)) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = null)
+                    IconButton(onClick = onBack, modifier = Modifier.padding(16.dp).background(MaterialTheme.colorScheme.surface.copy(alpha = 0.7f), CircleShape)) {
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = null, tint = MaterialTheme.colorScheme.onSurface)
                     }
                 }
 
                 Column(modifier = Modifier.padding(24.dp)) {
-                    Text(product!!.name, fontSize = 24.sp, fontWeight = FontWeight.Bold)
+                    Text(product!!.name, fontSize = 24.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onBackground)
                     Spacer(modifier = Modifier.height(8.dp))
-                    Text("R$ ${String.format("%.2f", product!!.price)}", fontSize = 20.sp, color = Color(0xFFFF9800), fontWeight = FontWeight.Bold)
+                    Text("R$ ${String.format("%.2f", product!!.price)}", fontSize = 20.sp, color = MaterialTheme.colorScheme.secondary, fontWeight = FontWeight.Bold)
                     Spacer(modifier = Modifier.height(16.dp))
-                    Text("Descrição", fontWeight = FontWeight.Bold)
-                    Text(product!!.description ?: "Sem descrição disponível.", color = Color.Gray)
+                    Text("Descrição", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onBackground)
+                    Text(product!!.description ?: "Sem descrição disponível.", color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             }
         }

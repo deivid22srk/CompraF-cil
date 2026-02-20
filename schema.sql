@@ -24,6 +24,7 @@ CREATE TABLE IF NOT EXISTS products (
     name TEXT NOT NULL,
     description TEXT,
     price DECIMAL(10, 2) NOT NULL,
+    image_url TEXT,
     category_id UUID REFERENCES categories(id) ON DELETE SET NULL,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
@@ -52,6 +53,7 @@ CREATE TABLE IF NOT EXISTS orders (
     whatsapp TEXT NOT NULL,
     location TEXT NOT NULL,
     total_price DECIMAL(10, 2) NOT NULL,
+    image_url TEXT,
     status TEXT DEFAULT 'pendente' NOT NULL,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );

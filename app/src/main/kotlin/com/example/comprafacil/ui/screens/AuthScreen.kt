@@ -1,5 +1,6 @@
 package com.example.comprafacil.ui.screens
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -27,7 +28,7 @@ fun AuthScreen(onLoginSuccess: () -> Unit) {
     }
 
     Column(
-        modifier = Modifier.fillMaxSize().padding(24.dp),
+        modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background).padding(24.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
@@ -35,7 +36,7 @@ fun AuthScreen(onLoginSuccess: () -> Unit) {
             if (isLogin) "Bem-vindo de volta!" else "Crie sua conta",
             fontSize = 28.sp,
             fontWeight = FontWeight.Bold,
-            color = Color(0xFFFF9800)
+            color = MaterialTheme.colorScheme.secondary
         )
         Spacer(modifier = Modifier.height(32.dp))
 
@@ -43,20 +44,28 @@ fun AuthScreen(onLoginSuccess: () -> Unit) {
             value = email,
             onValueChange = { email = it },
             label = { Text("Email") },
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier.fillMaxWidth(),
+            colors = OutlinedTextFieldDefaults.colors(
+                focusedTextColor = MaterialTheme.colorScheme.onBackground,
+                unfocusedTextColor = MaterialTheme.colorScheme.onBackground
+            )
         )
         Spacer(modifier = Modifier.height(16.dp))
         OutlinedTextField(
             value = password,
             onValueChange = { password = it },
             label = { Text("Senha") },
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier.fillMaxWidth(),
+            colors = OutlinedTextFieldDefaults.colors(
+                focusedTextColor = MaterialTheme.colorScheme.onBackground,
+                unfocusedTextColor = MaterialTheme.colorScheme.onBackground
+            )
         )
 
         Spacer(modifier = Modifier.height(24.dp))
 
         if (state is AuthViewModel.AuthState.Loading) {
-            CircularProgressIndicator(color = Color(0xFFFF9800))
+            CircularProgressIndicator(color = MaterialTheme.colorScheme.secondary)
         } else {
             Button(
                 onClick = {
@@ -64,14 +73,14 @@ fun AuthScreen(onLoginSuccess: () -> Unit) {
                     else viewModel.signUp(email, password)
                 },
                 modifier = Modifier.fillMaxWidth().height(56.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFF9800))
+                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.secondary)
             ) {
-                Text(if (isLogin) "ENTRAR" else "CADASTRAR")
+                Text(if (isLogin) "ENTRAR" else "CADASTRAR", color = MaterialTheme.colorScheme.onSecondary)
             }
         }
 
         TextButton(onClick = { isLogin = !isLogin }) {
-            Text(if (isLogin) "Não tem uma conta? Cadastre-se" else "Já tem uma conta? Entre")
+            Text(if (isLogin) "Não tem uma conta? Cadastre-se" else "Já tem uma conta? Entre", color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
 
         if (state is AuthViewModel.AuthState.Error) {

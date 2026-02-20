@@ -1,5 +1,4 @@
 package com.example.comprafacil.ui.screens
-import io.github.jan.supabase.gotrue.auth
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -22,6 +21,7 @@ import coil.compose.AsyncImage
 import com.example.comprafacil.SupabaseConfig
 import com.example.comprafacil.data.CartItem
 import com.example.comprafacil.data.Product
+import io.github.jan.supabase.gotrue.auth
 import io.github.jan.supabase.postgrest.from
 import io.github.jan.supabase.postgrest.query.Columns
 import kotlinx.coroutines.launch
@@ -54,15 +54,15 @@ fun CartScreen(onCheckout: () -> Unit) {
             TopAppBar(
                 title = { Text("Carrinho", fontWeight = FontWeight.Bold) },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = Color(0xFFFDCB58),
-                    titleContentColor = Color.Black
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    titleContentColor = MaterialTheme.colorScheme.onPrimary
                 )
             )
         }
     ) { padding ->
         if (loading) {
             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                CircularProgressIndicator()
+                CircularProgressIndicator(color = MaterialTheme.colorScheme.secondary)
             }
         } else if (cartItems.isEmpty()) {
             Column(
@@ -70,8 +70,8 @@ fun CartScreen(onCheckout: () -> Unit) {
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Center
             ) {
-                Icon(Icons.Default.ShoppingCart, contentDescription = null, modifier = Modifier.size(64.dp), tint = Color.Gray)
-                Text("Seu carrinho está vazio", color = Color.Gray)
+                Icon(Icons.Default.ShoppingCart, contentDescription = null, modifier = Modifier.size(64.dp), tint = MaterialTheme.colorScheme.outline)
+                Text("Seu carrinho está vazio", color = MaterialTheme.colorScheme.outline)
             }
         } else {
             Column(modifier = Modifier.padding(padding).fillMaxSize()) {
@@ -96,20 +96,23 @@ fun CartScreen(onCheckout: () -> Unit) {
                 Card(
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp),
-                    colors = CardDefaults.cardColors(containerColor = Color.White),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
                     elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
                 ) {
                     Column(modifier = Modifier.padding(24.dp)) {
                         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                            Text("Total", fontSize = 18.sp)
-                            Text("R$ ${String.format("%.2f", total)}", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = Color(0xFFFF9800))
+                            Text("Total", fontSize = 18.sp, color = MaterialTheme.colorScheme.onSurface)
+                            Text("R$ ${String.format("%.2f", total)}", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.secondary)
                         }
                         Spacer(modifier = Modifier.height(16.dp))
                         Button(
                             onClick = onCheckout,
                             modifier = Modifier.fillMaxWidth().height(56.dp),
                             shape = RoundedCornerShape(12.dp),
-                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFDCB58), contentColor = Color.Black)
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = MaterialTheme.colorScheme.primary,
+                                contentColor = MaterialTheme.colorScheme.onPrimary
+                            )
                         ) {
                             Text("CONTINUAR PARA PAGAMENTO", fontWeight = FontWeight.Bold)
                         }
@@ -124,7 +127,7 @@ fun CartScreen(onCheckout: () -> Unit) {
 fun CartItemRow(product: Product, quantity: Int, onDelete: () -> Unit) {
     Card(
         modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = Color(0xFFF9F9F9)),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
         shape = RoundedCornerShape(12.dp)
     ) {
         Row(
@@ -139,9 +142,9 @@ fun CartItemRow(product: Product, quantity: Int, onDelete: () -> Unit) {
             )
             Spacer(modifier = Modifier.width(16.dp))
             Column(modifier = Modifier.weight(1f)) {
-                Text(product.name, fontWeight = FontWeight.Bold, fontSize = 16.sp)
-                Text("Qtd: ${quantity}", color = Color.Gray)
-                Text("R$ ${String.format("%.2f", product.price * quantity)}", color = Color(0xFFFF9800), fontWeight = FontWeight.Bold)
+                Text(product.name, fontWeight = FontWeight.Bold, fontSize = 16.sp, color = MaterialTheme.colorScheme.onSurface)
+                Text("Qtd: ${quantity}", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text("R$ ${String.format("%.2f", product.price * quantity)}", color = MaterialTheme.colorScheme.secondary, fontWeight = FontWeight.Bold)
             }
             IconButton(onClick = onDelete) {
                 Icon(Icons.Default.Delete, contentDescription = null, tint = Color.Red)
