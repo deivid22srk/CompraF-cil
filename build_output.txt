@@ -1,0 +1,118 @@
+> Task :admin:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :admin:preBuild UP-TO-DATE
+> Task :admin:preReleaseBuild UP-TO-DATE
+> Task :admin:checkReleaseAarMetadata UP-TO-DATE
+> Task :admin:generateReleaseResValues UP-TO-DATE
+> Task :admin:mapReleaseSourceSetPaths UP-TO-DATE
+> Task :admin:generateReleaseResources UP-TO-DATE
+> Task :admin:mergeReleaseResources UP-TO-DATE
+> Task :admin:packageReleaseResources UP-TO-DATE
+> Task :admin:parseReleaseLocalResources UP-TO-DATE
+> Task :admin:createReleaseCompatibleScreenManifests UP-TO-DATE
+> Task :admin:extractDeepLinksRelease UP-TO-DATE
+> Task :admin:processReleaseMainManifest UP-TO-DATE
+> Task :admin:processReleaseManifest UP-TO-DATE
+> Task :admin:processReleaseManifestForPackage UP-TO-DATE
+> Task :admin:processReleaseResources UP-TO-DATE
+> Task :admin:compileReleaseKotlin UP-TO-DATE
+> Task :admin:buildKotlinToolingMetadata UP-TO-DATE
+> Task :admin:javaPreCompileRelease UP-TO-DATE
+> Task :admin:compileReleaseJavaWithJavac NO-SOURCE
+> Task :admin:extractProguardFiles UP-TO-DATE
+> Task :admin:generateReleaseLintVitalReportModel UP-TO-DATE
+> Task :admin:lintVitalAnalyzeRelease UP-TO-DATE
+> Task :admin:lintVitalReportRelease UP-TO-DATE
+> Task :admin:lintVitalRelease
+> Task :admin:mergeReleaseJniLibFolders UP-TO-DATE
+> Task :admin:mergeReleaseNativeLibs NO-SOURCE
+> Task :admin:stripReleaseDebugSymbols NO-SOURCE
+> Task :admin:extractReleaseNativeSymbolTables NO-SOURCE
+> Task :admin:mergeReleaseNativeDebugMetadata NO-SOURCE
+> Task :admin:checkReleaseDuplicateClasses UP-TO-DATE
+> Task :admin:mergeReleaseArtProfile UP-TO-DATE
+> Task :admin:expandReleaseArtProfileWildcards UP-TO-DATE
+> Task :admin:mergeReleaseGeneratedProguardFiles UP-TO-DATE
+> Task :admin:processReleaseJavaRes UP-TO-DATE
+> Task :admin:mergeReleaseJavaResource UP-TO-DATE
+> Task :admin:mergeReleaseStartupProfile UP-TO-DATE
+> Task :admin:mergeReleaseShaders UP-TO-DATE
+> Task :admin:compileReleaseShaders NO-SOURCE
+> Task :admin:generateReleaseAssets UP-TO-DATE
+> Task :admin:mergeReleaseAssets UP-TO-DATE
+> Task :admin:compressReleaseAssets UP-TO-DATE
+> Task :admin:extractReleaseVersionControlInfo UP-TO-DATE
+> Task :admin:processApplicationManifestReleaseForBundle UP-TO-DATE
+> Task :admin:bundleReleaseResources UP-TO-DATE
+> Task :admin:collectReleaseDependencies UP-TO-DATE
+> Task :admin:sdkReleaseDependencyData UP-TO-DATE
+> Task :admin:writeReleaseAppMetadata UP-TO-DATE
+> Task :admin:writeReleaseSigningConfigVersions UP-TO-DATE
+> Task :app:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :app:preBuild UP-TO-DATE
+> Task :app:preReleaseBuild UP-TO-DATE
+> Task :app:checkReleaseAarMetadata UP-TO-DATE
+> Task :app:generateReleaseResValues UP-TO-DATE
+> Task :app:mapReleaseSourceSetPaths UP-TO-DATE
+> Task :app:generateReleaseResources UP-TO-DATE
+> Task :app:mergeReleaseResources UP-TO-DATE
+> Task :app:packageReleaseResources UP-TO-DATE
+> Task :app:parseReleaseLocalResources UP-TO-DATE
+> Task :app:createReleaseCompatibleScreenManifests UP-TO-DATE
+> Task :app:extractDeepLinksRelease UP-TO-DATE
+> Task :app:processReleaseMainManifest UP-TO-DATE
+> Task :app:processReleaseManifest UP-TO-DATE
+> Task :app:processReleaseManifestForPackage UP-TO-DATE
+> Task :app:processReleaseResources UP-TO-DATE
+> Task :app:compileReleaseKotlin UP-TO-DATE
+> Task :app:buildKotlinToolingMetadata UP-TO-DATE
+> Task :app:javaPreCompileRelease UP-TO-DATE
+> Task :app:compileReleaseJavaWithJavac NO-SOURCE
+> Task :app:extractProguardFiles UP-TO-DATE
+> Task :app:generateReleaseLintVitalReportModel UP-TO-DATE
+> Task :app:lintVitalAnalyzeRelease UP-TO-DATE
+> Task :app:lintVitalReportRelease UP-TO-DATE
+> Task :app:lintVitalRelease
+> Task :app:mergeReleaseJniLibFolders UP-TO-DATE
+> Task :app:mergeReleaseNativeLibs NO-SOURCE
+> Task :app:stripReleaseDebugSymbols NO-SOURCE
+> Task :app:extractReleaseNativeSymbolTables NO-SOURCE
+> Task :app:mergeReleaseNativeDebugMetadata NO-SOURCE
+> Task :app:checkReleaseDuplicateClasses UP-TO-DATE
+> Task :app:mergeReleaseArtProfile UP-TO-DATE
+> Task :app:expandReleaseArtProfileWildcards UP-TO-DATE
+> Task :app:mergeReleaseGeneratedProguardFiles UP-TO-DATE
+> Task :app:processReleaseJavaRes UP-TO-DATE
+> Task :app:mergeReleaseJavaResource UP-TO-DATE
+> Task :app:mergeReleaseStartupProfile UP-TO-DATE
+> Task :app:mergeReleaseShaders UP-TO-DATE
+> Task :app:compileReleaseShaders NO-SOURCE
+> Task :app:generateReleaseAssets UP-TO-DATE
+> Task :app:mergeReleaseAssets UP-TO-DATE
+> Task :app:compressReleaseAssets UP-TO-DATE
+> Task :app:extractReleaseVersionControlInfo UP-TO-DATE
+> Task :app:processApplicationManifestReleaseForBundle UP-TO-DATE
+> Task :app:bundleReleaseResources UP-TO-DATE
+> Task :app:collectReleaseDependencies UP-TO-DATE
+> Task :app:sdkReleaseDependencyData UP-TO-DATE
+> Task :app:writeReleaseAppMetadata UP-TO-DATE
+> Task :app:writeReleaseSigningConfigVersions UP-TO-DATE
+
+> Task :admin:minifyReleaseWithR8 FAILED
+ERROR: Missing classes detected while running R8. Please add the missing classes or apply additional keep rules that are generated in /app/admin/build/outputs/mapping/release/missing_rules.txt.
+ERROR: R8: Missing class org.slf4j.impl.StaticLoggerBinder (referenced from: void org.slf4j.LoggerFactory.bind() and 3 other contexts)
+
+FAILURE: Build failed with an exception.
+
+* What went wrong:
+Execution failed for task ':admin:minifyReleaseWithR8'.
+> A failure occurred while executing com.android.build.gradle.internal.tasks.R8Task$R8Runnable
+   > Compilation failed to complete
+
+* Try:
+> Run with --stacktrace option to get the stack trace.
+> Run with --info or --debug option to get more log output.
+> Run with --scan to get full insights.
+> Get more help at https://help.gradle.org.
+
+BUILD FAILED in 18s
+79 actionable tasks: 3 executed, 76 up-to-date
