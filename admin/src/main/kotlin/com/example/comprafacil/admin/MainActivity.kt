@@ -32,6 +32,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.lifecycleScope
 import coil.compose.AsyncImage
 import com.example.comprafacil.SupabaseConfig
 import com.example.comprafacil.admin.data.*
@@ -148,23 +149,33 @@ fun AddProductScreen() {
 
         Spacer(modifier = Modifier.height(8.dp))
 
-        Box(modifier = Modifier.fillMaxWidth()) {
+        // Category Selection using ExposedDropdownMenuBox
+        ExposedDropdownMenuBox(
+            expanded = expanded,
+            onExpandedChange = { expanded = !expanded },
+            modifier = Modifier.fillMaxWidth()
+        ) {
             OutlinedTextField(
                 value = selectedCategory?.name ?: "Selecione uma Categoria",
                 onValueChange = {},
                 readOnly = true,
                 label = { Text("Categoria") },
-                modifier = Modifier.fillMaxWidth().clickable { expanded = true },
-                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) }
+                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
+                colors = ExposedDropdownMenuDefaults.outlinedTextFieldColors(),
+                modifier = Modifier.menuAnchor().fillMaxWidth()
             )
-            DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }, modifier = Modifier.fillMaxWidth()) {
+            ExposedDropdownMenu(
+                expanded = expanded,
+                onDismissRequest = { expanded = false }
+            ) {
                 categories.forEach { category ->
                     DropdownMenuItem(
                         text = { Text(category.name) },
                         onClick = {
                             selectedCategory = category
                             expanded = false
-                        }
+                        },
+                        contentPadding = ExposedDropdownMenuDefaults.ItemContentPadding
                     )
                 }
             }
@@ -215,12 +226,13 @@ fun AddProductScreen() {
                                 }
                             }
 
-                            val productData = mapOf(
-                                "name" to name,
-                                "description" to description,
-                                "price" to price.toDouble(),
-                                "category_id" to selectedCategory?.id,
-                                "image_url" to (imageUrls.firstOrNull() ?: "")
+                            // Use Product data class instead of mapOf to avoid "Serializer for Any not found"
+                            val productData = Product(
+                                name = name,
+                                description = description,
+                                price = price.toDoubleOrNull() ?: 0.0,
+                                category_id = selectedCategory?.id,
+                                image_url = imageUrls.firstOrNull() ?: ""
                             )
 
                             val insertedProduct = SupabaseConfig.client.from("products").insert(productData) {
@@ -231,7 +243,7 @@ fun AddProductScreen() {
 
                             if (imageUrls.isNotEmpty()) {
                                 val imagesToInsert = imageUrls.map { url ->
-                                    mapOf("product_id" to productId, "image_url" to url)
+                                    ProductImage(product_id = productId, image_url = url)
                                 }
                                 SupabaseConfig.client.from("product_images").insert(imagesToInsert)
                             }
