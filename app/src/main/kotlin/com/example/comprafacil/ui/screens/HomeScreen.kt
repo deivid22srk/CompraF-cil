@@ -8,9 +8,9 @@ import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -61,7 +61,7 @@ fun HomeScreen(onProductClick: (String) -> Unit) {
             modifier = Modifier
                 .fillMaxWidth()
                 .background(MaterialTheme.colorScheme.primary)
-                .padding(bottom = 24.dp)
+                .padding(bottom = 16.dp)
         ) {
             Column(modifier = Modifier.padding(16.dp)) {
                 Text(
@@ -71,12 +71,32 @@ fun HomeScreen(onProductClick: (String) -> Unit) {
                     color = MaterialTheme.colorScheme.onPrimary
                 )
                 Spacer(modifier = Modifier.height(4.dp))
-                Text(
-                    "Qualidade e frescor na sua porta",
-                    fontSize = 14.sp,
-                    color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.8f)
-                )
-                Spacer(modifier = Modifier.height(16.dp))
+
+                // Availability Notice
+                Surface(
+                    color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.1f),
+                    shape = RoundedCornerShape(8.dp)
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            Icons.Default.Info,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.onPrimary,
+                            modifier = Modifier.size(14.dp)
+                        )
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text(
+                            "Disponível apenas em Sítio Riacho dos Barreiros e locais próximos",
+                            fontSize = 11.sp,
+                            color = MaterialTheme.colorScheme.onPrimary
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(12.dp))
                 OutlinedTextField(
                     value = searchQuery,
                     onValueChange = { searchQuery = it },
@@ -203,12 +223,23 @@ fun ProductCard(product: Product, onClick: () -> Unit) {
                     maxLines = 1,
                     color = MaterialTheme.colorScheme.onSurface
                 )
-                Text(
-                    product.description ?: "",
-                    fontSize = 12.sp,
-                    maxLines = 1,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        "Por: ${product.sold_by ?: "CompraFácil"}",
+                        fontSize = 10.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 1,
+                        modifier = Modifier.weight(1f)
+                    )
+                    if ((product.stock_quantity ?: 0) > 0) {
+                        Text(
+                            "Estoque: ${product.stock_quantity}",
+                            fontSize = 10.sp,
+                            color = Color(0xFF4CAF50),
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                }
             }
         }
     }

@@ -50,6 +50,7 @@ fun CartScreen(onCheckout: () -> Unit) {
     }
 
     Scaffold(
+        containerColor = MaterialTheme.colorScheme.background,
         topBar = {
             TopAppBar(
                 title = { Text("Carrinho", fontWeight = FontWeight.Bold) },

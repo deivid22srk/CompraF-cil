@@ -93,6 +93,7 @@ fun ProfileScreen(onLogout: () -> Unit, onOrdersClick: () -> Unit) {
     }
 
     Scaffold(
+        containerColor = MaterialTheme.colorScheme.background,
         topBar = {
             TopAppBar(
                 title = { Text("Meu Perfil", fontWeight = FontWeight.Bold) },

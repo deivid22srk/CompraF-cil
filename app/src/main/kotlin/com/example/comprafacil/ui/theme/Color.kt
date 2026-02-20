@@ -3,8 +3,8 @@ package com.example.comprafacil.ui.theme
 import androidx.compose.ui.graphics.Color
 
 // Primary Branding
-val PrimaryYellow = Color(0xFFFDCB58)
-val SecondaryOrange = Color(0xFFFF9800)
+val PrimaryOrange = Color(0xFFFF9800)
+val SecondaryAmber = Color(0xFFFDCB58)
 
 // Modern Grayscale
 val SurfaceDark = Color(0xFF1A1A1A)

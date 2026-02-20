@@ -16,6 +16,7 @@ import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
@@ -97,12 +98,15 @@ class MainActivity : ComponentActivity() {
                 val showBottomBar = currentDestination?.route in items.map { it.route }
 
                 Scaffold(
+                    // Set Scaffold background to match the theme background exactly
+                    containerColor = MaterialTheme.colorScheme.background,
                     bottomBar = {
                         if (showBottomBar) {
+                            // Fix "floating line": Set tonalElevation to 0 and use a clear surface color
                             NavigationBar(
-                                containerColor = MaterialTheme.colorScheme.surface,
+                                containerColor = MaterialTheme.colorScheme.background,
                                 contentColor = MaterialTheme.colorScheme.primary,
-                                tonalElevation = 8.dp
+                                tonalElevation = 0.dp
                             ) {
                                 items.forEach { screen ->
                                     NavigationBarItem(

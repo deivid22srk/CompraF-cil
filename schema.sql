@@ -25,6 +25,8 @@ CREATE TABLE IF NOT EXISTS products (
     description TEXT,
     price DECIMAL(10, 2) NOT NULL,
     image_url TEXT,
+    stock_quantity INTEGER DEFAULT 0,
+    sold_by TEXT,
     category_id UUID REFERENCES categories(id) ON DELETE SET NULL,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
@@ -144,8 +146,14 @@ BEGIN
     CREATE POLICY "Allow public select on order_items" ON order_items FOR SELECT USING (true);
 END $$;
 
--- Initial Categories
-INSERT INTO categories (name) VALUES ('Frutas'), ('Vegetais'), ('Laticínios'), ('Padaria') ON CONFLICT DO NOTHING;
+-- Initial Categories (General Store)
+INSERT INTO categories (name) VALUES
+('Alimentos'),
+('Bebidas'),
+('Limpeza'),
+('Higiene'),
+('Outros')
+ON CONFLICT DO NOTHING;
 
 -- Enable Realtime for orders table
 DO $$

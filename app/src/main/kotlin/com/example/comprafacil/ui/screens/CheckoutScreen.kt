@@ -28,6 +28,7 @@ import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
 import com.example.comprafacil.SupabaseConfig
 import com.example.comprafacil.data.CartItem
+import com.example.comprafacil.data.Order
 import com.google.android.gms.location.LocationServices
 import com.google.android.gms.location.Priority
 import com.google.android.gms.tasks.CancellationTokenSource
@@ -125,6 +126,8 @@ fun CheckoutScreen(onBack: () -> Unit, onOrderFinished: () -> Unit) {
         ) {
             Text("Estamos quase lá!", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onBackground)
             Spacer(modifier = Modifier.height(8.dp))
+            Text("Apenas para Sítio Riacho dos Barreiros e locais próximos.", color = MaterialTheme.colorScheme.secondary, fontWeight = FontWeight.Bold)
+            Spacer(modifier = Modifier.height(4.dp))
             Text("Precisamos da sua localização exata para a entrega", color = MaterialTheme.colorScheme.onSurfaceVariant)
 
             Spacer(modifier = Modifier.height(32.dp))
@@ -192,17 +195,19 @@ fun CheckoutScreen(onBack: () -> Unit, onOrderFinished: () -> Unit) {
                     scope.launch {
                         val userId = client.auth.currentUserOrNull()?.id ?: return@launch
                         try {
-                            // Create Order
-                            client.from("orders").insert(
-                                mapOf(
-                                    "user_id" to userId,
-                                    "whatsapp" to whatsapp,
-                                    "location" to locationName,
-                                    "total_price" to total,
-                                    "latitude" to latitude,
-                                    "longitude" to longitude
-                                )
+                            // Create Order object to avoid SerializationException with mapOf
+                            val order = Order(
+                                user_id = userId,
+                                whatsapp = whatsapp,
+                                location = locationName,
+                                total_price = total,
+                                latitude = latitude,
+                                longitude = longitude
                             )
+
+                            // Create Order
+                            client.from("orders").insert(order)
+
                             // Clear Cart
                             client.from("cart_items").delete {
                                 filter { eq("user_id", userId) }

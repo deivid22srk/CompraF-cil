@@ -15,6 +15,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Store
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -182,13 +183,44 @@ fun ProductDetailsScreen(productId: String, onBack: () -> Unit) {
                 }
 
                 Column(modifier = Modifier.padding(24.dp)) {
-                    Text(
-                        product!!.name,
-                        style = MaterialTheme.typography.headlineSmall,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onBackground
-                    )
-                    Spacer(modifier = Modifier.height(8.dp))
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(
+                            product!!.name,
+                            style = MaterialTheme.typography.headlineSmall,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onBackground,
+                            modifier = Modifier.weight(1f)
+                        )
+                        if ((product!!.stock_quantity ?: 0) > 0) {
+                            Surface(
+                                color = Color(0xFF4CAF50).copy(alpha = 0.1f),
+                                shape = RoundedCornerShape(4.dp)
+                            ) {
+                                Text(
+                                    "ESTOQUE: ${product!!.stock_quantity}",
+                                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+                                    fontSize = 10.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = Color(0xFF4CAF50)
+                                )
+                            }
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(4.dp))
+
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(Icons.Default.Store, contentDescription = null, tint = MaterialTheme.colorScheme.secondary, modifier = Modifier.size(14.dp))
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text(
+                            "Vendido por: ${product!!.sold_by ?: "CompraFácil"}",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(12.dp))
+
                     Text(
                         "R$ ${String.format("%.2f", product!!.price)}",
                         style = MaterialTheme.typography.titleLarge,
@@ -198,7 +230,7 @@ fun ProductDetailsScreen(productId: String, onBack: () -> Unit) {
 
                     Spacer(modifier = Modifier.height(24.dp))
 
-                    Divider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.1f))
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.1f))
 
                     Spacer(modifier = Modifier.height(24.dp))
 
@@ -266,7 +298,7 @@ fun ZoomableImage(imageUrl: String, modifier: Modifier = Modifier) {
 
     Box(
         modifier = modifier
-            .clip(RectangleShape)
+            .clip(androidx.compose.ui.graphics.RectangleShape)
             .pointerInput(Unit) {
                 detectTransformGestures { _, pan, zoom, _ ->
                     scale *= zoom
@@ -294,6 +326,3 @@ fun ZoomableImage(imageUrl: String, modifier: Modifier = Modifier) {
         )
     }
 }
-
-// Add RectangleShape if not imported
-val RectangleShape = androidx.compose.ui.graphics.RectangleShape

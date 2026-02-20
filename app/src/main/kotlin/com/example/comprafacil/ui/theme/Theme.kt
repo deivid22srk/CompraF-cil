@@ -13,8 +13,8 @@ import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
 
 private val DarkColorScheme = darkColorScheme(
-    primary = PrimaryYellow,
-    secondary = SecondaryOrange,
+    primary = PrimaryOrange,
+    secondary = SecondaryAmber,
     background = BackgroundDark,
     surface = SurfaceDark,
     surfaceVariant = CardDark,
@@ -26,8 +26,8 @@ private val DarkColorScheme = darkColorScheme(
 )
 
 private val LightColorScheme = lightColorScheme(
-    primary = PrimaryYellow,
-    secondary = SecondaryOrange,
+    primary = PrimaryOrange,
+    secondary = SecondaryAmber,
     background = BackgroundLight,
     surface = SurfaceLight,
     surfaceVariant = CardLight,
@@ -49,7 +49,7 @@ fun CompraFacilTheme(
         SideEffect {
             val window = (view.context as Activity).window
             window.statusBarColor = colorScheme.background.toArgb()
-            window.navigationBarColor = colorScheme.surface.toArgb()
+            window.navigationBarColor = colorScheme.background.toArgb()
             WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars = !darkTheme
             WindowCompat.getInsetsController(window, view).isAppearanceLightNavigationBars = !darkTheme
         }

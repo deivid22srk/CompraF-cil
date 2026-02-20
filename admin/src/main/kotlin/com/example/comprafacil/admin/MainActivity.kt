@@ -16,6 +16,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -30,6 +31,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.lifecycleScope
@@ -72,7 +74,9 @@ fun AdminPanel() {
 
     Scaffold(
         bottomBar = {
-            NavigationBar {
+            NavigationBar(
+                tonalElevation = 0.dp
+            ) {
                 NavigationBarItem(
                     selected = selectedTab == 0,
                     onClick = { selectedTab = 0 },
@@ -82,7 +86,7 @@ fun AdminPanel() {
                 NavigationBarItem(
                     selected = selectedTab == 1,
                     onClick = { selectedTab = 1 },
-                    icon = { Icon(Icons.AutoMirrored.Filled.List, contentDescription = null) },
+                    icon = { Icon(Icons.Default.List, contentDescription = null) },
                     label = { Text("Produtos") }
                 )
                 NavigationBarItem(
@@ -113,6 +117,8 @@ fun AddProductScreen() {
     var name by remember { mutableStateOf("") }
     var description by remember { mutableStateOf("") }
     var price by remember { mutableStateOf("") }
+    var stockQuantity by remember { mutableStateOf("") }
+    var soldBy by remember { mutableStateOf("") }
     var selectedCategory by remember { mutableStateOf<Category?>(null) }
     var categories by remember { mutableStateOf<List<Category>>(emptyList()) }
     var selectedImages by remember { mutableStateOf<List<Uri>>(emptyList()) }
@@ -145,11 +151,14 @@ fun AddProductScreen() {
         Spacer(modifier = Modifier.height(8.dp))
         OutlinedTextField(value = description, onValueChange = { description = it }, label = { Text("Descrição") }, modifier = Modifier.fillMaxWidth())
         Spacer(modifier = Modifier.height(8.dp))
-        OutlinedTextField(value = price, onValueChange = { price = it }, label = { Text("Preço (ex: 29.90)") }, modifier = Modifier.fillMaxWidth())
+        OutlinedTextField(value = price, onValueChange = { price = it }, label = { Text("Preço (ex: 29.90)") }, modifier = Modifier.fillMaxWidth(), keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number))
+        Spacer(modifier = Modifier.height(8.dp))
+        OutlinedTextField(value = stockQuantity, onValueChange = { stockQuantity = it }, label = { Text("Estoque Disponível") }, modifier = Modifier.fillMaxWidth(), keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number))
+        Spacer(modifier = Modifier.height(8.dp))
+        OutlinedTextField(value = soldBy, onValueChange = { soldBy = it }, label = { Text("Vendido por (Nome da Loja/Vendedor)") }, modifier = Modifier.fillMaxWidth())
 
         Spacer(modifier = Modifier.height(8.dp))
 
-        // Category Selection using ExposedDropdownMenuBox
         ExposedDropdownMenuBox(
             expanded = expanded,
             onExpandedChange = { expanded = !expanded },
@@ -226,11 +235,12 @@ fun AddProductScreen() {
                                 }
                             }
 
-                            // Use Product data class instead of mapOf to avoid "Serializer for Any not found"
                             val productData = Product(
                                 name = name,
                                 description = description,
                                 price = price.toDoubleOrNull() ?: 0.0,
+                                stock_quantity = stockQuantity.toIntOrNull() ?: 0,
+                                sold_by = soldBy.ifBlank { null },
                                 category_id = selectedCategory?.id,
                                 image_url = imageUrls.firstOrNull() ?: ""
                             )
@@ -249,7 +259,7 @@ fun AddProductScreen() {
                             }
 
                             Toast.makeText(context, "Produto adicionado!", Toast.LENGTH_LONG).show()
-                            name = ""; description = ""; price = ""; selectedCategory = null; selectedImages = emptyList()
+                            name = ""; description = ""; price = ""; stockQuantity = ""; soldBy = ""; selectedCategory = null; selectedImages = emptyList()
                         } catch (e: Exception) {
                             Toast.makeText(context, "Erro: ${e.message}", Toast.LENGTH_LONG).show()
                         } finally {
@@ -322,6 +332,7 @@ fun ProductAdminItem(product: Product, onDelete: () -> Unit) {
             Column(modifier = Modifier.weight(1f)) {
                 Text(product.name, fontWeight = FontWeight.Bold, color = Color.White)
                 Text("R$ ${product.price}", color = Color(0xFFFF9800))
+                Text("Estoque: ${product.stock_quantity}", color = Color.Gray, fontSize = 12.sp)
             }
             IconButton(onClick = {
                 scope.launch {
