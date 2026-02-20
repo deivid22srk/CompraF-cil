@@ -8,6 +8,7 @@ data class Product(
     val name: String,
     val description: String? = null,
     val price: Double,
+    val image_url: String? = null,
     val category_id: String? = null,
     val created_at: String? = null,
     val images: List<ProductImage>? = null
@@ -24,5 +25,18 @@ data class ProductImage(
 data class Category(
     val id: String? = null,
     val name: String,
+    val created_at: String? = null
+)
+
+@Serializable
+data class Order(
+    val id: String? = null,
+    val user_id: String? = null,
+    val whatsapp: String,
+    val location: String,
+    val total_price: Double,
+    val latitude: Double? = null,
+    val longitude: Double? = null,
+    val status: String? = "pendente",
     val created_at: String? = null
 )

@@ -1,8 +1,13 @@
 package com.example.comprafacil.ui.screens
 
+import android.Manifest
+import android.annotation.SuppressLint
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.net.Uri
 import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -10,6 +15,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -19,12 +25,17 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.content.ContextCompat
 import com.example.comprafacil.SupabaseConfig
 import com.example.comprafacil.data.CartItem
+import com.google.android.gms.location.LocationServices
+import com.google.android.gms.location.Priority
+import com.google.android.gms.tasks.CancellationTokenSource
 import io.github.jan.supabase.gotrue.auth
 import io.github.jan.supabase.postgrest.from
 import io.github.jan.supabase.postgrest.query.Columns
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.tasks.await
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -32,10 +43,27 @@ fun CheckoutScreen(onBack: () -> Unit, onOrderFinished: () -> Unit) {
     val client = SupabaseConfig.client
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
+    val fusedLocationClient = remember { LocationServices.getFusedLocationProviderClient(context) }
+
     var whatsapp by remember { mutableStateOf("") }
-    var location by remember { mutableStateOf("") }
+    var locationName by remember { mutableStateOf("") }
+    var latitude by remember { mutableStateOf<Double?>(null) }
+    var longitude by remember { mutableStateOf<Double?>(null) }
     var total by remember { mutableDoubleStateOf(0.0) }
     var loading by remember { mutableStateOf(true) }
+    var fetchingLocation by remember { mutableStateOf(false) }
+
+    val permissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestMultiplePermissions()
+    ) { permissions ->
+        if (permissions[Manifest.permission.ACCESS_FINE_LOCATION] == true ||
+            permissions[Manifest.permission.ACCESS_COARSE_LOCATION] == true
+        ) {
+            // Permission granted
+        } else {
+            Toast.makeText(context, "Permissão de localização negada", Toast.LENGTH_SHORT).show()
+        }
+    }
 
     LaunchedEffect(Unit) {
         val userId = client.auth.currentUserOrNull()?.id
@@ -49,6 +77,28 @@ fun CheckoutScreen(onBack: () -> Unit, onOrderFinished: () -> Unit) {
             } catch (e: Exception) { /* ... */ }
         }
         loading = false
+    }
+
+    @SuppressLint("MissingPermission")
+    fun getCurrentLocation() {
+        scope.launch {
+            fetchingLocation = true
+            try {
+                val priority = Priority.PRIORITY_HIGH_ACCURACY
+                val result = fusedLocationClient.getCurrentLocation(priority, CancellationTokenSource().token).await()
+                if (result != null) {
+                    latitude = result.latitude
+                    longitude = result.longitude
+                    Toast.makeText(context, "Localização capturada!", Toast.LENGTH_SHORT).show()
+                } else {
+                    Toast.makeText(context, "Não foi possível obter a localização", Toast.LENGTH_SHORT).show()
+                }
+            } catch (e: Exception) {
+                Toast.makeText(context, "Erro ao obter localização: ${e.message}", Toast.LENGTH_SHORT).show()
+            } finally {
+                fetchingLocation = false
+            }
+        }
     }
 
     Scaffold(
@@ -75,7 +125,7 @@ fun CheckoutScreen(onBack: () -> Unit, onOrderFinished: () -> Unit) {
         ) {
             Text("Estamos quase lá!", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onBackground)
             Spacer(modifier = Modifier.height(8.dp))
-            Text("Informe seus dados para entrega via WhatsApp", color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text("Precisamos da sua localização exata para a entrega", color = MaterialTheme.colorScheme.onSurfaceVariant)
 
             Spacer(modifier = Modifier.height(32.dp))
 
@@ -84,25 +134,40 @@ fun CheckoutScreen(onBack: () -> Unit, onOrderFinished: () -> Unit) {
                 onValueChange = { whatsapp = it },
                 label = { Text("WhatsApp (com DDD)") },
                 modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(12.dp),
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedTextColor = MaterialTheme.colorScheme.onBackground,
-                    unfocusedTextColor = MaterialTheme.colorScheme.onBackground
-                )
+                shape = RoundedCornerShape(12.dp)
             )
             Spacer(modifier = Modifier.height(16.dp))
             OutlinedTextField(
-                value = location,
-                onValueChange = { location = it },
-                label = { Text("Endereço de Entrega") },
+                value = locationName,
+                onValueChange = { locationName = it },
+                label = { Text("Endereço (Rua, Número, Bairro)") },
                 modifier = Modifier.fillMaxWidth(),
-                minLines = 3,
-                shape = RoundedCornerShape(12.dp),
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedTextColor = MaterialTheme.colorScheme.onBackground,
-                    unfocusedTextColor = MaterialTheme.colorScheme.onBackground
-                )
+                minLines = 2,
+                shape = RoundedCornerShape(12.dp)
             )
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            Button(
+                onClick = {
+                    val fineLocation = ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION)
+                    if (fineLocation == PackageManager.PERMISSION_GRANTED) {
+                        getCurrentLocation()
+                    } else {
+                        permissionLauncher.launch(arrayOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION))
+                    }
+                },
+                modifier = Modifier.fillMaxWidth(),
+                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.secondary)
+            ) {
+                if (fetchingLocation) {
+                    CircularProgressIndicator(modifier = Modifier.size(20.dp), color = MaterialTheme.colorScheme.onSecondary)
+                } else {
+                    Icon(Icons.Default.LocationOn, contentDescription = null)
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(if (latitude != null) "LOCALIZAÇÃO CAPTURADA" else "OBTER LOCALIZAÇÃO EXATA")
+                }
+            }
 
             Spacer(modifier = Modifier.height(32.dp))
 
@@ -120,8 +185,8 @@ fun CheckoutScreen(onBack: () -> Unit, onOrderFinished: () -> Unit) {
 
             Button(
                 onClick = {
-                    if (whatsapp.isBlank() || location.isBlank()) {
-                        Toast.makeText(context, "Preencha todos os campos", Toast.LENGTH_SHORT).show()
+                    if (whatsapp.isBlank() || locationName.isBlank() || latitude == null) {
+                        Toast.makeText(context, "Preencha tudo e capture sua localização", Toast.LENGTH_LONG).show()
                         return@Button
                     }
                     scope.launch {
@@ -129,7 +194,14 @@ fun CheckoutScreen(onBack: () -> Unit, onOrderFinished: () -> Unit) {
                         try {
                             // Create Order
                             client.from("orders").insert(
-                                mapOf("user_id" to userId, "whatsapp" to whatsapp, "location" to location, "total_price" to total)
+                                mapOf(
+                                    "user_id" to userId,
+                                    "whatsapp" to whatsapp,
+                                    "location" to locationName,
+                                    "total_price" to total,
+                                    "latitude" to latitude,
+                                    "longitude" to longitude
+                                )
                             )
                             // Clear Cart
                             client.from("cart_items").delete {
@@ -137,7 +209,7 @@ fun CheckoutScreen(onBack: () -> Unit, onOrderFinished: () -> Unit) {
                             }
 
                             // Redirect to WhatsApp
-                            val message = "Olá! Gostaria de finalizar meu pedido de R$ ${String.format("%.2f", total)}. Entrega em: $location"
+                            val message = "Olá! Gostaria de finalizar meu pedido de R$ ${String.format("%.2f", total)}. Entrega em: $locationName. Localização: https://www.google.com/maps/search/?api=1&query=$latitude,$longitude"
                             val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://api.whatsapp.com/send?phone=55${whatsapp}&text=${Uri.encode(message)}"))
                             context.startActivity(intent)
 
@@ -149,7 +221,7 @@ fun CheckoutScreen(onBack: () -> Unit, onOrderFinished: () -> Unit) {
                 },
                 modifier = Modifier.fillMaxWidth().height(56.dp),
                 shape = RoundedCornerShape(12.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF25D366)) // WhatsApp Green
+                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF25D366))
             ) {
                 Text("FINALIZAR NO WHATSAPP", fontWeight = FontWeight.Bold, color = Color.White)
             }

@@ -37,7 +37,7 @@ import java.util.UUID
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ProfileScreen(onLogout: () -> Unit) {
+fun ProfileScreen(onLogout: () -> Unit, onOrdersClick: () -> Unit) {
     val client = SupabaseConfig.client
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -154,7 +154,7 @@ fun ProfileScreen(onLogout: () -> Unit) {
 
             Spacer(modifier = Modifier.height(32.dp))
 
-            ProfileMenuItem(Icons.Default.ShoppingBag, "Meus Pedidos") {}
+            ProfileMenuItem(Icons.Default.ShoppingBag, "Meus Pedidos") { onOrdersClick() }
             ProfileMenuItem(Icons.Default.LocationOn, "Endereços") {}
             ProfileMenuItem(Icons.Default.Payment, "Formas de Pagamento") {}
             ProfileMenuItem(Icons.Default.Notifications, "Notificações") {}

@@ -1,5 +1,6 @@
 package com.example.comprafacil.admin
 
+import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
 import android.widget.Toast
@@ -9,6 +10,7 @@ import androidx.activity.compose.setContent
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -32,6 +34,7 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.lifecycleScope
 import coil.compose.AsyncImage
 import com.example.comprafacil.SupabaseConfig
+import com.example.comprafacil.admin.data.*
 import io.github.jan.supabase.postgrest.from
 import io.github.jan.supabase.storage.storage
 import kotlinx.coroutines.Dispatchers
@@ -83,6 +86,12 @@ fun AdminPanel() {
                     icon = { Icon(Icons.Default.List, contentDescription = null) },
                     label = { Text("Produtos") }
                 )
+                NavigationBarItem(
+                    selected = selectedTab == 2,
+                    onClick = { selectedTab = 2 },
+                    icon = { Icon(Icons.Default.ShoppingBag, contentDescription = null) },
+                    label = { Text("Pedidos") }
+                )
             }
         }
     ) { padding ->
@@ -90,6 +99,7 @@ fun AdminPanel() {
             when (selectedTab) {
                 0 -> AddProductScreen()
                 1 -> ProductListScreen()
+                2 -> OrdersAdminScreen()
             }
         }
     }
@@ -104,9 +114,17 @@ fun AddProductScreen() {
     var name by remember { mutableStateOf("") }
     var description by remember { mutableStateOf("") }
     var price by remember { mutableStateOf("") }
-    var categoryId by remember { mutableStateOf("") }
+    var selectedCategory by remember { mutableStateOf<Category?>(null) }
+    var categories by remember { mutableStateOf<List<Category>>(emptyList()) }
     var selectedImages by remember { mutableStateOf<List<Uri>>(emptyList()) }
     var uploading by remember { mutableStateOf(false) }
+    var expanded by remember { mutableStateOf(false) }
+
+    LaunchedEffect(Unit) {
+        try {
+            categories = SupabaseConfig.client.from("categories").select().decodeAs<List<Category>>()
+        } catch (e: Exception) {}
+    }
 
     val pickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.PickMultipleVisualMedia()
@@ -129,8 +147,31 @@ fun AddProductScreen() {
         OutlinedTextField(value = description, onValueChange = { description = it }, label = { Text("Descrição") }, modifier = Modifier.fillMaxWidth())
         Spacer(modifier = Modifier.height(8.dp))
         OutlinedTextField(value = price, onValueChange = { price = it }, label = { Text("Preço (ex: 29.90)") }, modifier = Modifier.fillMaxWidth())
+
         Spacer(modifier = Modifier.height(8.dp))
-        OutlinedTextField(value = categoryId, onValueChange = { categoryId = it }, label = { Text("ID da Categoria (UUID)") }, modifier = Modifier.fillMaxWidth())
+
+        // Category Selection
+        Box(modifier = Modifier.fillMaxWidth()) {
+            OutlinedTextField(
+                value = selectedCategory?.name ?: "Selecione uma Categoria",
+                onValueChange = {},
+                readOnly = true,
+                label = { Text("Categoria") },
+                modifier = Modifier.fillMaxWidth().clickable { expanded = true },
+                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) }
+            )
+            DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }, modifier = Modifier.fillMaxWidth()) {
+                categories.forEach { category ->
+                    DropdownMenuItem(
+                        text = { Text(category.name) },
+                        onClick = {
+                            selectedCategory = category
+                            expanded = false
+                        }
+                    )
+                }
+            }
+        }
 
         Spacer(modifier = Modifier.height(16.dp))
 
@@ -177,19 +218,20 @@ fun AddProductScreen() {
                                 }
                             }
 
-                            val product = mapOf(
+                            val productData = mapOf(
                                 "name" to name,
                                 "description" to description,
                                 "price" to price.toDouble(),
-                                "category_id" to if (categoryId.isBlank()) null else categoryId,
+                                "category_id" to selectedCategory?.id,
                                 "image_url" to (imageUrls.firstOrNull() ?: "")
                             )
 
-                            val result = SupabaseConfig.client.from("products").insert(product) {
+                            // Fix: Use decodeSingle<Product> instead of Map<String, Any> to avoid Serializer Any error
+                            val insertedProduct = SupabaseConfig.client.from("products").insert(productData) {
                                 select()
-                            }.decodeSingle<Map<String, Any>>()
+                            }.decodeSingle<Product>()
 
-                            val productId = result["id"] as String
+                            val productId = insertedProduct.id!!
 
                             if (imageUrls.isNotEmpty()) {
                                 val imagesToInsert = imageUrls.map { url ->
@@ -199,7 +241,7 @@ fun AddProductScreen() {
                             }
 
                             Toast.makeText(context, "Produto adicionado!", Toast.LENGTH_LONG).show()
-                            name = ""; description = ""; price = ""; categoryId = ""; selectedImages = emptyList()
+                            name = ""; description = ""; price = ""; selectedCategory = null; selectedImages = emptyList()
                         } catch (e: Exception) {
                             Toast.makeText(context, "Erro: ${e.message}", Toast.LENGTH_LONG).show()
                         } finally {
@@ -218,16 +260,13 @@ fun AddProductScreen() {
 
 @Composable
 fun ProductListScreen() {
-    val scope = rememberCoroutineScope()
-    var products by remember { mutableStateOf<List<Map<String, Any>>>(emptyList()) }
+    var products by remember { mutableStateOf<List<Product>>(emptyList()) }
     var loading by remember { mutableStateOf(true) }
 
     LaunchedEffect(Unit) {
         try {
-            products = SupabaseConfig.client.from("products").select().decodeAs<List<Map<String, Any>>>()
-        } catch (e: Exception) {
-            // handle error
-        } finally {
+            products = SupabaseConfig.client.from("products").select().decodeAs<List<Product>>()
+        } catch (e: Exception) {} finally {
             loading = false
         }
     }
@@ -244,7 +283,7 @@ fun ProductListScreen() {
             }
             items(products) { product ->
                 ProductAdminItem(product) {
-                    products = products.filter { it["id"] != product["id"] }
+                    products = products.filter { it.id != product.id }
                 }
                 Spacer(modifier = Modifier.height(8.dp))
             }
@@ -253,7 +292,7 @@ fun ProductListScreen() {
 }
 
 @Composable
-fun ProductAdminItem(product: Map<String, Any>, onDelete: () -> Unit) {
+fun ProductAdminItem(product: Product, onDelete: () -> Unit) {
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
 
@@ -266,23 +305,21 @@ fun ProductAdminItem(product: Map<String, Any>, onDelete: () -> Unit) {
             verticalAlignment = Alignment.CenterVertically
         ) {
             AsyncImage(
-                model = product["image_url"] as? String,
+                model = product.image_url,
                 contentDescription = null,
                 modifier = Modifier.size(60.dp).clip(RoundedCornerShape(8.dp)),
                 contentScale = ContentScale.Crop
             )
             Spacer(modifier = Modifier.width(12.dp))
             Column(modifier = Modifier.weight(1f)) {
-                Text(product["name"] as String, fontWeight = FontWeight.Bold, color = Color.White)
-                Text("R$ ${product["price"]}", color = Color(0xFFFF9800))
+                Text(product.name, fontWeight = FontWeight.Bold, color = Color.White)
+                Text("R$ ${product.price}", color = Color(0xFFFF9800))
             }
             IconButton(onClick = {
                 scope.launch {
                     try {
                         SupabaseConfig.client.from("products").delete {
-                            filter {
-                                eq("id", product["id"] as String)
-                            }
+                            filter { eq("id", product.id!!) }
                         }
                         onDelete()
                         Toast.makeText(context, "Excluído", Toast.LENGTH_SHORT).show()
@@ -292,6 +329,75 @@ fun ProductAdminItem(product: Map<String, Any>, onDelete: () -> Unit) {
                 }
             }) {
                 Icon(Icons.Default.Delete, contentDescription = null, tint = Color.Red)
+            }
+        }
+    }
+}
+
+@Composable
+fun OrdersAdminScreen() {
+    var orders by remember { mutableStateOf<List<Order>>(emptyList()) }
+    var loading by remember { mutableStateOf(true) }
+
+    LaunchedEffect(Unit) {
+        try {
+            orders = SupabaseConfig.client.from("orders").select().decodeAs<List<Order>>()
+        } catch (e: Exception) {} finally {
+            loading = false
+        }
+    }
+
+    if (loading) {
+        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            CircularProgressIndicator(color = Color(0xFFFF9800))
+        }
+    } else {
+        LazyColumn(modifier = Modifier.fillMaxSize().padding(16.dp)) {
+            item {
+                Text("Pedidos Recebidos", fontSize = 24.sp, fontWeight = FontWeight.Bold, color = Color(0xFFFF9800))
+                Spacer(modifier = Modifier.height(16.dp))
+            }
+            items(orders) { order ->
+                OrderAdminItem(order)
+                Spacer(modifier = Modifier.height(8.dp))
+            }
+        }
+    }
+}
+
+@Composable
+fun OrderAdminItem(order: Order) {
+    val context = LocalContext.current
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(containerColor = Color(0xFF1E1E1E))
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                Text("Pedido #${order.id?.takeLast(6)}", fontWeight = FontWeight.Bold, color = Color(0xFFFF9800))
+                Text(order.status ?: "Pendente", color = Color.Gray)
+            }
+            Spacer(modifier = Modifier.height(8.dp))
+            Text("Total: R$ ${order.total_price}", color = Color.White, fontSize = 18.sp, fontWeight = FontWeight.Bold)
+            Text("Endereço: ${order.location}", color = Color.White)
+            Text("WhatsApp: ${order.whatsapp}", color = Color.White)
+
+            if (order.latitude != null && order.longitude != null) {
+                Spacer(modifier = Modifier.height(12.dp))
+                Button(
+                    onClick = {
+                        val gmmIntentUri = Uri.parse("geo:${order.latitude},${order.longitude}?q=${order.latitude},${order.longitude}")
+                        val mapIntent = Intent(Intent.ACTION_VIEW, gmmIntentUri)
+                        mapIntent.setPackage("com.google.android.apps.maps")
+                        context.startActivity(mapIntent)
+                    },
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2196F3))
+                ) {
+                    Icon(Icons.Default.LocationOn, contentDescription = null)
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("VER LOCALIZAÇÃO NO MAPA")
+                }
             }
         }
     }

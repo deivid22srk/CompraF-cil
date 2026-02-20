@@ -51,6 +51,8 @@ dependencies {
     implementation(libs.androidx.material3)
     implementation(libs.androidx.navigation.compose)
     implementation(libs.androidx.material.icons.extended)
+    implementation(libs.google.play.services.location)
+    implementation(libs.kotlinx.coroutines.play.services)
 
     // Supabase
     implementation(libs.supabase.postgrest)

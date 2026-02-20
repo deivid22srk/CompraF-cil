@@ -43,7 +43,7 @@ class MainActivity : ComponentActivity() {
                     Screen.Profile
                 )
 
-                // Hide bottom bar on auth and detail screens
+                // Hide bottom bar on auth, detail, and orders screens
                 val showBottomBar = currentDestination?.route in items.map { it.route }
 
                 Scaffold(
@@ -133,7 +133,15 @@ class MainActivity : ComponentActivity() {
                                     navController.navigate("auth") {
                                         popUpTo(navController.graph.startDestinationId) { inclusive = true }
                                     }
+                                },
+                                onOrdersClick = {
+                                    navController.navigate("orders")
                                 }
+                            )
+                        }
+                        composable("orders") {
+                            OrdersScreen(
+                                onBack = { navController.popBackStack() }
                             )
                         }
                     }
