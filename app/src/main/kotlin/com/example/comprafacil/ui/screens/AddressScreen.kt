@@ -1,6 +1,11 @@
 package com.example.comprafacil.ui.screens
 
+import android.Manifest
+import android.annotation.SuppressLint
+import android.content.pm.PackageManager
 import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -17,11 +22,16 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.content.ContextCompat
 import com.example.comprafacil.SupabaseConfig
 import com.example.comprafacil.data.Address
+import com.google.android.gms.location.LocationServices
+import com.google.android.gms.location.Priority
+import com.google.android.gms.tasks.CancellationTokenSource
 import io.github.jan.supabase.gotrue.auth
 import io.github.jan.supabase.postgrest.from
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.tasks.await
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -199,25 +209,85 @@ fun AddressDialog(
     onDismiss: () -> Unit,
     onSave: (String, String, String, Double?, Double?) -> Unit
 ) {
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    val fusedLocationClient = remember { LocationServices.getFusedLocationProviderClient(context) }
+
     var name by remember { mutableStateOf(address?.name ?: "") }
     var phone by remember { mutableStateOf(address?.phone ?: "") }
     var line by remember { mutableStateOf(address?.address_line ?: "") }
     var lat by remember { mutableStateOf(address?.latitude?.toString() ?: "") }
     var lon by remember { mutableStateOf(address?.longitude?.toString() ?: "") }
+    var fetchingLocation by remember { mutableStateOf(false) }
+
+    val permissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestMultiplePermissions()
+    ) { permissions ->
+        if (permissions[Manifest.permission.ACCESS_FINE_LOCATION] == true ||
+            permissions[Manifest.permission.ACCESS_COARSE_LOCATION] == true
+        ) {
+            // Permission granted
+        } else {
+            Toast.makeText(context, "Permissão de localização negada", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    @SuppressLint("MissingPermission")
+    fun getCurrentLocation() {
+        scope.launch {
+            fetchingLocation = true
+            try {
+                val priority = Priority.PRIORITY_HIGH_ACCURACY
+                val result = fusedLocationClient.getCurrentLocation(priority, CancellationTokenSource().token).await()
+                if (result != null) {
+                    lat = result.latitude.toString()
+                    lon = result.longitude.toString()
+                    Toast.makeText(context, "Localização capturada!", Toast.LENGTH_SHORT).show()
+                } else {
+                    Toast.makeText(context, "Não foi possível obter a localização", Toast.LENGTH_SHORT).show()
+                }
+            } catch (e: Exception) {
+                Toast.makeText(context, "Erro ao obter localização: ${e.message}", Toast.LENGTH_SHORT).show()
+            } finally {
+                fetchingLocation = false
+            }
+        }
+    }
 
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text(if (address == null) "Novo Endereço" else "Editar Endereço") },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                OutlinedTextField(value = name, onValueChange = { name = it }, label = { Text("Nome (ex: Casa, Trabalho)") })
-                OutlinedTextField(value = phone, onValueChange = { phone = it }, label = { Text("Telefone/WhatsApp") })
-                OutlinedTextField(value = line, onValueChange = { line = it }, label = { Text("Endereço Completo") })
+                OutlinedTextField(value = name, onValueChange = { name = it }, label = { Text("Apelido do Endereço (ex: Minha Casa)") }, modifier = Modifier.fillMaxWidth())
+                OutlinedTextField(value = phone, onValueChange = { phone = it }, label = { Text("Telefone/WhatsApp") }, modifier = Modifier.fillMaxWidth())
+                OutlinedTextField(value = line, onValueChange = { line = it }, label = { Text("Rua, Número, Bairro") }, modifier = Modifier.fillMaxWidth())
+
+                Button(
+                    onClick = {
+                        val fineLocation = ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION)
+                        if (fineLocation == PackageManager.PERMISSION_GRANTED) {
+                            getCurrentLocation()
+                        } else {
+                            permissionLauncher.launch(arrayOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION))
+                        }
+                    },
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.secondary)
+                ) {
+                    if (fetchingLocation) {
+                        CircularProgressIndicator(modifier = Modifier.size(20.dp), color = MaterialTheme.colorScheme.onSecondary)
+                    } else {
+                        Icon(Icons.Default.LocationOn, contentDescription = null)
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("CAPTURAR LOCALIZAÇÃO GPS")
+                    }
+                }
+
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     OutlinedTextField(value = lat, onValueChange = { lat = it }, label = { Text("Lat") }, modifier = Modifier.weight(1f))
                     OutlinedTextField(value = lon, onValueChange = { lon = it }, label = { Text("Lon") }, modifier = Modifier.weight(1f))
                 }
-                Text("Dica: Use latitude/longitude para localização exata no mapa.", fontSize = 10.sp, color = Color.Gray)
             }
         },
         confirmButton = {

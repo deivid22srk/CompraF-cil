@@ -1,15 +1,15 @@
-package com.example.comprafacil.utils
+package com.example.comprafacil.admin.utils
 
 import android.content.Context
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
+import androidx.work.ListenableWorker.Result
 import com.example.comprafacil.SupabaseConfig
-import com.example.comprafacil.data.Order
+import com.example.comprafacil.admin.data.Order
 import com.russhwolf.settings.SharedPreferencesSettings
-import io.github.jan.supabase.gotrue.auth
 import io.github.jan.supabase.postgrest.from
 
-class OrderUpdateWorker(
+class NewOrderWorker(
     context: Context,
     workerParams: WorkerParameters
 ) : CoroutineWorker(context, workerParams) {
@@ -17,31 +17,26 @@ class OrderUpdateWorker(
     override suspend fun doWork(): Result {
         SupabaseConfig.initialize(applicationContext)
         val client = SupabaseConfig.client
-        val userId = client.auth.currentUserOrNull()?.id ?: return Result.success()
         val notificationHelper = NotificationHelper(applicationContext)
-        val settings = SharedPreferencesSettings(applicationContext.getSharedPreferences("order_notifications", Context.MODE_PRIVATE))
+        val settings = SharedPreferencesSettings(applicationContext.getSharedPreferences("admin_notifications", Context.MODE_PRIVATE))
 
         try {
-            // Fetch active orders (non-concluded)
+            // Fetch the last 5 orders
             val orders = client.from("orders").select {
-                filter {
-                    eq("user_id", userId)
-                    neq("status", "concluído")
-                    neq("status", "cancelado")
-                }
+                order("created_at", io.github.jan.supabase.postgrest.query.Order.DESCENDING)
+                limit(5)
             }.decodeAs<List<Order>>()
 
             for (order in orders) {
                 val orderId = order.id ?: continue
-                val status = order.status ?: "pendente"
-                val lastStatus = settings.getString("order_$orderId", "pendente")
+                val alreadyNotified = settings.getBoolean("notified_$orderId", false)
 
-                if (status != lastStatus) {
+                if (!alreadyNotified) {
                     notificationHelper.showNotification(
-                        "Atualização no Pedido #${orderId.takeLast(6)}",
-                        "O status mudou para: ${status.uppercase()}"
+                        "Novo Pedido Recebido!",
+                        "Pedido #${orderId.takeLast(6)} de ${order.customer_name ?: "Cliente"}"
                     )
-                    settings.putString("order_$orderId", status)
+                    settings.putBoolean("notified_$orderId", true)
                 }
             }
         } catch (e: Exception) {

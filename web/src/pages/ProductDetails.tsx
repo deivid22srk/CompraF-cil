@@ -13,23 +13,58 @@ interface Product {
   stock_quantity?: number
 }
 
+interface ProductImage {
+  id: string
+  image_url: string
+}
+
 export default function ProductDetails() {
   const { id } = useParams()
   const navigate = useNavigate()
   const [product, setProduct] = useState<Product | null>(null)
+  const [images, setImages] = useState<ProductImage[]>([])
+  const [selectedImage, setSelectedImage] = useState('')
+  const [downloadUrl, setDownloadUrl] = useState('')
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    if (id) fetchProduct(id)
+    if (id) fetchData(id)
   }, [id])
 
-  async function fetchProduct(productId: string) {
-    const { data } = await supabase
+  async function fetchData(productId: string) {
+    // Fetch product
+    const { data: productData } = await supabase
       .from('products')
       .select('*')
       .eq('id', productId)
       .single()
-    if (data) setProduct(data)
+
+    if (productData) {
+      setProduct(productData)
+      setSelectedImage(productData.image_url)
+    }
+
+    // Fetch extra images
+    const { data: imagesData } = await supabase
+      .from('product_images')
+      .select('*')
+      .eq('product_id', productId)
+
+    if (imagesData) {
+      setImages(imagesData)
+    }
+
+    // Fetch download URL
+    const { data: configData } = await supabase
+      .from('app_config')
+      .select('value')
+      .eq('key', 'download_url')
+      .single()
+
+    if (configData) {
+      setDownloadUrl(configData.value as string)
+    }
+
     setLoading(false)
   }
 
@@ -56,6 +91,11 @@ export default function ProductDetails() {
     </div>
   )
 
+  const allImages = [
+    { id: 'main', image_url: product.image_url },
+    ...images
+  ]
+
   return (
     <div className="max-w-4xl mx-auto p-6">
       <button
@@ -66,9 +106,31 @@ export default function ProductDetails() {
       </button>
 
       <div className="grid md:grid-cols-2 gap-10 bg-card rounded-[40px] overflow-hidden shadow-2xl">
-        <div className="h-[400px] md:h-auto">
-          <img src={product.image_url} alt={product.name} className="w-full h-full object-cover" />
+        <div className="flex flex-col">
+          <div className="h-[400px] bg-surface">
+            <img
+              src={selectedImage || product.image_url}
+              alt={product.name}
+              className="w-full h-full object-cover transition-all duration-300"
+            />
+          </div>
+          {allImages.length > 1 && (
+            <div className="p-4 flex gap-2 overflow-x-auto bg-surface/50 scrollbar-hide">
+              {allImages.map((img) => (
+                <button
+                  key={img.id}
+                  onClick={() => setSelectedImage(img.image_url)}
+                  className={`relative flex-shrink-0 w-20 h-20 rounded-xl overflow-hidden border-2 transition-all ${
+                    selectedImage === img.image_url ? 'border-primary' : 'border-transparent opacity-60 hover:opacity-100'
+                  }`}
+                >
+                  <img src={img.image_url} className="w-full h-full object-cover" />
+                </button>
+              ))}
+            </div>
+          )}
         </div>
+
         <div className="p-10 flex flex-col">
           <div className="flex justify-between items-start mb-4">
             <h1 className="text-3xl font-bold">{product.name}</h1>
@@ -98,9 +160,20 @@ export default function ProductDetails() {
               <p className="text-sm text-white/70 mb-4">
                 Para comprar este produto e aproveitar ofertas exclusivas, baixe nosso aplicativo Android.
               </p>
-              <button className="w-full py-4 bg-primary text-black font-black rounded-2xl hover:scale-[1.02] active:scale-95 transition-all">
-                BAIXAR APP COMPRAFÁCIL
-              </button>
+              {downloadUrl ? (
+                <a
+                  href={downloadUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="block w-full py-4 bg-primary text-black text-center font-black rounded-2xl hover:scale-[1.02] active:scale-95 transition-all"
+                >
+                  BAIXAR APP COMPRAFÁCIL
+                </a>
+              ) : (
+                <button disabled className="w-full py-4 bg-gray-600 text-black font-black rounded-2xl opacity-50">
+                  DOWNLOAD INDISPONÍVEL
+                </button>
+              )}
             </div>
           </div>
         </div>

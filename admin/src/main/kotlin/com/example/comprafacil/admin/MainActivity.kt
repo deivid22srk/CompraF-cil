@@ -1,7 +1,10 @@
 package com.example.comprafacil.admin
 
+import android.Manifest
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.net.Uri
+import android.os.Build
 import android.os.Bundle
 import android.widget.Toast
 import androidx.activity.ComponentActivity
@@ -34,12 +37,24 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
 import coil.compose.AsyncImage
 import com.example.comprafacil.SupabaseConfig
+import androidx.work.ExistingPeriodicWorkPolicy
+import androidx.work.PeriodicWorkRequestBuilder
+import androidx.work.WorkManager
 import com.example.comprafacil.admin.data.*
+import com.example.comprafacil.admin.utils.NotificationHelper
+import com.example.comprafacil.admin.utils.NewOrderWorker
 import io.github.jan.supabase.postgrest.from
+import io.github.jan.supabase.realtime.PostgresAction
+import io.github.jan.supabase.realtime.channel
+import io.github.jan.supabase.realtime.postgresChangeFlow
+import io.github.jan.supabase.realtime.realtime
 import io.github.jan.supabase.storage.storage
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.*
 import java.util.UUID
@@ -48,8 +63,42 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         SupabaseConfig.initialize(this)
+
+        val notificationHelper = NotificationHelper(this)
+        val workRequest = PeriodicWorkRequestBuilder<NewOrderWorker>(15, java.util.concurrent.TimeUnit.MINUTES).build()
+        WorkManager.getInstance(this).enqueueUniquePeriodicWork("admin_orders", ExistingPeriodicWorkPolicy.KEEP, workRequest)
+
         setContent {
             AdminTheme {
+                val permissionLauncher = rememberLauncherForActivityResult(
+                    ActivityResultContracts.RequestPermission()
+                ) { }
+
+                LaunchedEffect(Unit) {
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                        if (ContextCompat.checkSelfPermission(this@MainActivity, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
+                            permissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                        }
+                    }
+
+                    // Realtime Listener for New Orders
+                    try {
+                        val channel = SupabaseConfig.client.realtime.channel("admin_orders")
+                        val insertFlow = channel.postgresChangeFlow<PostgresAction.Insert>(schema = "public") {
+                            this.table = "orders"
+                        }
+                        insertFlow.onEach { change ->
+                            val customerName = change.record["customer_name"]?.jsonPrimitive?.content ?: "Cliente"
+                            val orderId = change.record["id"]?.jsonPrimitive?.content?.takeLast(6) ?: ""
+                            notificationHelper.showNotification(
+                                "Novo Pedido Recebido!",
+                                "Pedido #$orderId de $customerName"
+                            )
+                        }.launchIn(this)
+                        channel.subscribe()
+                    } catch (e: Exception) {}
+                }
+
                 AdminPanel()
             }
         }
