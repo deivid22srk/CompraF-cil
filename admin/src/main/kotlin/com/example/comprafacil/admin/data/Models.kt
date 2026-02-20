@@ -65,3 +65,10 @@ data class OrderStatusHistory(
     val notes: String? = null,
     val created_at: String? = null
 )
+
+@Serializable
+data class AppConfig(
+    val key: String,
+    val value: kotlinx.serialization.json.JsonElement,
+    val updated_at: String? = null
+)

@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../supabaseClient'
 import { Link } from 'react-router-dom'
-import { Search } from 'lucide-react'
+import { Search, Download } from 'lucide-react'
 
 interface Product {
   id: string
@@ -13,18 +13,32 @@ interface Product {
 
 export default function Home() {
   const [products, setProducts] = useState<Product[]>([])
+  const [downloadUrl, setDownloadUrl] = useState('')
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
 
   useEffect(() => {
-    fetchProducts()
+    fetchData()
   }, [])
 
-  async function fetchProducts() {
-    const { data } = await supabase
+  async function fetchData() {
+    // Fetch products
+    const { data: productData } = await supabase
       .from('products')
       .select('*')
-    if (data) setProducts(data)
+    if (productData) setProducts(productData)
+
+    // Fetch download URL
+    const { data: configData } = await supabase
+      .from('app_config')
+      .select('value')
+      .eq('key', 'download_url')
+      .single()
+
+    if (configData) {
+      setDownloadUrl(configData.value as string)
+    }
+
     setLoading(false)
   }
 
@@ -36,7 +50,20 @@ export default function Home() {
     <div>
       <header className="bg-primary p-6 shadow-lg">
         <div className="max-w-6xl mx-auto flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <h1 className="text-3xl font-black text-black">CompraFácil</h1>
+          <div className="flex items-center gap-4">
+            <h1 className="text-3xl font-black text-black">CompraFácil</h1>
+            {downloadUrl && (
+              <a
+                href={downloadUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="bg-black text-primary px-4 py-2 rounded-full text-sm font-bold flex items-center gap-2 hover:scale-105 transition-transform"
+              >
+                <Download size={16} />
+                Baixar App
+              </a>
+            )}
+          </div>
           <div className="relative flex-1 max-w-md">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 w-5 h-5" />
             <input

@@ -36,6 +36,8 @@ import io.github.jan.supabase.postgrest.from
 import io.github.jan.supabase.postgrest.query.Columns
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
+import kotlinx.serialization.json.doubleOrNull
+import kotlinx.serialization.json.jsonPrimitive
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -51,7 +53,8 @@ fun CheckoutScreen(onBack: () -> Unit, onOrderFinished: () -> Unit) {
     var latitude by remember { mutableStateOf<Double?>(null) }
     var longitude by remember { mutableStateOf<Double?>(null) }
     var paymentMethod by remember { mutableStateOf("dinheiro") }
-    var total by remember { mutableDoubleStateOf(0.0) }
+    var subtotal by remember { mutableDoubleStateOf(0.0) }
+    var deliveryFee by remember { mutableDoubleStateOf(0.0) }
     var loading by remember { mutableStateOf(true) }
     var fetchingLocation by remember { mutableStateOf(false) }
     var isPlacingOrder by remember { mutableStateOf(false) }
@@ -79,7 +82,12 @@ fun CheckoutScreen(onBack: () -> Unit, onOrderFinished: () -> Unit) {
                 val items = client.from("cart_items").select(Columns.raw("*, product:products(*)")) {
                     filter { eq("user_id", userId) }
                 }.decodeAs<List<CartItem>>()
-                total = items.sumOf { (it.product?.price ?: 0.0) * it.quantity }
+                subtotal = items.sumOf { (it.product?.price ?: 0.0) * it.quantity }
+
+                val configs = client.from("app_config").select().decodeAs<List<AppConfig>>()
+                configs.find { it.key == "delivery_fee" }?.let {
+                    deliveryFee = it.value.jsonPrimitive.doubleOrNull ?: 0.0
+                }
 
                 val profile = client.from("profiles").select { filter { eq("id", userId) } }.decodeSingleOrNull<Profile>()
                 customerName = profile?.full_name ?: ""
@@ -256,9 +264,20 @@ fun CheckoutScreen(onBack: () -> Unit, onOrderFinished: () -> Unit) {
                 modifier = Modifier.fillMaxWidth(),
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
             ) {
-                Row(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Text("Total a pagar:", modifier = Modifier.weight(1f), color = MaterialTheme.colorScheme.onSurface)
-                    Text("R$ ${String.format("%.2f", total)}", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.secondary)
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                        Text("Subtotal", color = MaterialTheme.colorScheme.onSurface)
+                        Text("R$ ${String.format("%.2f", subtotal)}")
+                    }
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                        Text("Taxa de Entrega", color = MaterialTheme.colorScheme.onSurface)
+                        Text("R$ ${String.format("%.2f", deliveryFee)}")
+                    }
+                    Divider(modifier = Modifier.padding(vertical = 8.dp))
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                        Text("Total a pagar:", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
+                        Text("R$ ${String.format("%.2f", subtotal + deliveryFee)}", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.secondary)
+                    }
                 }
             }
 
@@ -282,7 +301,7 @@ fun CheckoutScreen(onBack: () -> Unit, onOrderFinished: () -> Unit) {
                                     customer_name = customerName,
                                     whatsapp = whatsapp,
                                     location = locationName,
-                                    total_price = total,
+                                    total_price = subtotal + deliveryFee,
                                     latitude = latitude,
                                     longitude = longitude,
                                     payment_method = paymentMethod,

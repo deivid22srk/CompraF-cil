@@ -1,6 +1,13 @@
 -- Enable UUID extension
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
+-- Create app_config table
+CREATE TABLE IF NOT EXISTS app_config (
+    key TEXT PRIMARY KEY,
+    value JSONB NOT NULL,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
 -- Create profiles table
 CREATE TABLE IF NOT EXISTS profiles (
     id UUID PRIMARY KEY REFERENCES auth.users ON DELETE CASCADE,
@@ -93,6 +100,14 @@ CREATE TABLE IF NOT EXISTS order_items (
     price_at_time DECIMAL(10, 2) NOT NULL
 );
 
+-- Idempotent column additions (if they don't exist)
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='orders' AND column_name='customer_name') THEN
+        ALTER TABLE orders ADD COLUMN customer_name TEXT;
+    END IF;
+END $$;
+
 -- Enable RLS
 DO $$
 BEGIN
@@ -123,11 +138,20 @@ BEGIN
     IF NOT EXISTS (SELECT 1 FROM pg_tables WHERE tablename = 'addresses' AND rowsecurity = true) THEN
         ALTER TABLE addresses ENABLE ROW LEVEL SECURITY;
     END IF;
+    IF NOT EXISTS (SELECT 1 FROM pg_tables WHERE tablename = 'app_config' AND rowsecurity = true) THEN
+        ALTER TABLE app_config ENABLE ROW LEVEL SECURITY;
+    END IF;
 END $$;
 
 -- Policies
 DO $$
 BEGIN
+    -- App Config
+    DROP POLICY IF EXISTS "Allow public select on app_config" ON app_config;
+    CREATE POLICY "Allow public select on app_config" ON app_config FOR SELECT USING (true);
+    DROP POLICY IF EXISTS "Allow anon/auth all on app_config" ON app_config;
+    CREATE POLICY "Allow anon/auth all on app_config" ON app_config FOR ALL USING (true) WITH CHECK (true);
+
     -- Addresses
     DROP POLICY IF EXISTS "Users can manage their own addresses" ON addresses;
     CREATE POLICY "Users can manage their own addresses" ON addresses FOR ALL USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
@@ -171,12 +195,16 @@ BEGIN
     CREATE POLICY "Anyone can insert orders" ON orders FOR INSERT WITH CHECK (true);
     DROP POLICY IF EXISTS "Allow public select on orders" ON orders;
     CREATE POLICY "Allow public select on orders" ON orders FOR SELECT USING (true);
+    DROP POLICY IF EXISTS "Allow anon/auth all on orders" ON orders;
+    CREATE POLICY "Allow anon/auth all on orders" ON orders FOR ALL USING (true) WITH CHECK (true);
 
     -- Order Status History
     DROP POLICY IF EXISTS "Users can view their own order history" ON order_status_history;
-    CREATE POLICY "Users can view their own order history" ON order_status_history FOR SELECT USING (true); -- Simplified for now
+    CREATE POLICY "Users can view their own order history" ON order_status_history FOR SELECT USING (true);
     DROP POLICY IF EXISTS "Allow anon/auth insert on order status history" ON order_status_history;
     CREATE POLICY "Allow anon/auth insert on order status history" ON order_status_history FOR INSERT WITH CHECK (true);
+    DROP POLICY IF EXISTS "Allow anon/auth all on order status history" ON order_status_history;
+    CREATE POLICY "Allow anon/auth all on order status history" ON order_status_history FOR ALL USING (true) WITH CHECK (true);
 
     -- Order Items
     DROP POLICY IF EXISTS "Anyone can insert order items" ON order_items;
@@ -192,7 +220,14 @@ INSERT INTO categories (name) VALUES
 ('Limpeza'),
 ('Higiene'),
 ('Outros')
-ON CONFLICT DO NOTHING;
+ON CONFLICT (id) DO NOTHING;
+
+-- Initial Config
+INSERT INTO app_config (key, value) VALUES
+('min_version', '"1.0"'),
+('download_url', '"https://comprafacil.ct.ws/download"'),
+('delivery_fee', '0.0')
+ON CONFLICT (key) DO NOTHING;
 
 -- Enable Realtime for orders table
 DO $$

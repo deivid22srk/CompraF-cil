@@ -8,13 +8,14 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -27,9 +28,13 @@ import androidx.navigation.compose.*
 import androidx.navigation.navArgument
 import com.example.comprafacil.ui.screens.*
 import com.example.comprafacil.ui.theme.CompraFacilTheme
+import android.content.Intent
+import android.net.Uri
+import androidx.compose.ui.window.DialogProperties
+import com.example.comprafacil.data.AppConfig
 import com.example.comprafacil.utils.NotificationHelper
-import io.github.jan.supabase.gotrue.auth
-import io.github.jan.supabase.gotrue.SessionStatus
+import io.github.jan.supabase.gotrue.*
+import io.github.jan.supabase.postgrest.from
 import io.github.jan.supabase.realtime.*
 import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.coroutines.flow.launchIn
@@ -39,6 +44,7 @@ import kotlinx.coroutines.launch
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        SupabaseConfig.initialize(this)
 
         val notificationHelper = NotificationHelper(this)
         val workRequest = androidx.work.PeriodicWorkRequestBuilder<com.example.comprafacil.utils.OrderUpdateWorker>(15, java.util.concurrent.TimeUnit.MINUTES).build()
@@ -51,17 +57,60 @@ class MainActivity : ComponentActivity() {
                 val currentDestination = navBackStackEntry?.destination
                 val scope = rememberCoroutineScope()
 
-                // Check for existing session
+                val sessionStatus by SupabaseConfig.client.auth.sessionStatus.collectAsState()
+
+                var showUpdateDialog by remember { mutableStateOf(false) }
+                var downloadUrl by remember { mutableStateOf("") }
+
+                LaunchedEffect(Unit) {
+                    try {
+                        val configs = SupabaseConfig.client.from("app_config").select().decodeAs<List<AppConfig>>()
+                        var minVersion = "1.0"
+                        configs.forEach { config ->
+                            when (config.key) {
+                                "min_version" -> minVersion = config.value.jsonPrimitive.content
+                                "download_url" -> downloadUrl = config.value.jsonPrimitive.content
+                            }
+                        }
+                        val currentVersion = "1.0"
+                        if (minVersion > currentVersion) {
+                            showUpdateDialog = true
+                        }
+                    } catch (e: Exception) {}
+                }
+
+                if (showUpdateDialog) {
+                    AlertDialog(
+                        onDismissRequest = {},
+                        title = { Text("Atualização Necessária") },
+                        text = { Text("Uma nova versão do app está disponível. Por favor, atualize para continuar.") },
+                        confirmButton = {
+                            Button(onClick = {
+                                val intent = Intent(Intent.ACTION_VIEW, Uri.parse(downloadUrl))
+                                startActivity(intent)
+                            }) {
+                                Text("ATUALIZAR AGORA")
+                            }
+                        },
+                        properties = DialogProperties(dismissOnBackPress = false, dismissOnClickOutside = false)
+                    )
+                }
+
+                if (sessionStatus !is SessionStatus.Authenticated && sessionStatus !is SessionStatus.NotAuthenticated) {
+                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
+                    }
+                    return@CompraFacilTheme
+                }
+
                 val startDestination = remember {
-                    if (SupabaseConfig.client.auth.currentUserOrNull() != null) "home" else "auth"
+                    if (sessionStatus is SessionStatus.Authenticated) "home" else "auth"
                 }
 
                 // Notification Permission
                 val permissionLauncher = rememberLauncherForActivityResult(
                     ActivityResultContracts.RequestPermission()
                 ) { /* Handle result */ }
-
-                val sessionStatus by SupabaseConfig.client.auth.sessionStatus.collectAsState()
 
                 LaunchedEffect(sessionStatus) {
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
@@ -71,8 +120,9 @@ class MainActivity : ComponentActivity() {
                     }
 
                     // Setup Realtime Listener for Order Updates
-                    val userId = if (sessionStatus is SessionStatus.Authenticated) {
-                        (sessionStatus as SessionStatus.Authenticated).session.user?.id
+                    val status = sessionStatus
+                    val userId = if (status is SessionStatus.Authenticated) {
+                        status.session.user?.id
                     } else null
                     if (userId != null) {
                         val channel = SupabaseConfig.client.realtime.channel("orders_channel_$userId")

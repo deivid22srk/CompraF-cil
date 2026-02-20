@@ -21,12 +21,15 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import com.example.comprafacil.SupabaseConfig
+import com.example.comprafacil.data.AppConfig
 import com.example.comprafacil.data.CartItem
 import com.example.comprafacil.data.Product
 import io.github.jan.supabase.gotrue.auth
 import io.github.jan.supabase.postgrest.from
 import io.github.jan.supabase.postgrest.query.Columns
 import kotlinx.coroutines.launch
+import kotlinx.serialization.json.doubleOrNull
+import kotlinx.serialization.json.jsonPrimitive
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -34,6 +37,7 @@ fun CartScreen(onCheckout: () -> Unit) {
     val client = SupabaseConfig.client
     val scope = rememberCoroutineScope()
     var cartItems by remember { mutableStateOf<List<CartItem>>(emptyList()) }
+    var deliveryFee by remember { mutableDoubleStateOf(0.0) }
     var loading by remember { mutableStateOf(true) }
 
     LaunchedEffect(Unit) {
@@ -44,6 +48,11 @@ fun CartScreen(onCheckout: () -> Unit) {
                 cartItems = client.from("cart_items").select(Columns.raw("*, product:products(*)")) {
                     filter { eq("user_id", userId) }
                 }.decodeAs<List<CartItem>>()
+
+                val configs = client.from("app_config").select().decodeAs<List<AppConfig>>()
+                configs.find { it.key == "delivery_fee" }?.let {
+                    deliveryFee = it.value.jsonPrimitive.doubleOrNull ?: 0.0
+                }
             } catch (e: Exception) {
                 // handle error
             }
@@ -119,7 +128,8 @@ fun CartScreen(onCheckout: () -> Unit) {
                     }
                 }
 
-                val total = cartItems.sumOf { (it.product?.price ?: 0.0) * it.quantity }
+                val subtotal = cartItems.sumOf { (it.product?.price ?: 0.0) * it.quantity }
+                val total = subtotal + deliveryFee
 
                 Card(
                     modifier = Modifier.fillMaxWidth(),
@@ -129,7 +139,16 @@ fun CartScreen(onCheckout: () -> Unit) {
                 ) {
                     Column(modifier = Modifier.padding(24.dp)) {
                         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                            Text("Total", fontSize = 18.sp, color = MaterialTheme.colorScheme.onSurface)
+                            Text("Subtotal", fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurface)
+                            Text("R$ ${String.format("%.2f", subtotal)}", fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurface)
+                        }
+                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                            Text("Taxa de Entrega", fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurface)
+                            Text("R$ ${String.format("%.2f", deliveryFee)}", fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurface)
+                        }
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                            Text("Total", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onSurface)
                             Text("R$ ${String.format("%.2f", total)}", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.secondary)
                         }
                         Spacer(modifier = Modifier.height(16.dp))
