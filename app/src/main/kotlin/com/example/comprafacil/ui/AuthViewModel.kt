@@ -14,6 +14,7 @@ class AuthViewModel : ViewModel() {
         object Idle : AuthState()
         object Loading : AuthState()
         object Success : AuthState()
+        object SignUpSuccess : AuthState()
         data class Error(val message: String) : AuthState()
     }
 
@@ -28,7 +29,7 @@ class AuthViewModel : ViewModel() {
                     this.email = email
                     password = pass
                 }
-                _state.value = AuthState.Success
+                _state.value = AuthState.SignUpSuccess
             } catch (e: Exception) {
                 _state.value = AuthState.Error(e.message ?: "Erro desconhecido")
             }

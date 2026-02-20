@@ -21,10 +21,30 @@ fun AuthScreen(onLoginSuccess: () -> Unit) {
     var password by remember { mutableStateOf("") }
     val state by viewModel.state.collectAsState()
 
+    var showSignUpDialog by remember { mutableStateOf(false) }
+
     LaunchedEffect(state) {
         if (state is AuthViewModel.AuthState.Success) {
             onLoginSuccess()
+        } else if (state is AuthViewModel.AuthState.SignUpSuccess) {
+            showSignUpDialog = true
         }
+    }
+
+    if (showSignUpDialog) {
+        AlertDialog(
+            onDismissRequest = { showSignUpDialog = false },
+            title = { Text("Conta Criada!") },
+            text = { Text("Enviamos um email de confirmação para $email. Por favor, verifique sua caixa de entrada para ativar sua conta.") },
+            confirmButton = {
+                Button(onClick = {
+                    showSignUpDialog = false
+                    isLogin = true
+                }) {
+                    Text("OK")
+                }
+            }
+        )
     }
 
     Column(
