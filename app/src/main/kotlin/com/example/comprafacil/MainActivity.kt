@@ -20,6 +20,7 @@ import androidx.navigation.compose.*
 import androidx.navigation.navArgument
 import com.example.comprafacil.ui.screens.*
 import com.example.comprafacil.ui.theme.CompraFacilTheme
+import io.github.jan.supabase.gotrue.auth
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -30,6 +31,11 @@ class MainActivity : ComponentActivity() {
                 val navController = rememberNavController()
                 val navBackStackEntry by navController.currentBackStackEntryAsState()
                 val currentDestination = navBackStackEntry?.destination
+
+                // Check for existing session
+                val startDestination = remember {
+                    if (SupabaseConfig.client.auth.currentUserOrNull() != null) "home" else "auth"
+                }
 
                 val items = listOf(
                     Screen.Home,
@@ -77,7 +83,7 @@ class MainActivity : ComponentActivity() {
                 ) { innerPadding ->
                     NavHost(
                         navController,
-                        startDestination = "auth",
+                        startDestination = startDestination,
                         modifier = Modifier.padding(innerPadding)
                     ) {
                         composable("auth") {
