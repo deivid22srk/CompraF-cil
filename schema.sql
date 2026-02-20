@@ -69,40 +69,91 @@ CREATE TABLE IF NOT EXISTS order_items (
 );
 
 -- Enable RLS
-ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
-ALTER TABLE categories ENABLE ROW LEVEL SECURITY;
-ALTER TABLE products ENABLE ROW LEVEL SECURITY;
-ALTER TABLE product_images ENABLE ROW LEVEL SECURITY;
-ALTER TABLE cart_items ENABLE ROW LEVEL SECURITY;
-ALTER TABLE orders ENABLE ROW LEVEL SECURITY;
-ALTER TABLE order_items ENABLE ROW LEVEL SECURITY;
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_tables WHERE tablename = 'profiles' AND rowsecurity = true) THEN
+        ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM pg_tables WHERE tablename = 'categories' AND rowsecurity = true) THEN
+        ALTER TABLE categories ENABLE ROW LEVEL SECURITY;
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM pg_tables WHERE tablename = 'products' AND rowsecurity = true) THEN
+        ALTER TABLE products ENABLE ROW LEVEL SECURITY;
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM pg_tables WHERE tablename = 'product_images' AND rowsecurity = true) THEN
+        ALTER TABLE product_images ENABLE ROW LEVEL SECURITY;
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM pg_tables WHERE tablename = 'cart_items' AND rowsecurity = true) THEN
+        ALTER TABLE cart_items ENABLE ROW LEVEL SECURITY;
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM pg_tables WHERE tablename = 'orders' AND rowsecurity = true) THEN
+        ALTER TABLE orders ENABLE ROW LEVEL SECURITY;
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM pg_tables WHERE tablename = 'order_items' AND rowsecurity = true) THEN
+        ALTER TABLE order_items ENABLE ROW LEVEL SECURITY;
+    END IF;
+END $$;
 
 -- Policies
-CREATE POLICY "Public profiles are viewable by everyone" ON profiles FOR SELECT USING (true);
-CREATE POLICY "Users can insert their own profile" ON profiles FOR INSERT WITH CHECK (auth.uid() = id);
-CREATE POLICY "Users can update own profile" ON profiles FOR UPDATE USING (auth.uid() = id);
+DO $$
+BEGIN
+    -- Profiles
+    DROP POLICY IF EXISTS "Public profiles are viewable by everyone" ON profiles;
+    CREATE POLICY "Public profiles are viewable by everyone" ON profiles FOR SELECT USING (true);
+    DROP POLICY IF EXISTS "Users can insert their own profile" ON profiles;
+    CREATE POLICY "Users can insert their own profile" ON profiles FOR INSERT WITH CHECK (auth.uid() = id);
+    DROP POLICY IF EXISTS "Users can update own profile" ON profiles;
+    CREATE POLICY "Users can update own profile" ON profiles FOR UPDATE USING (auth.uid() = id);
 
-CREATE POLICY "Allow public select on categories" ON categories FOR SELECT USING (true);
-CREATE POLICY "Allow anon/auth all on categories" ON categories FOR ALL USING (true) WITH CHECK (true);
+    -- Categories
+    DROP POLICY IF EXISTS "Allow public select on categories" ON categories;
+    CREATE POLICY "Allow public select on categories" ON categories FOR SELECT USING (true);
+    DROP POLICY IF EXISTS "Allow anon/auth all on categories" ON categories;
+    CREATE POLICY "Allow anon/auth all on categories" ON categories FOR ALL USING (true) WITH CHECK (true);
 
-CREATE POLICY "Allow public select on products" ON products FOR SELECT USING (true);
-CREATE POLICY "Allow anon/auth all on products" ON products FOR ALL USING (true) WITH CHECK (true);
+    -- Products
+    DROP POLICY IF EXISTS "Allow public select on products" ON products;
+    CREATE POLICY "Allow public select on products" ON products FOR SELECT USING (true);
+    DROP POLICY IF EXISTS "Allow anon/auth all on products" ON products;
+    CREATE POLICY "Allow anon/auth all on products" ON products FOR ALL USING (true) WITH CHECK (true);
 
-CREATE POLICY "Allow public select on product_images" ON product_images FOR SELECT USING (true);
-CREATE POLICY "Allow anon/auth all on product_images" ON product_images FOR ALL USING (true) WITH CHECK (true);
+    -- Product Images
+    DROP POLICY IF EXISTS "Allow public select on product_images" ON product_images;
+    CREATE POLICY "Allow public select on product_images" ON product_images FOR SELECT USING (true);
+    DROP POLICY IF EXISTS "Allow anon/auth all on product_images" ON product_images;
+    CREATE POLICY "Allow anon/auth all on product_images" ON product_images FOR ALL USING (true) WITH CHECK (true);
 
-CREATE POLICY "Users can view their own cart items" ON cart_items FOR SELECT USING (auth.uid() = user_id);
-CREATE POLICY "Users can manage their own cart items" ON cart_items FOR ALL USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
+    -- Cart Items
+    DROP POLICY IF EXISTS "Users can view their own cart items" ON cart_items;
+    CREATE POLICY "Users can view their own cart items" ON cart_items FOR SELECT USING (auth.uid() = user_id);
+    DROP POLICY IF EXISTS "Users can manage their own cart items" ON cart_items;
+    CREATE POLICY "Users can manage their own cart items" ON cart_items FOR ALL USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
 
-CREATE POLICY "Users can view their own orders" ON orders FOR SELECT USING (auth.uid() = user_id);
-CREATE POLICY "Anyone can insert orders" ON orders FOR INSERT WITH CHECK (true);
-CREATE POLICY "Allow public select on orders" ON orders FOR SELECT USING (true);
+    -- Orders
+    DROP POLICY IF EXISTS "Users can view their own orders" ON orders;
+    CREATE POLICY "Users can view their own orders" ON orders FOR SELECT USING (auth.uid() = user_id);
+    DROP POLICY IF EXISTS "Anyone can insert orders" ON orders;
+    CREATE POLICY "Anyone can insert orders" ON orders FOR INSERT WITH CHECK (true);
+    DROP POLICY IF EXISTS "Allow public select on orders" ON orders;
+    CREATE POLICY "Allow public select on orders" ON orders FOR SELECT USING (true);
 
-CREATE POLICY "Anyone can insert order items" ON order_items FOR INSERT WITH CHECK (true);
-CREATE POLICY "Allow public select on order_items" ON order_items FOR SELECT USING (true);
+    -- Order Items
+    DROP POLICY IF EXISTS "Anyone can insert order items" ON order_items;
+    CREATE POLICY "Anyone can insert order items" ON order_items FOR INSERT WITH CHECK (true);
+    DROP POLICY IF EXISTS "Allow public select on order_items" ON order_items;
+    CREATE POLICY "Allow public select on order_items" ON order_items FOR SELECT USING (true);
+END $$;
 
 -- Initial Categories
 INSERT INTO categories (name) VALUES ('Frutas'), ('Vegetais'), ('Laticínios'), ('Padaria') ON CONFLICT DO NOTHING;
 
 -- Enable Realtime for orders table
-ALTER PUBLICATION supabase_realtime ADD TABLE orders;
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_publication_tables
+        WHERE pubname = 'supabase_realtime' AND tablename = 'orders'
+    ) THEN
+        ALTER PUBLICATION supabase_realtime ADD TABLE orders;
+    END IF;
+END $$;
