@@ -28,7 +28,9 @@ import androidx.navigation.NavType
 import androidx.navigation.compose.*
 import androidx.navigation.navArgument
 import com.example.comprafacil.ui.screens.*
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.comprafacil.ui.theme.CompraFacilTheme
+import com.example.comprafacil.ui.viewmodel.CartViewModel
 import android.content.Intent
 import android.net.Uri
 import androidx.compose.ui.window.DialogProperties
@@ -155,6 +157,8 @@ class MainActivity : ComponentActivity() {
                 )
 
                 val showBottomBar = currentDestination?.route in items.map { it.route }
+                val cartViewModel: CartViewModel = viewModel()
+                val cartCount by cartViewModel.cartCount.collectAsState()
 
                 Scaffold(
                     // Set Scaffold background to match the theme background exactly
@@ -170,7 +174,19 @@ class MainActivity : ComponentActivity() {
                             ) {
                                 items.forEach { screen ->
                                     NavigationBarItem(
-                                        icon = { Icon(screen.icon, contentDescription = null) },
+                                        icon = {
+                                            if (screen == Screen.Cart) {
+                                                BadgedBox(badge = {
+                                                    if (cartCount > 0) {
+                                                        Badge { Text(cartCount.toString()) }
+                                                    }
+                                                }) {
+                                                    Icon(screen.icon, contentDescription = null)
+                                                }
+                                            } else {
+                                                Icon(screen.icon, contentDescription = null)
+                                            }
+                                        },
                                         label = { Text(screen.label) },
                                         selected = currentDestination?.hierarchy?.any { it.route == screen.route } == true,
                                         onClick = {
@@ -211,7 +227,18 @@ class MainActivity : ComponentActivity() {
                             HomeScreen(
                                 onProductClick = { productId ->
                                     navController.navigate("product/$productId")
+                                },
+                                onSearchClick = {
+                                    navController.navigate("search")
                                 }
+                            )
+                        }
+                        composable("search") {
+                            SearchScreen(
+                                onProductClick = { productId ->
+                                    navController.navigate("product/$productId")
+                                },
+                                onBack = { navController.popBackStack() }
                             )
                         }
                         composable(

@@ -218,7 +218,7 @@ fun CheckoutScreen(onBack: () -> Unit, onOrderFinished: () -> Unit) {
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            Button(
+            OutlinedButton(
                 onClick = {
                     val fineLocation = ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION)
                     if (fineLocation == PackageManager.PERMISSION_GRANTED) {
@@ -228,7 +228,8 @@ fun CheckoutScreen(onBack: () -> Unit, onOrderFinished: () -> Unit) {
                     }
                 },
                 modifier = Modifier.fillMaxWidth(),
-                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.secondary)
+                colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.secondary),
+                border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.secondary)
             ) {
                 if (fetchingLocation) {
                     CircularProgressIndicator(modifier = Modifier.size(20.dp), color = MaterialTheme.colorScheme.onSecondary)

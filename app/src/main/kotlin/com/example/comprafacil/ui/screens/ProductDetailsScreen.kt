@@ -255,7 +255,7 @@ fun ProductDetailsScreen(productId: String, onBack: () -> Unit) {
                                 Text(
                                     "ESTOQUE: ${product!!.stock_quantity}",
                                     modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
-                                    fontSize = 10.sp,
+                                    fontSize = 12.sp,
                                     fontWeight = FontWeight.Bold,
                                     color = Color(0xFF4CAF50)
                                 )
@@ -270,7 +270,7 @@ fun ProductDetailsScreen(productId: String, onBack: () -> Unit) {
                         Spacer(modifier = Modifier.width(4.dp))
                         Text(
                             "Vendido por: ${product!!.sold_by ?: "CompraFácil"}",
-                            style = MaterialTheme.typography.bodySmall,
+                            style = MaterialTheme.typography.labelLarge,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }

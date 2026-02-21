@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Search, Download } from 'lucide-react'
+import { Search, Download, SearchX } from 'lucide-react'
 import { productService } from '../services/productService'
 import { configService } from '../services/configService'
 import type { Product } from '../types/database'
@@ -76,11 +76,17 @@ export default function Home() {
 
         {loading ? (
           <LoadingSpinner />
-        ) : (
+        ) : filteredProducts.length > 0 ? (
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
             {filteredProducts.map(product => (
               <ProductCard key={product.id} product={product} />
             ))}
+          </div>
+        ) : (
+          <div className="flex flex-col items-center justify-center py-20 text-gray-500">
+            <SearchX size={64} className="mb-4 opacity-20" />
+            <h3 className="text-xl font-bold text-white mb-2">Nenhum produto encontrado</h3>
+            <p>Tente buscar por outro termo.</p>
           </div>
         )}
       </main>

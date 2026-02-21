@@ -27,12 +27,14 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.comprafacil.core.data.Category
 import com.example.comprafacil.core.data.Product
 import com.example.comprafacil.core.utils.CurrencyUtils
+import com.example.comprafacil.ui.components.ProductCard
 import com.example.comprafacil.ui.viewmodel.HomeViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(
     onProductClick: (String) -> Unit,
+    onSearchClick: () -> Unit,
     viewModel: HomeViewModel = viewModel()
 ) {
     val products by viewModel.products.collectAsState()
@@ -90,22 +92,29 @@ fun HomeScreen(
                 }
 
                 Spacer(modifier = Modifier.height(12.dp))
-                OutlinedTextField(
-                    value = searchQuery,
-                    onValueChange = { searchQuery = it },
-                    modifier = Modifier.fillMaxWidth(),
-                    placeholder = { Text("Buscar produtos...") },
-                    leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
+                Surface(
+                    onClick = onSearchClick,
                     shape = RoundedCornerShape(16.dp),
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedContainerColor = MaterialTheme.colorScheme.surface,
-                        unfocusedContainerColor = MaterialTheme.colorScheme.surface,
-                        focusedBorderColor = Color.Transparent,
-                        unfocusedBorderColor = Color.Transparent,
-                        focusedTextColor = MaterialTheme.colorScheme.onSurface,
-                        unfocusedTextColor = MaterialTheme.colorScheme.onSurface
-                    )
-                )
+                    color = MaterialTheme.colorScheme.surface,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            Icons.Default.Search,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Spacer(modifier = Modifier.width(12.dp))
+                        Text(
+                            "Buscar produtos...",
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            fontSize = 16.sp
+                        )
+                    }
+                }
             }
         }
 
@@ -167,73 +176,3 @@ fun CategoryChip(name: String, isSelected: Boolean, onClick: () -> Unit) {
     }
 }
 
-@Composable
-fun ProductCard(product: Product, onClick: () -> Unit) {
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable(onClick = onClick),
-        shape = RoundedCornerShape(20.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
-    ) {
-        Column {
-            Box {
-                AsyncImage(
-                    model = product.image_url ?: product.images?.firstOrNull()?.image_url ?: "",
-                    contentDescription = null,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(140.dp)
-                        .clip(RoundedCornerShape(20.dp)),
-                    contentScale = ContentScale.Crop
-                )
-
-                // Price Tag Overlay
-                Box(
-                    modifier = Modifier
-                        .align(Alignment.BottomEnd)
-                        .padding(8.dp)
-                        .background(
-                            MaterialTheme.colorScheme.secondary.copy(alpha = 0.9f),
-                            RoundedCornerShape(8.dp)
-                        )
-                        .padding(horizontal = 8.dp, vertical = 4.dp)
-                ) {
-                    Text(
-                        CurrencyUtils.formatPrice(product.price),
-                        color = MaterialTheme.colorScheme.onSecondary,
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.Bold
-                    )
-                }
-            }
-            Column(modifier = Modifier.padding(12.dp)) {
-                Text(
-                    product.name,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 15.sp,
-                    maxLines = 1,
-                    color = MaterialTheme.colorScheme.onSurface
-                )
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(
-                        "Por: ${product.sold_by ?: "CompraFácil"}",
-                        fontSize = 10.sp,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        maxLines = 1,
-                        modifier = Modifier.weight(1f)
-                    )
-                    if ((product.stock_quantity ?: 0) > 0) {
-                        Text(
-                            "Estoque: ${product.stock_quantity}",
-                            fontSize = 10.sp,
-                            color = Color(0xFF4CAF50),
-                            fontWeight = FontWeight.Bold
-                        )
-                    }
-                }
-            }
-        }
-    }
-}
