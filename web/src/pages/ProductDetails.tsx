@@ -116,9 +116,29 @@ export default function ProductDetails() {
             <span className="text-3xl font-black">R$ {product.price.toFixed(2)}</span>
           </div>
 
-          <p className="text-gray-400 leading-relaxed mb-8 flex-1">
+          <p className="text-gray-400 leading-relaxed mb-6 flex-1">
             {product.description || 'Nenhuma descrição disponível para este produto.'}
           </p>
+
+          {product.variations && product.variations.length > 0 && (
+            <div className="space-y-4 mb-8">
+              {product.variations.map((v, i) => (
+                <div key={i}>
+                  <span className="text-sm font-bold text-gray-400 block mb-2">{v.name}</span>
+                  <div className="flex flex-wrap gap-2">
+                    {v.values.map((val, j) => (
+                      <span
+                        key={j}
+                        className="px-4 py-2 bg-surface border border-white/10 rounded-xl text-sm font-medium text-white/80"
+                      >
+                        {val}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
 
           <div className="space-y-4">
             <div className="flex items-center justify-between p-4 bg-surface rounded-2xl border border-white/5">

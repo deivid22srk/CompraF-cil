@@ -116,6 +116,18 @@ BEGIN
     IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='orders' AND column_name='customer_name') THEN
         ALTER TABLE orders ADD COLUMN customer_name TEXT;
     END IF;
+
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='products' AND column_name='variations') THEN
+        ALTER TABLE products ADD COLUMN variations JSONB DEFAULT '[]'::jsonb;
+    END IF;
+
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='cart_items' AND column_name='selected_variations') THEN
+        ALTER TABLE cart_items ADD COLUMN selected_variations JSONB;
+    END IF;
+
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='order_items' AND column_name='selected_variations') THEN
+        ALTER TABLE order_items ADD COLUMN selected_variations JSONB;
+    END IF;
 END $$;
 
 -- Enable RLS

@@ -13,7 +13,14 @@ data class Product(
     val sold_by: String? = null,
     val category_id: String? = null,
     val created_at: String? = null,
-    val images: List<ProductImage>? = null
+    val images: List<ProductImage>? = null,
+    val variations: List<ProductVariation>? = null
+)
+
+@Serializable
+data class ProductVariation(
+    val name: String,
+    val values: List<String>
 )
 
 @Serializable
@@ -46,7 +53,8 @@ data class CartItem(
     val user_id: String,
     val product_id: String,
     val quantity: Int,
-    val product: Product? = null
+    val product: Product? = null,
+    val selected_variations: Map<String, String>? = null
 )
 
 @Serializable
@@ -92,7 +100,8 @@ data class OrderItem(
     val order_id: String,
     val product_id: String? = null,
     val quantity: Int,
-    val price_at_time: Double
+    val price_at_time: Double,
+    val selected_variations: Map<String, String>? = null
 )
 
 @Serializable

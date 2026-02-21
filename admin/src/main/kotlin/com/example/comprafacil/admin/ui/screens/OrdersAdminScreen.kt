@@ -106,7 +106,13 @@ fun OrderAdminItem(order: Order, viewModel: AdminOrdersViewModel) {
                     CircularProgressIndicator(modifier = Modifier.size(20.dp))
                 } else {
                     orderItems.forEach { item ->
-                        Text("• ${item.quantity}x (ID: ${item.product_id?.takeLast(4)}) - R$ ${item.price_at_time}", color = Color.Gray, fontSize = 12.sp)
+                        Column(modifier = Modifier.padding(bottom = 4.dp)) {
+                            Text("• ${item.quantity}x (ID: ${item.product_id?.takeLast(4)}) - R$ ${item.price_at_time}", color = Color.Gray, fontSize = 12.sp)
+                            item.selected_variations?.let { vars ->
+                                val varsText = vars.entries.joinToString(", ") { "${it.key}: ${it.value}" }
+                                Text("  $varsText", color = Color(0xFFFDCB58), fontSize = 10.sp)
+                            }
+                        }
                     }
                 }
             }

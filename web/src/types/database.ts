@@ -8,6 +8,7 @@ export interface Product {
   stock_quantity?: number;
   category_id?: string;
   created_at?: string;
+  variations?: { name: string; values: string[] }[];
 }
 
 export interface ProductImage {

@@ -7,6 +7,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -59,7 +60,10 @@ class ProductListViewModel(private val repository: ProductRepository = ProductRe
 }
 
 @Composable
-fun ProductListScreen(viewModel: ProductListViewModel = viewModel()) {
+fun ProductListScreen(
+    onEditProduct: (String) -> Unit,
+    viewModel: ProductListViewModel = viewModel()
+) {
     val products by viewModel.products.collectAsState()
     val loading by viewModel.loading.collectAsState()
 
@@ -74,7 +78,11 @@ fun ProductListScreen(viewModel: ProductListViewModel = viewModel()) {
                 Spacer(modifier = Modifier.height(16.dp))
             }
             items(products) { product ->
-                ProductAdminItem(product, viewModel)
+                ProductAdminItem(
+                    product = product,
+                    onEdit = { onEditProduct(product.id!!) },
+                    viewModel = viewModel
+                )
                 Spacer(modifier = Modifier.height(8.dp))
             }
         }
@@ -82,7 +90,11 @@ fun ProductListScreen(viewModel: ProductListViewModel = viewModel()) {
 }
 
 @Composable
-fun ProductAdminItem(product: Product, viewModel: ProductListViewModel) {
+fun ProductAdminItem(
+    product: Product,
+    onEdit: () -> Unit,
+    viewModel: ProductListViewModel
+) {
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
 
@@ -106,17 +118,22 @@ fun ProductAdminItem(product: Product, viewModel: ProductListViewModel) {
                 Text("R$ ${product.price}", color = Color(0xFFFF9800))
                 Text("Estoque: ${product.stock_quantity}", color = Color.Gray, fontSize = 12.sp)
             }
-            IconButton(onClick = {
-                scope.launch {
-                    try {
-                        viewModel.deleteProduct(product.id!!)
-                        Toast.makeText(context, "Excluído", Toast.LENGTH_SHORT).show()
-                    } catch (e: Exception) {
-                        Toast.makeText(context, "Erro ao excluir", Toast.LENGTH_SHORT).show()
-                    }
+            Row {
+                IconButton(onClick = onEdit) {
+                    Icon(Icons.Default.Edit, contentDescription = "Editar", tint = Color(0xFF2196F3))
                 }
-            }) {
-                Icon(Icons.Default.Delete, contentDescription = null, tint = Color.Red)
+                IconButton(onClick = {
+                    scope.launch {
+                        try {
+                            viewModel.deleteProduct(product.id!!)
+                            Toast.makeText(context, "Excluído", Toast.LENGTH_SHORT).show()
+                        } catch (e: Exception) {
+                            Toast.makeText(context, "Erro ao excluir", Toast.LENGTH_SHORT).show()
+                        }
+                    }
+                }) {
+                    Icon(Icons.Default.Delete, contentDescription = "Excluir", tint = Color.Red)
+                }
             }
         }
     }

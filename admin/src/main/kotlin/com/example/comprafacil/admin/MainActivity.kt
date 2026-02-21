@@ -342,6 +342,7 @@ fun AdminTheme(content: @Composable () -> Unit) {
 @Composable
 fun AdminPanel() {
     var selectedTab by remember { mutableIntStateOf(0) }
+    var editingProductId by remember { mutableStateOf<String?>(null) }
 
     Scaffold(
         bottomBar = {
@@ -349,8 +350,11 @@ fun AdminPanel() {
                 tonalElevation = 0.dp
             ) {
                 NavigationBarItem(
-                    selected = selectedTab == 0,
-                    onClick = { selectedTab = 0 },
+                    selected = selectedTab == 0 && editingProductId == null,
+                    onClick = {
+                        selectedTab = 0
+                        editingProductId = null
+                    },
                     icon = { Icon(Icons.Default.Add, contentDescription = null) },
                     label = { Text("Novo") }
                 )
@@ -383,8 +387,19 @@ fun AdminPanel() {
     ) { padding ->
         Box(modifier = Modifier.padding(padding)) {
             when (selectedTab) {
-                0 -> AddProductScreen()
-                1 -> ProductListScreen()
+                0 -> ProductFormScreen(
+                    productId = editingProductId,
+                    onSuccess = {
+                        editingProductId = null
+                        selectedTab = 1
+                    }
+                )
+                1 -> ProductListScreen(
+                    onEditProduct = { id ->
+                        editingProductId = id
+                        selectedTab = 0
+                    }
+                )
                 2 -> OrdersAdminScreen()
                 3 -> CategoryAdminScreen()
                 4 -> SettingsAdminScreen()

@@ -5,6 +5,7 @@ import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -13,6 +14,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Image
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -24,95 +27,19 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.ViewModel
-import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.example.comprafacil.core.SupabaseConfig
+import com.example.comprafacil.admin.ui.viewmodel.ProductFormViewModel
 import com.example.comprafacil.core.data.Category
-import com.example.comprafacil.core.data.Product
-import com.example.comprafacil.core.data.ProductImage
-import com.example.comprafacil.core.data.repository.ProductRepository
-import io.github.jan.supabase.postgrest.from
-import io.github.jan.supabase.storage.storage
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
+import com.example.comprafacil.core.data.ProductVariation
 import kotlinx.coroutines.launch
-import java.util.*
-
-class AddProductViewModel(private val repository: ProductRepository = ProductRepository()) : ViewModel() {
-    private val _categories = MutableStateFlow<List<Category>>(emptyList())
-    val categories: StateFlow<List<Category>> = _categories.asStateFlow()
-
-    private val _uploading = MutableStateFlow(false)
-    val uploading: StateFlow<Boolean> = _uploading.asStateFlow()
-
-    init {
-        fetchCategories()
-    }
-
-    private fun fetchCategories() {
-        viewModelScope.launch {
-            try {
-                _categories.value = repository.getCategories()
-            } catch (e: Exception) {}
-        }
-    }
-
-    fun addProduct(
-        name: String,
-        description: String,
-        price: Double,
-        stockQuantity: Int,
-        soldBy: String?,
-        category: Category?,
-        images: List<ByteArray>,
-        onSuccess: () -> Unit,
-        onError: (String) -> Unit
-    ) {
-        viewModelScope.launch {
-            _uploading.value = true
-            try {
-                val imageUrls = mutableListOf<String>()
-                for (bytes in images) {
-                    val fileName = "products/${UUID.randomUUID()}.jpg"
-                    val bucket = SupabaseConfig.client.storage.from("product-images")
-                    bucket.upload(fileName, bytes)
-                    imageUrls.add(bucket.publicUrl(fileName))
-                }
-
-                val productData = Product(
-                    name = name,
-                    description = description,
-                    price = price,
-                    stock_quantity = stockQuantity,
-                    sold_by = soldBy,
-                    category_id = category?.id,
-                    image_url = imageUrls.firstOrNull() ?: ""
-                )
-
-                val insertedProduct = repository.insertProduct(productData)
-                val productId = insertedProduct.id!!
-
-                if (imageUrls.isNotEmpty()) {
-                    val imagesToInsert = imageUrls.map { url ->
-                        ProductImage(product_id = productId, image_url = url)
-                    }
-                    SupabaseConfig.client.from("product_images").insert(imagesToInsert)
-                }
-                onSuccess()
-            } catch (e: Exception) {
-                onError(e.message ?: "Erro ao adicionar produto")
-            } finally {
-                _uploading.value = false
-            }
-        }
-    }
-}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun AddProductScreen(viewModel: AddProductViewModel = viewModel()) {
+fun ProductFormScreen(
+    productId: String? = null,
+    onSuccess: () -> Unit,
+    viewModel: ProductFormViewModel = viewModel()
+) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
 
@@ -123,10 +50,39 @@ fun AddProductScreen(viewModel: AddProductViewModel = viewModel()) {
     var soldBy by remember { mutableStateOf("") }
     var selectedCategory by remember { mutableStateOf<Category?>(null) }
     var selectedImages by remember { mutableStateOf<List<Uri>>(emptyList()) }
+    var existingImageUrls by remember { mutableStateOf<List<String>>(emptyList()) }
+    var variations by remember { mutableStateOf<List<ProductVariation>>(emptyList()) }
     var expanded by remember { mutableStateOf(false) }
 
     val categories by viewModel.categories.collectAsState()
-    val uploading by viewModel.uploading.collectAsState()
+    val loading by viewModel.loading.collectAsState()
+    val product by viewModel.product.collectAsState()
+
+    LaunchedEffect(productId) {
+        if (productId != null) {
+            viewModel.loadProduct(productId)
+        }
+    }
+
+    LaunchedEffect(product) {
+        product?.let {
+            name = it.name
+            description = it.description ?: ""
+            price = it.price.toString()
+            stockQuantity = (it.stock_quantity ?: 0).toString()
+            soldBy = it.sold_by ?: ""
+            variations = it.variations ?: emptyList()
+            existingImageUrls = it.images?.map { img -> img.image_url } ?: listOfNotNull(it.image_url)
+            // Note: category needs careful matching
+        }
+    }
+
+    // Match category once categories are loaded and product is loaded
+    LaunchedEffect(categories, product) {
+        if (categories.isNotEmpty() && product != null) {
+            selectedCategory = categories.find { it.id == product?.category_id }
+        }
+    }
 
     val pickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.PickMultipleVisualMedia()
@@ -141,7 +97,12 @@ fun AddProductScreen(viewModel: AddProductViewModel = viewModel()) {
             .padding(16.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Text("Adicionar Produto", fontSize = 24.sp, fontWeight = FontWeight.Bold, color = Color(0xFFFF9800))
+        Text(
+            if (productId == null) "Adicionar Produto" else "Editar Produto",
+            fontSize = 24.sp,
+            fontWeight = FontWeight.Bold,
+            color = Color(0xFFFF9800)
+        )
         Spacer(modifier = Modifier.height(16.dp))
 
         OutlinedTextField(value = name, onValueChange = { name = it }, label = { Text("Nome do Produto") }, modifier = Modifier.fillMaxWidth())
@@ -154,7 +115,7 @@ fun AddProductScreen(viewModel: AddProductViewModel = viewModel()) {
         Spacer(modifier = Modifier.height(8.dp))
         OutlinedTextField(value = soldBy, onValueChange = { soldBy = it }, label = { Text("Vendido por (Nome da Loja/Vendedor)") }, modifier = Modifier.fillMaxWidth())
 
-        Spacer(modifier = Modifier.height(8.dp))
+        Spacer(modifier = Modifier.height(16.dp))
 
         ExposedDropdownMenuBox(
             expanded = expanded,
@@ -167,7 +128,6 @@ fun AddProductScreen(viewModel: AddProductViewModel = viewModel()) {
                 readOnly = true,
                 label = { Text("Categoria") },
                 trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
-                colors = ExposedDropdownMenuDefaults.outlinedTextFieldColors(),
                 modifier = Modifier.menuAnchor().fillMaxWidth()
             )
             ExposedDropdownMenu(
@@ -180,14 +140,40 @@ fun AddProductScreen(viewModel: AddProductViewModel = viewModel()) {
                         onClick = {
                             selectedCategory = category
                             expanded = false
-                        },
-                        contentPadding = ExposedDropdownMenuDefaults.ItemContentPadding
+                        }
                     )
                 }
             }
         }
 
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(24.dp))
+        Text("Variações (Opcional)", fontWeight = FontWeight.Bold, modifier = Modifier.align(Alignment.Start))
+        Spacer(modifier = Modifier.height(8.dp))
+
+        variations.forEachIndexed { index, variation ->
+            VariationItem(
+                variation = variation,
+                onUpdate = { updated ->
+                    variations = variations.toMutableList().apply { set(index, updated) }
+                },
+                onRemove = {
+                    variations = variations.toMutableList().apply { removeAt(index) }
+                }
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+        }
+
+        Button(
+            onClick = { variations = variations + ProductVariation(name = "", values = emptyList()) },
+            modifier = Modifier.fillMaxWidth(),
+            colors = ButtonDefaults.buttonColors(containerColor = Color.DarkGray)
+        ) {
+            Icon(Icons.Default.Add, contentDescription = null)
+            Spacer(modifier = Modifier.width(8.dp))
+            Text("Adicionar Variação (ex: Cor)")
+        }
+
+        Spacer(modifier = Modifier.height(24.dp))
 
         Button(
             onClick = { pickerLauncher.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) },
@@ -196,20 +182,18 @@ fun AddProductScreen(viewModel: AddProductViewModel = viewModel()) {
         ) {
             Icon(Icons.Default.Image, contentDescription = null)
             Spacer(modifier = Modifier.width(8.dp))
-            Text("Selecionar Imagens (${selectedImages.size})")
+            Text("Selecionar Novas Imagens (${selectedImages.size})")
         }
 
-        Spacer(modifier = Modifier.height(8.dp))
-
-        LazyColumn(modifier = Modifier.heightIn(max = 200.dp)) {
-            items(selectedImages) { uri ->
-                Text(uri.toString(), fontSize = 10.sp, maxLines = 1)
-            }
+        if (existingImageUrls.isNotEmpty()) {
+            Spacer(modifier = Modifier.height(8.dp))
+            Text("Imagens atuais: ${existingImageUrls.size}", fontSize = 12.sp, color = Color.Gray)
+            // Option to clear images could be added here
         }
 
-        Spacer(modifier = Modifier.height(24.dp))
+        Spacer(modifier = Modifier.height(32.dp))
 
-        if (uploading) {
+        if (loading) {
             CircularProgressIndicator(color = Color(0xFFFF9800))
         } else {
             Button(
@@ -223,17 +207,20 @@ fun AddProductScreen(viewModel: AddProductViewModel = viewModel()) {
                         context.contentResolver.openInputStream(uri)?.readBytes()
                     }
 
-                    viewModel.addProduct(
+                    viewModel.saveProduct(
+                        id = productId,
                         name = name,
                         description = description,
                         price = price.toDoubleOrNull() ?: 0.0,
                         stockQuantity = stockQuantity.toIntOrNull() ?: 0,
                         soldBy = soldBy.ifBlank { null },
                         category = selectedCategory,
-                        images = imageBytesList,
+                        variations = variations.filter { it.name.isNotBlank() && it.values.isNotEmpty() },
+                        newImages = imageBytesList,
+                        existingImageUrls = if (selectedImages.isNotEmpty()) emptyList() else existingImageUrls, // Simplified: replace all if new ones selected
                         onSuccess = {
-                            Toast.makeText(context, "Produto adicionado!", Toast.LENGTH_LONG).show()
-                            name = ""; description = ""; price = ""; stockQuantity = ""; soldBy = ""; selectedCategory = null; selectedImages = emptyList()
+                            Toast.makeText(context, "Produto salvo!", Toast.LENGTH_LONG).show()
+                            onSuccess()
                         },
                         onError = { error ->
                             Toast.makeText(context, "Erro: $error", Toast.LENGTH_LONG).show()
@@ -243,8 +230,49 @@ fun AddProductScreen(viewModel: AddProductViewModel = viewModel()) {
                 modifier = Modifier.fillMaxWidth().height(56.dp),
                 shape = RoundedCornerShape(12.dp)
             ) {
-                Text("CADASTRAR PRODUTO", fontWeight = FontWeight.Bold)
+                Text(if (productId == null) "CADASTRAR PRODUTO" else "ATUALIZAR PRODUTO", fontWeight = FontWeight.Bold)
             }
+        }
+    }
+}
+
+@Composable
+fun VariationItem(
+    variation: ProductVariation,
+    onUpdate: (ProductVariation) -> Unit,
+    onRemove: () -> Unit
+) {
+    var valuesText by remember { mutableStateOf(variation.values.joinToString(", ")) }
+
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(containerColor = Color(0xFF1E1E1E))
+    ) {
+        Column(modifier = Modifier.padding(12.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                OutlinedTextField(
+                    value = variation.name,
+                    onValueChange = { onUpdate(variation.copy(name = it)) },
+                    label = { Text("Nome (ex: Cor)") },
+                    modifier = Modifier.weight(1f),
+                    placeholder = { Text("Cor, Tamanho, etc") }
+                )
+                IconButton(onClick = onRemove) {
+                    Icon(Icons.Default.Delete, contentDescription = null, tint = Color.Red)
+                }
+            }
+            Spacer(modifier = Modifier.height(8.dp))
+            OutlinedTextField(
+                value = valuesText,
+                onValueChange = {
+                    valuesText = it
+                    val values = it.split(",").map { v -> v.trim() }.filter { v -> v.isNotBlank() }
+                    onUpdate(variation.copy(values = values))
+                },
+                label = { Text("Valores (separados por vírgula)") },
+                modifier = Modifier.fillMaxWidth(),
+                placeholder = { Text("Azul, Vermelho, Verde") }
+            )
         }
     }
 }

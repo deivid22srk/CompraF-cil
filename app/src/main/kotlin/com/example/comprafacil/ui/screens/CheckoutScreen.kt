@@ -331,7 +331,8 @@ fun CheckoutScreen(onBack: () -> Unit, onOrderFinished: () -> Unit) {
                                         order_id = orderId,
                                         product_id = cartItem.product_id,
                                         quantity = cartItem.quantity,
-                                        price_at_time = cartItem.product?.price ?: 0.0
+                                        price_at_time = cartItem.product?.price ?: 0.0,
+                                        selected_variations = cartItem.selected_variations
                                     )
                                 }
 

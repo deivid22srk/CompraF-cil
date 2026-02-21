@@ -52,6 +52,7 @@ fun ProductDetailsScreen(productId: String, onBack: () -> Unit) {
     var loading by remember { mutableStateOf(true) }
     var showZoomDialog by remember { mutableStateOf(false) }
     var selectedImageUrl by remember { mutableStateOf("") }
+    var selectedVariations by remember { mutableStateOf<Map<String, String>>(emptyMap()) }
 
     LaunchedEffect(productId) {
         try {
@@ -115,13 +116,21 @@ fun ProductDetailsScreen(productId: String, onBack: () -> Unit) {
                                     val userId = client.auth.currentUserOrNull()?.id
                                     if (userId != null) {
                                         try {
-                                            // Check if already in cart
+                                            // Validate variations
+                                            val missingVariations = product?.variations?.filter { !selectedVariations.containsKey(it.name) } ?: emptyList()
+                                            if (missingVariations.isNotEmpty()) {
+                                                Toast.makeText(context, "Selecione: ${missingVariations.first().name}", Toast.LENGTH_SHORT).show()
+                                                return@launch
+                                            }
+
+                                            // For variations, we often want separate entries if variations differ,
+                                            // or we check if exact same variation exists.
                                             val existing = client.from("cart_items").select {
                                                 filter {
                                                     eq("user_id", userId)
                                                     eq("product_id", productId)
                                                 }
-                                            }.decodeSingleOrNull<CartItem>()
+                                            }.decodeAs<List<CartItem>>().find { it.selected_variations == selectedVariations }
 
                                             if (existing != null) {
                                                 val newQuantity = existing.quantity + quantity
@@ -139,7 +148,8 @@ fun ProductDetailsScreen(productId: String, onBack: () -> Unit) {
                                                 val cartItem = CartItem(
                                                     user_id = userId,
                                                     product_id = productId,
-                                                    quantity = quantity
+                                                    quantity = quantity,
+                                                    selected_variations = selectedVariations.ifEmpty { null }
                                                 )
                                                 client.from("cart_items").insert(cartItem)
                                                 Toast.makeText(context, "Adicionado ao carrinho!", Toast.LENGTH_SHORT).show()
@@ -273,6 +283,36 @@ fun ProductDetailsScreen(productId: String, onBack: () -> Unit) {
                             style = MaterialTheme.typography.labelLarge,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
+                    }
+
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    if (product!!.variations?.isNotEmpty() == true) {
+                        product!!.variations!!.forEach { variation ->
+                            Text(
+                                variation.name,
+                                style = MaterialTheme.typography.titleSmall,
+                                fontWeight = FontWeight.Bold,
+                                modifier = Modifier.padding(top = 16.dp)
+                            )
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(vertical = 8.dp),
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                variation.values.forEach { value ->
+                                    FilterChip(
+                                        selected = selectedVariations[variation.name] == value,
+                                        onClick = {
+                                            selectedVariations = selectedVariations + (variation.name to value)
+                                        },
+                                        label = { Text(value) },
+                                        shape = RoundedCornerShape(8.dp)
+                                    )
+                                }
+                            }
+                        }
                     }
 
                     Spacer(modifier = Modifier.height(12.dp))

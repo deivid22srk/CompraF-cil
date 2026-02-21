@@ -93,6 +93,7 @@ fun CartScreen(onCheckout: () -> Unit) {
                             CartItemRow(
                                 product = product,
                                 quantity = item.quantity,
+                                selectedVariations = item.selected_variations,
                                 onUpdateQuantity = { newQuantity ->
                                     if (newQuantity <= 0) {
                                         scope.launch {
@@ -171,7 +172,13 @@ fun CartScreen(onCheckout: () -> Unit) {
 }
 
 @Composable
-fun CartItemRow(product: Product, quantity: Int, onUpdateQuantity: (Int) -> Unit, onDelete: () -> Unit) {
+fun CartItemRow(
+    product: Product,
+    quantity: Int,
+    selectedVariations: Map<String, String>? = null,
+    onUpdateQuantity: (Int) -> Unit,
+    onDelete: () -> Unit
+) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
@@ -190,6 +197,12 @@ fun CartItemRow(product: Product, quantity: Int, onUpdateQuantity: (Int) -> Unit
             Spacer(modifier = Modifier.width(16.dp))
             Column(modifier = Modifier.weight(1f)) {
                 Text(product.name, fontWeight = FontWeight.Bold, fontSize = 16.sp, color = MaterialTheme.colorScheme.onSurface)
+
+                selectedVariations?.let { vars ->
+                    val varsText = vars.entries.joinToString(", ") { "${it.key}: ${it.value}" }
+                    Text(varsText, color = MaterialTheme.colorScheme.secondary, fontSize = 12.sp, fontWeight = FontWeight.Medium)
+                }
+
                 Text("R$ ${String.format("%.2f", product.price)} cada", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
 
                 Spacer(modifier = Modifier.height(8.dp))

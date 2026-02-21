@@ -3,6 +3,7 @@ package com.example.comprafacil.core.data.repository
 import com.example.comprafacil.core.SupabaseConfig
 import com.example.comprafacil.core.data.Product
 import com.example.comprafacil.core.data.Category
+import com.example.comprafacil.core.data.ProductImage
 import io.github.jan.supabase.postgrest.from
 import io.github.jan.supabase.postgrest.query.Columns
 
@@ -42,5 +43,22 @@ class ProductRepository {
         return client.from("products").insert(product) {
             select()
         }.decodeSingle<Product>()
+    }
+
+    suspend fun updateProduct(product: Product): Product {
+        return client.from("products").update(product) {
+            filter { eq("id", product.id!!) }
+            select()
+        }.decodeSingle<Product>()
+    }
+
+    suspend fun deleteProductImages(productId: String) {
+        client.from("product_images").delete {
+            filter { eq("product_id", productId) }
+        }
+    }
+
+    suspend fun insertProductImages(images: List<ProductImage>) {
+        client.from("product_images").insert(images)
     }
 }
