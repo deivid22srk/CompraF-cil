@@ -82,8 +82,19 @@ class MainActivity : ComponentActivity() {
 
                 LaunchedEffect(sessionStatus) {
                     if (sessionStatus is SessionStatus.Authenticated) {
-                        val email = SupabaseConfig.client.auth.currentUserOrNull()?.email
-                        isAdminLoggedIn = email == "admin@comprafacil.com"
+                        val userId = SupabaseConfig.client.auth.currentUserOrNull()?.id
+                        if (userId != null) {
+                            try {
+                                val profile = SupabaseConfig.client.from("profiles")
+                                    .select { filter { eq("id", userId) } }
+                                    .decodeSingleOrNull<Profile>()
+                                isAdminLoggedIn = profile?.role == "admin"
+                            } catch (e: Exception) {
+                                isAdminLoggedIn = false
+                            }
+                        } else {
+                            isAdminLoggedIn = false
+                        }
                     } else {
                         isAdminLoggedIn = false
                     }

@@ -11,8 +11,10 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.comprafacil.core.SupabaseConfig
+import com.example.comprafacil.core.data.Profile
 import io.github.jan.supabase.gotrue.auth
 import io.github.jan.supabase.gotrue.providers.builtin.Email
+import io.github.jan.supabase.postgrest.from
 import kotlinx.coroutines.launch
 
 @Composable
@@ -69,12 +71,22 @@ fun AdminAuthScreen(onLoginSuccess: () -> Unit) {
                             this.email = email
                             this.password = password
                         }
-                        // Check if it's the admin email (hardcoded for now as per RLS)
-                        if (email == "admin@comprafacil.com") {
-                            onLoginSuccess()
+
+                        // Fetch profile to check role
+                        val userId = SupabaseConfig.client.auth.currentUserOrNull()?.id
+                        if (userId != null) {
+                            val profile = SupabaseConfig.client.from("profiles")
+                                .select { filter { eq("id", userId) } }
+                                .decodeSingleOrNull<Profile>()
+
+                            if (profile?.role == "admin") {
+                                onLoginSuccess()
+                            } else {
+                                error = "Acesso negado: Este usuário não é um administrador."
+                                SupabaseConfig.client.auth.signOut()
+                            }
                         } else {
-                            error = "Acesso negado: Este usuário não é um administrador."
-                            SupabaseConfig.client.auth.signOut()
+                            error = "Erro ao identificar usuário."
                         }
                     } catch (e: Exception) {
                         error = e.message ?: "Erro ao fazer login"
