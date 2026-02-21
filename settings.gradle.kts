@@ -22,3 +22,4 @@ dependencyResolutionManagement {
 rootProject.name = "CompraFacil"
 include(":app")
 include(":admin")
+include(":core")

@@ -23,8 +23,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
-import com.example.comprafacil.SupabaseConfig
-import com.example.comprafacil.data.Address
+import com.example.comprafacil.core.SupabaseConfig
+import com.example.comprafacil.core.data.Address
 import com.google.android.gms.location.LocationServices
 import com.google.android.gms.location.Priority
 import com.google.android.gms.tasks.CancellationTokenSource

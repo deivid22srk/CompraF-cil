@@ -2,7 +2,7 @@ package com.example.comprafacil.ui
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.comprafacil.SupabaseConfig
+import com.example.comprafacil.core.SupabaseConfig
 import io.github.jan.supabase.gotrue.auth
 import io.github.jan.supabase.gotrue.providers.builtin.Email
 import kotlinx.coroutines.flow.MutableStateFlow

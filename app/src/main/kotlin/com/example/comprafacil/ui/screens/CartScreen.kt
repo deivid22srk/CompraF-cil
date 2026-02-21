@@ -20,10 +20,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
-import com.example.comprafacil.SupabaseConfig
-import com.example.comprafacil.data.AppConfig
-import com.example.comprafacil.data.CartItem
-import com.example.comprafacil.data.Product
+import com.example.comprafacil.core.SupabaseConfig
+import com.example.comprafacil.core.data.AppConfig
+import com.example.comprafacil.core.data.CartItem
+import com.example.comprafacil.core.data.Product
 import io.github.jan.supabase.gotrue.auth
 import io.github.jan.supabase.postgrest.from
 import io.github.jan.supabase.postgrest.query.Columns

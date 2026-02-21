@@ -26,8 +26,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
-import com.example.comprafacil.SupabaseConfig
-import com.example.comprafacil.data.*
+import com.example.comprafacil.core.SupabaseConfig
+import com.example.comprafacil.core.data.*
 import com.google.android.gms.location.LocationServices
 import com.google.android.gms.location.Priority
 import com.google.android.gms.tasks.CancellationTokenSource
@@ -296,6 +296,16 @@ fun CheckoutScreen(onBack: () -> Unit, onOrderFinished: () -> Unit) {
                             isPlacingOrder = true
                             val userId = client.auth.currentUserOrNull()?.id ?: return@launch
                             try {
+                                // Fetch cart items with products to get current prices
+                                val cartItems = client.from("cart_items").select(Columns.raw("*, product:products(*)")) {
+                                    filter { eq("user_id", userId) }
+                                }.decodeAs<List<CartItem>>()
+
+                                if (cartItems.isEmpty()) {
+                                    Toast.makeText(context, "Seu carrinho está vazio", Toast.LENGTH_SHORT).show()
+                                    return@launch
+                                }
+
                                 val order = Order(
                                     user_id = userId,
                                     customer_name = customerName,
@@ -308,8 +318,25 @@ fun CheckoutScreen(onBack: () -> Unit, onOrderFinished: () -> Unit) {
                                     status = "pendente"
                                 )
 
-                                client.from("orders").insert(order)
+                                val insertedOrder = client.from("orders").insert(order) {
+                                    select()
+                                }.decodeSingle<Order>()
 
+                                val orderId = insertedOrder.id!!
+
+                                // Create and insert order items (price snapshot)
+                                val orderItems = cartItems.map { cartItem ->
+                                    OrderItem(
+                                        order_id = orderId,
+                                        product_id = cartItem.product_id,
+                                        quantity = cartItem.quantity,
+                                        price_at_time = cartItem.product?.price ?: 0.0
+                                    )
+                                }
+
+                                client.from("order_items").insert(orderItems)
+
+                                // Clear cart
                                 client.from("cart_items").delete {
                                     filter { eq("user_id", userId) }
                                 }
