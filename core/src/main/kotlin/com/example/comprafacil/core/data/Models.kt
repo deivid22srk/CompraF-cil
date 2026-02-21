@@ -36,7 +36,8 @@ data class Profile(
     val id: String,
     val full_name: String? = null,
     val avatar_url: String? = null,
-    val whatsapp: String? = null
+    val whatsapp: String? = null,
+    val role: String = "user"
 )
 
 @Serializable
