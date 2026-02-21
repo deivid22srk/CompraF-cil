@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom'
 import type { Product } from '../types/database'
+import ImageWithLoading from './ImageWithLoading'
 
 interface ProductCardProps {
   product: Product
@@ -12,12 +13,13 @@ export default function ProductCard({ product }: ProductCardProps) {
       className="bg-card rounded-3xl overflow-hidden shadow-md hover:scale-105 transition-transform group"
     >
       <div className="relative h-48">
-        <img
+        <ImageWithLoading
           src={product.image_url}
           alt={product.name}
           className="w-full h-full object-cover"
+          containerClassName="w-full h-full"
         />
-        <div className="absolute bottom-2 right-2 bg-secondary text-black px-3 py-1 rounded-lg text-sm font-bold shadow-sm">
+        <div className="absolute bottom-2 right-2 bg-secondary text-black px-3 py-1 rounded-lg text-sm font-bold shadow-sm z-10">
           R$ {product.price.toFixed(2)}
         </div>
       </div>

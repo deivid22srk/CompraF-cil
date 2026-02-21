@@ -7,6 +7,7 @@ import { configService } from '../services/configService'
 import type { Product, ProductImage } from '../types/database'
 import LoadingSpinner from '../components/LoadingSpinner'
 import ImageGallery from '../components/ImageGallery'
+import ImageWithLoading from '../components/ImageWithLoading'
 
 export default function ProductDetails() {
   const { id } = useParams()
@@ -89,10 +90,11 @@ export default function ProductDetails() {
       <div className="grid md:grid-cols-2 gap-10 bg-card rounded-[40px] overflow-hidden shadow-2xl">
         <div className="flex flex-col">
           <div className="h-[400px] bg-surface">
-            <img
+            <ImageWithLoading
               src={selectedImage || product.image_url}
               alt={product.name}
               className="w-full h-full object-cover transition-all duration-300"
+              containerClassName="w-full h-full"
             />
           </div>
           <ImageGallery

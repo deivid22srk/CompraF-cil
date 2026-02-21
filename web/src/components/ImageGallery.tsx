@@ -4,6 +4,8 @@ interface ImageGalleryProps {
   onSelect: (url: string) => void
 }
 
+import ImageWithLoading from './ImageWithLoading'
+
 export default function ImageGallery({ images, selectedImage, onSelect }: ImageGalleryProps) {
   if (images.length <= 1) return null
 
@@ -17,7 +19,12 @@ export default function ImageGallery({ images, selectedImage, onSelect }: ImageG
             selectedImage === img.image_url ? 'border-primary' : 'border-transparent opacity-60 hover:opacity-100'
           }`}
         >
-          <img src={img.image_url} className="w-full h-full object-cover" alt="" />
+          <ImageWithLoading
+            src={img.image_url}
+            className="w-full h-full object-cover"
+            containerClassName="w-full h-full"
+            alt=""
+          />
         </button>
       ))}
     </div>
