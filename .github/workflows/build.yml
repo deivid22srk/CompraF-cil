@@ -38,7 +38,7 @@ jobs:
     - name: Install Web Dependencies
       run: |
         cd web
-        npm ci
+        npm install --legacy-peer-deps
 
     - name: Build Web Application
       run: |
