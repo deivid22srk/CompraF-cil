@@ -70,8 +70,15 @@ CREATE TABLE IF NOT EXISTS addresses (
 );
 
 -- Idempotent receiver_name addition
+-- Idempotent column additions for existing tables
 DO $$
 BEGIN
+    -- profiles.role
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='profiles' AND column_name='role') THEN
+        ALTER TABLE profiles ADD COLUMN role TEXT DEFAULT 'user' NOT NULL;
+    END IF;
+
+    -- addresses.receiver_name
     IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='addresses' AND column_name='receiver_name') THEN
         ALTER TABLE addresses ADD COLUMN receiver_name TEXT;
     END IF;
@@ -110,21 +117,25 @@ CREATE TABLE IF NOT EXISTS order_items (
     price_at_time DECIMAL(10, 2) NOT NULL
 );
 
--- Idempotent column additions (if they don't exist)
+-- More idempotent column additions
 DO $$
 BEGIN
+    -- orders.customer_name
     IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='orders' AND column_name='customer_name') THEN
         ALTER TABLE orders ADD COLUMN customer_name TEXT;
     END IF;
 
+    -- products.variations
     IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='products' AND column_name='variations') THEN
         ALTER TABLE products ADD COLUMN variations JSONB DEFAULT '[]'::jsonb;
     END IF;
 
+    -- cart_items.selected_variations
     IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='cart_items' AND column_name='selected_variations') THEN
         ALTER TABLE cart_items ADD COLUMN selected_variations JSONB;
     END IF;
 
+    -- order_items.selected_variations
     IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='order_items' AND column_name='selected_variations') THEN
         ALTER TABLE order_items ADD COLUMN selected_variations JSONB;
     END IF;
