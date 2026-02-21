@@ -158,12 +158,12 @@ BEGIN
     -- App Config
     DROP POLICY IF EXISTS "Allow public select on app_config" ON app_config;
     CREATE POLICY "Allow public select on app_config" ON app_config FOR SELECT USING (true);
-    DROP POLICY IF EXISTS "Allow anon/auth all on app_config" ON app_config;
-    CREATE POLICY "Allow anon/auth all on app_config" ON app_config FOR ALL USING (true) WITH CHECK (true);
+    DROP POLICY IF EXISTS "Only admins can manage app_config" ON app_config;
+    CREATE POLICY "Only admins can manage app_config" ON app_config FOR ALL USING (auth.role() = 'service_role' OR auth.jwt() ->> 'email' = 'admin@comprafacil.com');
 
     -- Addresses
     DROP POLICY IF EXISTS "Users can manage their own addresses" ON addresses;
-    CREATE POLICY "Users can manage their own addresses" ON addresses FOR ALL USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
+    CREATE POLICY "Users can manage their own addresses" ON addresses FOR ALL USING (auth.uid() = user_id);
 
     -- Profiles
     DROP POLICY IF EXISTS "Public profiles are viewable by everyone" ON profiles;
@@ -176,50 +176,52 @@ BEGIN
     -- Categories
     DROP POLICY IF EXISTS "Allow public select on categories" ON categories;
     CREATE POLICY "Allow public select on categories" ON categories FOR SELECT USING (true);
-    DROP POLICY IF EXISTS "Allow anon/auth all on categories" ON categories;
-    CREATE POLICY "Allow anon/auth all on categories" ON categories FOR ALL USING (true) WITH CHECK (true);
+    DROP POLICY IF EXISTS "Only admins can manage categories" ON categories;
+    CREATE POLICY "Only admins can manage categories" ON categories FOR ALL USING (auth.jwt() ->> 'email' = 'admin@comprafacil.com');
 
     -- Products
     DROP POLICY IF EXISTS "Allow public select on products" ON products;
     CREATE POLICY "Allow public select on products" ON products FOR SELECT USING (true);
-    DROP POLICY IF EXISTS "Allow anon/auth all on products" ON products;
-    CREATE POLICY "Allow anon/auth all on products" ON products FOR ALL USING (true) WITH CHECK (true);
+    DROP POLICY IF EXISTS "Only admins can manage products" ON products;
+    CREATE POLICY "Only admins can manage products" ON products FOR ALL USING (auth.jwt() ->> 'email' = 'admin@comprafacil.com');
 
     -- Product Images
     DROP POLICY IF EXISTS "Allow public select on product_images" ON product_images;
     CREATE POLICY "Allow public select on product_images" ON product_images FOR SELECT USING (true);
-    DROP POLICY IF EXISTS "Allow anon/auth all on product_images" ON product_images;
-    CREATE POLICY "Allow anon/auth all on product_images" ON product_images FOR ALL USING (true) WITH CHECK (true);
+    DROP POLICY IF EXISTS "Only admins can manage product_images" ON product_images;
+    CREATE POLICY "Only admins can manage product_images" ON product_images FOR ALL USING (auth.jwt() ->> 'email' = 'admin@comprafacil.com');
 
     -- Cart Items
     DROP POLICY IF EXISTS "Users can view their own cart items" ON cart_items;
     CREATE POLICY "Users can view their own cart items" ON cart_items FOR SELECT USING (auth.uid() = user_id);
     DROP POLICY IF EXISTS "Users can manage their own cart items" ON cart_items;
-    CREATE POLICY "Users can manage their own cart items" ON cart_items FOR ALL USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
+    CREATE POLICY "Users can manage their own cart items" ON cart_items FOR ALL USING (auth.uid() = user_id);
 
     -- Orders
     DROP POLICY IF EXISTS "Users can view their own orders" ON orders;
-    CREATE POLICY "Users can view their own orders" ON orders FOR SELECT USING (auth.uid() = user_id);
-    DROP POLICY IF EXISTS "Anyone can insert orders" ON orders;
-    CREATE POLICY "Anyone can insert orders" ON orders FOR INSERT WITH CHECK (true);
-    DROP POLICY IF EXISTS "Allow public select on orders" ON orders;
-    CREATE POLICY "Allow public select on orders" ON orders FOR SELECT USING (true);
-    DROP POLICY IF EXISTS "Allow anon/auth all on orders" ON orders;
-    CREATE POLICY "Allow anon/auth all on orders" ON orders FOR ALL USING (true) WITH CHECK (true);
+    CREATE POLICY "Users can view their own orders" ON orders FOR SELECT USING (auth.uid() = user_id OR auth.jwt() ->> 'email' = 'admin@comprafacil.com');
+    DROP POLICY IF EXISTS "Authenticated users can insert orders" ON orders;
+    CREATE POLICY "Authenticated users can insert orders" ON orders FOR INSERT WITH CHECK (auth.uid() = user_id);
+    DROP POLICY IF EXISTS "Only admins can delete orders" ON orders;
+    CREATE POLICY "Only admins can delete orders" ON orders FOR DELETE USING (auth.jwt() ->> 'email' = 'admin@comprafacil.com');
+    DROP POLICY IF EXISTS "Only admins can update orders" ON orders;
+    CREATE POLICY "Only admins can update orders" ON orders FOR UPDATE USING (auth.jwt() ->> 'email' = 'admin@comprafacil.com');
 
     -- Order Status History
-    DROP POLICY IF EXISTS "Users can view their own order history" ON order_status_history;
-    CREATE POLICY "Users can view their own order history" ON order_status_history FOR SELECT USING (true);
-    DROP POLICY IF EXISTS "Allow anon/auth insert on order status history" ON order_status_history;
-    CREATE POLICY "Allow anon/auth insert on order status history" ON order_status_history FOR INSERT WITH CHECK (true);
-    DROP POLICY IF EXISTS "Allow anon/auth all on order status history" ON order_status_history;
-    CREATE POLICY "Allow anon/auth all on order status history" ON order_status_history FOR ALL USING (true) WITH CHECK (true);
+    DROP POLICY IF EXISTS "Users can view history of their own orders" ON order_status_history;
+    CREATE POLICY "Users can view history of their own orders" ON order_status_history FOR SELECT USING (
+        EXISTS (SELECT 1 FROM orders WHERE orders.id = order_status_history.order_id AND (orders.user_id = auth.uid() OR auth.jwt() ->> 'email' = 'admin@comprafacil.com'))
+    );
+    DROP POLICY IF EXISTS "Only admins can insert order history" ON order_status_history;
+    CREATE POLICY "Only admins can insert order history" ON order_status_history FOR INSERT WITH CHECK (auth.jwt() ->> 'email' = 'admin@comprafacil.com');
 
     -- Order Items
-    DROP POLICY IF EXISTS "Anyone can insert order items" ON order_items;
-    CREATE POLICY "Anyone can insert order items" ON order_items FOR INSERT WITH CHECK (true);
-    DROP POLICY IF EXISTS "Allow public select on order_items" ON order_items;
-    CREATE POLICY "Allow public select on order_items" ON order_items FOR SELECT USING (true);
+    DROP POLICY IF EXISTS "Users can view items of their own orders" ON order_items;
+    CREATE POLICY "Users can view items of their own orders" ON order_items FOR SELECT USING (
+        EXISTS (SELECT 1 FROM orders WHERE orders.id = order_items.order_id AND (orders.user_id = auth.uid() OR auth.jwt() ->> 'email' = 'admin@comprafacil.com'))
+    );
+    DROP POLICY IF EXISTS "Authenticated users can insert order items" ON order_items;
+    CREATE POLICY "Authenticated users can insert order items" ON order_items FOR INSERT WITH CHECK (auth.role() = 'authenticated');
 END $$;
 
 -- Initial Categories (General Store)

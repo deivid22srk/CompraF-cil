@@ -27,8 +27,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
-import com.example.comprafacil.SupabaseConfig
-import com.example.comprafacil.data.Profile
+import com.example.comprafacil.core.SupabaseConfig
+import com.example.comprafacil.core.data.Profile
 import io.github.jan.supabase.gotrue.auth
 import io.github.jan.supabase.postgrest.from
 import io.github.jan.supabase.storage.storage

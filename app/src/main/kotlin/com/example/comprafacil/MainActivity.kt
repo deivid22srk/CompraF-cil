@@ -1,4 +1,5 @@
 package com.example.comprafacil
+import com.example.comprafacil.core.SupabaseConfig
 
 import android.Manifest
 import android.content.pm.PackageManager
@@ -31,7 +32,7 @@ import com.example.comprafacil.ui.theme.CompraFacilTheme
 import android.content.Intent
 import android.net.Uri
 import androidx.compose.ui.window.DialogProperties
-import com.example.comprafacil.data.AppConfig
+import com.example.comprafacil.core.data.AppConfig
 import com.example.comprafacil.utils.NotificationHelper
 import io.github.jan.supabase.gotrue.*
 import io.github.jan.supabase.postgrest.from

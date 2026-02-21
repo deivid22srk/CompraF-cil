@@ -1,6 +1,6 @@
 -keepattributes *Annotation*, Signature, InnerClasses
 -dontwarn io.ktor.**
 -dontwarn kotlinx.serialization.**
--keep class com.example.comprafacil.admin.data.** { *; }
+-keep class com.example.comprafacil.core.data.** { *; }
 -keep class io.github.jan.supabase.** { *; }
 -dontwarn org.slf4j.**

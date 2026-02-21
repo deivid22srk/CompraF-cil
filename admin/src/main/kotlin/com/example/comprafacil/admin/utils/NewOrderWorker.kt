@@ -4,8 +4,8 @@ import android.content.Context
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
 import androidx.work.ListenableWorker.Result
-import com.example.comprafacil.SupabaseConfig
-import com.example.comprafacil.admin.data.Order
+import com.example.comprafacil.core.SupabaseConfig
+import com.example.comprafacil.core.data.Order
 import com.russhwolf.settings.SharedPreferencesSettings
 import io.github.jan.supabase.gotrue.auth
 import io.github.jan.supabase.postgrest.from

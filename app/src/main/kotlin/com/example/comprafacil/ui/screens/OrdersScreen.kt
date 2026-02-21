@@ -21,9 +21,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
-import com.example.comprafacil.SupabaseConfig
-import com.example.comprafacil.data.Order
-import com.example.comprafacil.data.OrderStatusHistory
+import com.example.comprafacil.core.SupabaseConfig
+import com.example.comprafacil.core.data.Order
+import com.example.comprafacil.core.data.OrderStatusHistory
 import io.github.jan.supabase.gotrue.auth
 import io.github.jan.supabase.postgrest.from
 import kotlinx.coroutines.launch

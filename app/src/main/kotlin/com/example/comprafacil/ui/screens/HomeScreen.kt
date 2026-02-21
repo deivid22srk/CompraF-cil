@@ -23,31 +23,24 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
-import com.example.comprafacil.SupabaseConfig
-import com.example.comprafacil.data.Category
-import com.example.comprafacil.data.Product
-import io.github.jan.supabase.postgrest.from
-import io.github.jan.supabase.postgrest.query.Columns
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.comprafacil.core.data.Category
+import com.example.comprafacil.core.data.Product
+import com.example.comprafacil.core.utils.CurrencyUtils
+import com.example.comprafacil.ui.viewmodel.HomeViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun HomeScreen(onProductClick: (String) -> Unit) {
-    var products by remember { mutableStateOf<List<Product>>(emptyList()) }
-    var categories by remember { mutableStateOf<List<Category>>(emptyList()) }
-    var selectedCategory by remember { mutableStateOf<String?>(null) }
-    var loading by remember { mutableStateOf(true) }
-    var searchQuery by remember { mutableStateOf("") }
+fun HomeScreen(
+    onProductClick: (String) -> Unit,
+    viewModel: HomeViewModel = viewModel()
+) {
+    val products by viewModel.products.collectAsState()
+    val categories by viewModel.categories.collectAsState()
+    val loading by viewModel.loading.collectAsState()
 
-    LaunchedEffect(Unit) {
-        try {
-            categories = SupabaseConfig.client.from("categories").select().decodeAs<List<Category>>()
-            products = SupabaseConfig.client.from("products").select(Columns.raw("*, images:product_images(*)")).decodeAs<List<Product>>()
-        } catch (e: Exception) {
-            // handle error
-        } finally {
-            loading = false
-        }
-    }
+    var selectedCategory by remember { mutableStateOf<String?>(null) }
+    var searchQuery by remember { mutableStateOf("") }
 
     val filteredProducts = products.filter { product ->
         val matchesQuery = product.name.contains(searchQuery, ignoreCase = true)
@@ -208,7 +201,7 @@ fun ProductCard(product: Product, onClick: () -> Unit) {
                         .padding(horizontal = 8.dp, vertical = 4.dp)
                 ) {
                     Text(
-                        "R$ ${String.format("%.2f", product.price)}",
+                        CurrencyUtils.formatPrice(product.price),
                         color = MaterialTheme.colorScheme.onSecondary,
                         fontSize = 12.sp,
                         fontWeight = FontWeight.Bold

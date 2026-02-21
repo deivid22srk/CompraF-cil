@@ -1,4 +1,4 @@
-package com.example.comprafacil
+package com.example.comprafacil.core
 
 import android.content.Context
 import com.russhwolf.settings.SharedPreferencesSettings
