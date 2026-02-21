@@ -1,22 +1,12 @@
 import { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { supabase } from '../supabaseClient'
 import { ArrowLeft, Share2, Smartphone } from 'lucide-react'
-
-interface Product {
-  id: string
-  name: string
-  price: number
-  description: string
-  image_url: string
-  sold_by?: string
-  stock_quantity?: number
-}
-
-interface ProductImage {
-  id: string
-  image_url: string
-}
+import { Helmet } from 'react-helmet-async'
+import { productService } from '../services/productService'
+import { configService } from '../services/configService'
+import type { Product, ProductImage } from '../types/database'
+import LoadingSpinner from '../components/LoadingSpinner'
+import ImageGallery from '../components/ImageGallery'
 
 export default function ProductDetails() {
   const { id } = useParams()
@@ -28,61 +18,43 @@ export default function ProductDetails() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    if (id) fetchData(id)
+    if (id) {
+      fetchData(id)
+    }
   }, [id])
 
   async function fetchData(productId: string) {
-    // Fetch product
-    const { data: productData } = await supabase
-      .from('products')
-      .select('*')
-      .eq('id', productId)
-      .single()
+    try {
+      const [productData, imagesData, url] = await Promise.all([
+        productService.getProductById(productId),
+        productService.getProductImages(productId),
+        configService.getDownloadUrl()
+      ])
 
-    if (productData) {
-      setProduct(productData)
-      setSelectedImage(productData.image_url)
+      if (productData) {
+        setProduct(productData)
+        setSelectedImage(productData.image_url)
+      }
+      if (imagesData) setImages(imagesData)
+      if (url) setDownloadUrl(url)
+    } catch (error) {
+      console.error('Error fetching product details:', error)
+    } finally {
+      setLoading(false)
     }
-
-    // Fetch extra images
-    const { data: imagesData } = await supabase
-      .from('product_images')
-      .select('*')
-      .eq('product_id', productId)
-
-    if (imagesData) {
-      setImages(imagesData)
-    }
-
-    // Fetch download URL
-    const { data: configData } = await supabase
-      .from('app_config')
-      .select('value')
-      .eq('key', 'download_url')
-      .single()
-
-    if (configData) {
-      setDownloadUrl(configData.value as string)
-    }
-
-    setLoading(false)
   }
 
   const shareProduct = () => {
-    if (navigator.share) {
+    if (navigator.share && product) {
       navigator.share({
-        title: product?.name,
-        text: `Confira este produto no CompraFácil: ${product?.name}`,
+        title: product.name,
+        text: `Confira este produto no CompraFácil: ${product.name}`,
         url: window.location.href,
       })
     }
   }
 
-  if (loading) return (
-    <div className="flex justify-center p-20">
-      <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-primary"></div>
-    </div>
-  )
+  if (loading) return <LoadingSpinner />
 
   if (!product) return (
     <div className="p-10 text-center">
@@ -98,6 +70,15 @@ export default function ProductDetails() {
 
   return (
     <div className="max-w-4xl mx-auto p-6">
+      <Helmet>
+        <title>{product.name} | CompraFácil</title>
+        <meta name="description" content={product.description || `Confira ${product.name} no CompraFácil.`} />
+        <meta property="og:title" content={product.name} />
+        <meta property="og:description" content={product.description} />
+        <meta property="og:image" content={product.image_url} />
+        <meta property="og:type" content="product" />
+      </Helmet>
+
       <button
         onClick={() => navigate('/')}
         className="flex items-center gap-2 text-gray-400 hover:text-white mb-6 transition-colors"
@@ -114,21 +95,11 @@ export default function ProductDetails() {
               className="w-full h-full object-cover transition-all duration-300"
             />
           </div>
-          {allImages.length > 1 && (
-            <div className="p-4 flex gap-2 overflow-x-auto bg-surface/50 scrollbar-hide">
-              {allImages.map((img) => (
-                <button
-                  key={img.id}
-                  onClick={() => setSelectedImage(img.image_url)}
-                  className={`relative flex-shrink-0 w-20 h-20 rounded-xl overflow-hidden border-2 transition-all ${
-                    selectedImage === img.image_url ? 'border-primary' : 'border-transparent opacity-60 hover:opacity-100'
-                  }`}
-                >
-                  <img src={img.image_url} className="w-full h-full object-cover" />
-                </button>
-              ))}
-            </div>
-          )}
+          <ImageGallery
+            images={allImages}
+            selectedImage={selectedImage}
+            onSelect={setSelectedImage}
+          />
         </div>
 
         <div className="p-10 flex flex-col">
