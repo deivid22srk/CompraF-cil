@@ -1,0 +1,32 @@
+# Android
+.gradle/
+build/
+app/build/
+admin/build/
+local.properties
+*.apk
+*.apks
+
+# Web
+node_modules/
+web/node_modules/
+dist/
+web/dist/
+web/dev_server.log
+
+# IDEs
+.idea/
+*.iml
+.vscode/
+
+# Build artifacts and logs
+*.log
+*.txt
+build_output*
+ls_*.txt
+apks.txt
+
+# Verification
+verification/*.png
+verification/verify_web_final.py
+verification/verify_web.py
