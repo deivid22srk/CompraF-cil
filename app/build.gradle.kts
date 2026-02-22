@@ -69,6 +69,9 @@ dependencies {
     // Coil
     implementation(libs.coil.compose)
 
+    // Image Cropper
+    implementation(libs.android.image.cropper)
+
     // Serialization
     implementation(libs.kotlinx.serialization.json)
 

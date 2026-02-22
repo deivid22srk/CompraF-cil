@@ -3,8 +3,10 @@ package com.example.comprafacil.ui.screens
 import android.net.Uri
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.PickVisualMediaRequest
-import androidx.activity.result.contract.ActivityResultContracts
+import com.canhub.cropper.CropImageContract
+import com.canhub.cropper.CropImageContractOptions
+import com.canhub.cropper.CropImageOptions
+import com.canhub.cropper.CropImageView
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -47,34 +49,35 @@ fun ProfileScreen(onLogout: () -> Unit, onOrdersClick: () -> Unit, onAddressesCl
     var showNameDialog by remember { mutableStateOf(false) }
     var newName by remember { mutableStateOf("") }
 
-    val pickerLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.PickVisualMedia()
-    ) { uri ->
-        if (uri != null) {
-            scope.launch {
-                uploading = true
-                try {
-                    val bytes = context.contentResolver.openInputStream(uri)?.readBytes()
-                    if (bytes != null) {
-                        val userId = client.auth.currentUserOrNull()?.id ?: return@launch
-                        val fileName = "avatars/$userId-${UUID.randomUUID()}.jpg"
-                        val bucket = client.storage.from("product-images") // Using same bucket for simplicity
-                        bucket.upload(fileName, bytes)
-                        val publicUrl = bucket.publicUrl(fileName)
+    val cropImageLauncher = rememberLauncherForActivityResult(
+        contract = CropImageContract()
+    ) { result ->
+        if (result.isSuccessful) {
+            val uri = result.uriContent
+            if (uri != null) {
+                scope.launch {
+                    uploading = true
+                    try {
+                        val bytes = context.contentResolver.openInputStream(uri)?.readBytes()
+                        if (bytes != null) {
+                            val userId = client.auth.currentUserOrNull()?.id ?: return@launch
+                            val fileName = "avatars/$userId-${UUID.randomUUID()}.jpg"
+                            val bucket = client.storage.from("product-images")
+                            bucket.upload(fileName, bytes)
+                            val publicUrl = bucket.publicUrl(fileName)
 
-                        // Update profile in DB
-                        client.from("profiles").upsert(
-                            mapOf("id" to userId, "avatar_url" to publicUrl)
-                        )
+                            client.from("profiles").upsert(
+                                mapOf("id" to userId, "avatar_url" to publicUrl)
+                            )
 
-                        // Refresh local state
-                        profile = profile?.copy(avatar_url = publicUrl) ?: Profile(id = userId, avatar_url = publicUrl)
-                        Toast.makeText(context, "Foto atualizada!", Toast.LENGTH_SHORT).show()
+                            profile = profile?.copy(avatar_url = publicUrl) ?: Profile(id = userId, avatar_url = publicUrl)
+                            Toast.makeText(context, "Foto atualizada!", Toast.LENGTH_SHORT).show()
+                        }
+                    } catch (e: Exception) {
+                        Toast.makeText(context, "Erro ao enviar: ${e.message}", Toast.LENGTH_SHORT).show()
+                    } finally {
+                        uploading = false
                     }
-                } catch (e: Exception) {
-                    Toast.makeText(context, "Erro ao enviar: ${e.message}", Toast.LENGTH_SHORT).show()
-                } finally {
-                    uploading = false
                 }
             }
         }
@@ -121,7 +124,23 @@ fun ProfileScreen(onLogout: () -> Unit, onOrdersClick: () -> Unit, onAddressesCl
                     .size(120.dp)
                     .clip(CircleShape)
                     .background(MaterialTheme.colorScheme.surfaceVariant)
-                    .clickable { pickerLauncher.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) },
+                    .clickable {
+                        cropImageLauncher.launch(
+                            CropImageContractOptions(
+                                uri = null,
+                                cropImageOptions = CropImageOptions(
+                                    imageSourceIncludeGallery = true,
+                                    imageSourceIncludeCamera = true,
+                                    guidelines = CropImageView.Guidelines.ON,
+                                    aspectRatioX = 1,
+                                    aspectRatioY = 1,
+                                    fixAspectRatio = true,
+                                    cropShape = CropImageView.CropShape.OVAL,
+                                    showProgressBar = true
+                                )
+                            )
+                        )
+                    },
                 contentAlignment = Alignment.Center
             ) {
                 if (profile?.avatar_url != null) {
