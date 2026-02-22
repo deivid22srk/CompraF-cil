@@ -54,6 +54,7 @@ fun OrdersScreen(onBack: () -> Unit) {
         topBar = {
             TopAppBar(
                 title = { Text("Meus Pedidos") },
+                windowInsets = WindowInsets(0, 0, 0, 0),
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = null)

@@ -67,6 +67,7 @@ fun AddressScreen(onBack: () -> Unit) {
         topBar = {
             TopAppBar(
                 title = { Text("Meus Endereços", fontWeight = FontWeight.Bold) },
+                windowInsets = WindowInsets(0, 0, 0, 0),
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = null)

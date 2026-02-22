@@ -99,6 +99,7 @@ fun ProfileScreen(onLogout: () -> Unit, onOrdersClick: () -> Unit, onAddressesCl
         topBar = {
             TopAppBar(
                 title = { Text("Meu Perfil", fontWeight = FontWeight.Bold) },
+                windowInsets = WindowInsets(0, 0, 0, 0),
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.primary,
                     titleContentColor = MaterialTheme.colorScheme.onPrimary

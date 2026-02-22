@@ -65,6 +65,7 @@ fun CartScreen(onCheckout: () -> Unit) {
         topBar = {
             TopAppBar(
                 title = { Text("Carrinho", fontWeight = FontWeight.Bold) },
+                windowInsets = WindowInsets(0, 0, 0, 0),
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.primary,
                     titleContentColor = MaterialTheme.colorScheme.onPrimary
