@@ -7,7 +7,6 @@ junitVersion = "1.2.1"
 espressoCore = "3.6.1"
 lifecycleRuntimeKtx = "2.8.4"
 activityCompose = "1.9.1"
-appcompat = "1.6.1"
 composeBom = "2024.06.00"
 navigationCompose = "2.7.7"
 supabase = "2.5.0"
@@ -18,11 +17,9 @@ google-play-services-location = "21.3.0"
 kotlinx-coroutines-play-services = "1.8.1"
 androidx-work = "2.9.0"
 multiplatform-settings = "1.1.1"
-android-image-cropper = "4.5.0"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
-androidx-appcompat = { group = "androidx.appcompat", name = "appcompat", version.ref = "appcompat" }
 junit = { group = "junit", name = "junit", version.ref = "junit" }
 androidx-junit = { group = "androidx.test.ext", name = "junit", version.ref = "junitVersion" }
 androidx-espresso-core = { group = "androidx.test.espresso", name = "espresso-core", version.ref = "espressoCore" }
@@ -61,9 +58,6 @@ ktor-client-cio = { module = "io.ktor:ktor-client-cio", version.ref = "ktor" }
 
 # Coil for image loading
 coil-compose = { group = "io.coil-kt", name = "coil-compose", version.ref = "coil" }
-
-# Image Cropper
-android-image-cropper = { group = "com.github.CanHub", name = "Android-Image-Cropper", version.ref = "android-image-cropper" }
 
 # Kotlinx Serialization
 kotlinx-serialization-json = { group = "org.jetbrains.kotlinx", name = "kotlinx-serialization-json", version.ref = "kotlinx-serialization" }

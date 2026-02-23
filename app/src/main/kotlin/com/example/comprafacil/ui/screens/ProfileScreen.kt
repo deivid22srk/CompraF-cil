@@ -1,12 +1,12 @@
 package com.example.comprafacil.ui.screens
 
+import android.graphics.Bitmap
 import android.net.Uri
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
-import com.canhub.cropper.CropImageContract
-import com.canhub.cropper.CropImageContractOptions
-import com.canhub.cropper.CropImageOptions
-import com.canhub.cropper.CropImageView
+import androidx.activity.result.PickVisualMediaRequest
+import androidx.activity.result.contract.ActivityResultContracts
+import com.example.comprafacil.ui.components.ManualImageCropper
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -48,37 +48,43 @@ fun ProfileScreen(onLogout: () -> Unit, onOrdersClick: () -> Unit, onAddressesCl
     var uploading by remember { mutableStateOf(false) }
     var showNameDialog by remember { mutableStateOf(false) }
     var newName by remember { mutableStateOf("") }
+    var selectedUri by remember { mutableStateOf<Uri?>(null) }
+    var showCropper by remember { mutableStateOf(false) }
 
-    val cropImageLauncher = rememberLauncherForActivityResult(
-        contract = CropImageContract()
-    ) { result ->
-        if (result.isSuccessful) {
-            val uri = result.uriContent
-            if (uri != null) {
-                scope.launch {
-                    uploading = true
-                    try {
-                        val bytes = context.contentResolver.openInputStream(uri)?.readBytes()
-                        if (bytes != null) {
-                            val userId = client.auth.currentUserOrNull()?.id ?: return@launch
-                            val fileName = "avatars/$userId-${UUID.randomUUID()}.jpg"
-                            val bucket = client.storage.from("product-images")
-                            bucket.upload(fileName, bytes)
-                            val publicUrl = bucket.publicUrl(fileName)
+    val pickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.PickVisualMedia()
+    ) { uri ->
+        if (uri != null) {
+            selectedUri = uri
+            showCropper = true
+        }
+    }
 
-                            client.from("profiles").upsert(
-                                mapOf("id" to userId, "avatar_url" to publicUrl)
-                            )
+    fun uploadBitmap(bitmap: Bitmap) {
+        scope.launch {
+            uploading = true
+            showCropper = false
+            try {
+                val stream = java.io.ByteArrayOutputStream()
+                bitmap.compress(Bitmap.CompressFormat.JPEG, 90, stream)
+                val bytes = stream.toByteArray()
 
-                            profile = profile?.copy(avatar_url = publicUrl) ?: Profile(id = userId, avatar_url = publicUrl)
-                            Toast.makeText(context, "Foto atualizada!", Toast.LENGTH_SHORT).show()
-                        }
-                    } catch (e: Exception) {
-                        Toast.makeText(context, "Erro ao enviar: ${e.message}", Toast.LENGTH_SHORT).show()
-                    } finally {
-                        uploading = false
-                    }
-                }
+                val userId = client.auth.currentUserOrNull()?.id ?: return@launch
+                val fileName = "avatars/$userId-${UUID.randomUUID()}.jpg"
+                val bucket = client.storage.from("product-images")
+                bucket.upload(fileName, bytes)
+                val publicUrl = bucket.publicUrl(fileName)
+
+                client.from("profiles").upsert(
+                    mapOf("id" to userId, "avatar_url" to publicUrl)
+                )
+
+                profile = profile?.copy(avatar_url = publicUrl) ?: Profile(id = userId, avatar_url = publicUrl)
+                Toast.makeText(context, "Foto atualizada!", Toast.LENGTH_SHORT).show()
+            } catch (e: Exception) {
+                Toast.makeText(context, "Erro ao enviar: ${e.message}", Toast.LENGTH_SHORT).show()
+            } finally {
+                uploading = false
             }
         }
     }
@@ -125,21 +131,7 @@ fun ProfileScreen(onLogout: () -> Unit, onOrdersClick: () -> Unit, onAddressesCl
                     .clip(CircleShape)
                     .background(MaterialTheme.colorScheme.surfaceVariant)
                     .clickable {
-                        cropImageLauncher.launch(
-                            CropImageContractOptions(
-                                uri = null,
-                                cropImageOptions = CropImageOptions(
-                                    imageSourceIncludeGallery = true,
-                                    imageSourceIncludeCamera = true,
-                                    guidelines = CropImageView.Guidelines.ON,
-                                    aspectRatioX = 1,
-                                    aspectRatioY = 1,
-                                    fixAspectRatio = true,
-                                    cropShape = CropImageView.CropShape.OVAL,
-                                    showProgressBar = true
-                                )
-                            )
-                        )
+                        pickerLauncher.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
                     },
                 contentAlignment = Alignment.Center
             ) {
@@ -197,6 +189,21 @@ fun ProfileScreen(onLogout: () -> Unit, onOrdersClick: () -> Unit, onAddressesCl
             ProfileMenuItem(Icons.Default.Help, "Ajuda e Suporte") {}
 
             Spacer(modifier = Modifier.height(32.dp))
+
+            if (showCropper && selectedUri != null) {
+                androidx.compose.ui.window.Dialog(
+                    onDismissRequest = { showCropper = false },
+                    properties = androidx.compose.ui.window.DialogProperties(
+                        usePlatformDefaultWidth = false
+                    )
+                ) {
+                    ManualImageCropper(
+                        imageUri = selectedUri!!,
+                        onCropSuccess = { uploadBitmap(it) },
+                        onCancel = { showCropper = false }
+                    )
+                }
+            }
 
             if (showNameDialog) {
                 AlertDialog(

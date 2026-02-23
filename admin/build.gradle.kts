@@ -44,7 +44,6 @@ android {
 dependencies {
     implementation(project(":core"))
     implementation(libs.androidx.core.ktx)
-    implementation(libs.androidx.appcompat)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.activity.compose)
     implementation(platform(libs.androidx.compose.bom))
@@ -67,9 +66,6 @@ dependencies {
 
     // Coil
     implementation(libs.coil.compose)
-
-    // Image Cropper
-    implementation(libs.android.image.cropper)
 
     // Serialization
     implementation(libs.kotlinx.serialization.json)
