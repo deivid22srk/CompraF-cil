@@ -3,9 +3,11 @@ package com.example.comprafacil.admin.ui.screens
 import android.content.Intent
 import android.net.Uri
 import android.widget.Toast
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
@@ -222,7 +224,6 @@ fun OrderAdminItem(order: Order, viewModel: AdminOrdersViewModel) {
                     }
                 }
             }
-        }
         }
     }
 }
