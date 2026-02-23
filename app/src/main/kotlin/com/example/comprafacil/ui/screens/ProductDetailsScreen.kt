@@ -68,7 +68,7 @@ fun ProductDetailsScreen(productId: String, onBack: () -> Unit) {
 
     if (loading) {
         Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-            CircularProgressIndicator(color = MaterialTheme.colorScheme.secondary)
+            CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
         }
     } else if (product != null) {
         Scaffold(
@@ -164,12 +164,12 @@ fun ProductDetailsScreen(productId: String, onBack: () -> Unit) {
                             },
                             modifier = Modifier.weight(1f).height(56.dp),
                             shape = RoundedCornerShape(16.dp),
-                            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.secondary)
+                            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
                         ) {
                             Text(
-                                "ADICIONAR R$ ${String.format("%.2f", product!!.price * quantity)}",
-                                color = MaterialTheme.colorScheme.onSecondary,
-                                fontWeight = FontWeight.Bold,
+                                "ADICIONAR ${com.example.comprafacil.core.utils.CurrencyUtils.formatPrice(product!!.price * quantity)}",
+                                color = MaterialTheme.colorScheme.onPrimary,
+                                fontWeight = FontWeight.Black,
                                 fontSize = 16.sp
                             )
                         }
@@ -318,10 +318,10 @@ fun ProductDetailsScreen(productId: String, onBack: () -> Unit) {
                     Spacer(modifier = Modifier.height(12.dp))
 
                     Text(
-                        "R$ ${String.format("%.2f", product!!.price)}",
-                        style = MaterialTheme.typography.titleLarge,
-                        color = MaterialTheme.colorScheme.secondary,
-                        fontWeight = FontWeight.SemiBold
+                        com.example.comprafacil.core.utils.CurrencyUtils.formatPrice(product!!.price),
+                        style = MaterialTheme.typography.headlineSmall,
+                        color = MaterialTheme.colorScheme.primary,
+                        fontWeight = FontWeight.Black
                     )
 
                     Spacer(modifier = Modifier.height(24.dp))
