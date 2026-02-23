@@ -55,6 +55,7 @@ fun ManualImageCropper(
         modifier = Modifier
             .fillMaxSize()
             .background(Color.Black)
+            .navigationBarsPadding()
             .onGloballyPositioned { containerSize = it.size }
     ) {
         bitmap?.let { btm ->
