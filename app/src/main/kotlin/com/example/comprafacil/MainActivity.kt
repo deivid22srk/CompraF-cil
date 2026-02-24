@@ -294,7 +294,21 @@ class MainActivity : ComponentActivity() {
                             val productId = backStackEntry.arguments?.getString("productId") ?: ""
                             ProductDetailsScreen(
                                 productId = productId,
-                                onBack = { navController.popBackStack() }
+                                onBack = { navController.popBackStack() },
+                                onBuyNow = { pid, qty, vars ->
+                                    val varsJson = if (vars.isNotEmpty()) {
+                                        kotlinx.serialization.json.Json.encodeToString(vars)
+                                    } else null
+
+                                    val route = buildString {
+                                        append("checkout?productId=$pid")
+                                        append("&quantity=$qty")
+                                        if (varsJson != null) {
+                                            append("&variations=${Uri.encode(varsJson)}")
+                                        }
+                                    }
+                                    navController.navigate(route)
+                                }
                             )
                         }
                         composable("cart") {
@@ -304,8 +318,18 @@ class MainActivity : ComponentActivity() {
                                 }
                             )
                         }
-                        composable("checkout") {
+                        composable(
+                            "checkout?productId={productId}&quantity={quantity}&variations={variations}",
+                            arguments = listOf(
+                                navArgument("productId") { type = NavType.StringType; nullable = true; defaultValue = null },
+                                navArgument("quantity") { type = NavType.IntType; defaultValue = 1 },
+                                navArgument("variations") { type = NavType.StringType; nullable = true; defaultValue = null }
+                            )
+                        ) { backStackEntry ->
                             CheckoutScreen(
+                                productId = backStackEntry.arguments?.getString("productId"),
+                                quantity = backStackEntry.arguments?.getInt("quantity") ?: 1,
+                                variationsJson = backStackEntry.arguments?.getString("variations"),
                                 onBack = { navController.popBackStack() },
                                 onOrderFinished = {
                                     navController.navigate("home") {

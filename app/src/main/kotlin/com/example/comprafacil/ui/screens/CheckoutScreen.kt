@@ -41,7 +41,13 @@ import kotlinx.serialization.json.jsonPrimitive
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun CheckoutScreen(onBack: () -> Unit, onOrderFinished: () -> Unit) {
+fun CheckoutScreen(
+    productId: String? = null,
+    quantity: Int = 1,
+    variationsJson: String? = null,
+    onBack: () -> Unit,
+    onOrderFinished: () -> Unit
+) {
     val client = SupabaseConfig.client
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
@@ -75,14 +81,32 @@ fun CheckoutScreen(onBack: () -> Unit, onOrderFinished: () -> Unit) {
         }
     }
 
+    val selectedVariations = remember(variationsJson) {
+        if (variationsJson != null) {
+            try {
+                // Decode from the encoded JSON string passed in the URL
+                kotlinx.serialization.json.Json.decodeFromString<Map<String, String>>(Uri.decode(variationsJson))
+            } catch (e: Exception) {
+                null
+            }
+        } else null
+    }
+
     LaunchedEffect(Unit) {
         val userId = client.auth.currentUserOrNull()?.id
         if (userId != null) {
             try {
-                val items = client.from("cart_items").select(Columns.raw("*, product:products(*)")) {
-                    filter { eq("user_id", userId) }
-                }.decodeAs<List<CartItem>>()
-                subtotal = items.sumOf { (it.product?.price ?: 0.0) * it.quantity }
+                if (productId != null) {
+                    val product = client.from("products").select {
+                        filter { eq("id", productId) }
+                    }.decodeSingle<Product>()
+                    subtotal = product.price * quantity
+                } else {
+                    val items = client.from("cart_items").select(Columns.raw("*, product:products(*)")) {
+                        filter { eq("user_id", userId) }
+                    }.decodeAs<List<CartItem>>()
+                    subtotal = items.sumOf { (it.product?.price ?: 0.0) * it.quantity }
+                }
 
                 val configs = client.from("app_config").select().decodeAs<List<AppConfig>>()
                 configs.find { it.key == "delivery_fee" }?.let {
@@ -298,14 +322,40 @@ fun CheckoutScreen(onBack: () -> Unit, onOrderFinished: () -> Unit) {
                             isPlacingOrder = true
                             val userId = client.auth.currentUserOrNull()?.id ?: return@launch
                             try {
-                                // Fetch cart items with products to get current prices
-                                val cartItems = client.from("cart_items").select(Columns.raw("*, product:products(*)")) {
-                                    filter { eq("user_id", userId) }
-                                }.decodeAs<List<CartItem>>()
+                                val orderItemsList = if (productId != null) {
+                                    val product = client.from("products").select {
+                                        filter { eq("id", productId) }
+                                    }.decodeSingle<Product>()
 
-                                if (cartItems.isEmpty()) {
-                                    Toast.makeText(context, "Seu carrinho está vazio", Toast.LENGTH_SHORT).show()
-                                    return@launch
+                                    listOf(
+                                        OrderItem(
+                                            order_id = "", // Will be set after order insertion
+                                            product_id = productId,
+                                            quantity = quantity,
+                                            price_at_time = product.price,
+                                            selected_variations = selectedVariations
+                                        )
+                                    )
+                                } else {
+                                    val cartItems = client.from("cart_items").select(Columns.raw("*, product:products(*)")) {
+                                        filter { eq("user_id", userId) }
+                                    }.decodeAs<List<CartItem>>()
+
+                                    if (cartItems.isEmpty()) {
+                                        Toast.makeText(context, "Seu carrinho está vazio", Toast.LENGTH_SHORT).show()
+                                        isPlacingOrder = false
+                                        return@launch
+                                    }
+
+                                    cartItems.map { cartItem ->
+                                        OrderItem(
+                                            order_id = "",
+                                            product_id = cartItem.product_id,
+                                            quantity = cartItem.quantity,
+                                            price_at_time = cartItem.product?.price ?: 0.0,
+                                            selected_variations = cartItem.selected_variations
+                                        )
+                                    }
                                 }
 
                                 val order = Order(
@@ -326,22 +376,15 @@ fun CheckoutScreen(onBack: () -> Unit, onOrderFinished: () -> Unit) {
 
                                 val orderId = insertedOrder.id!!
 
-                                // Create and insert order items (price snapshot)
-                                val orderItems = cartItems.map { cartItem ->
-                                    OrderItem(
-                                        order_id = orderId,
-                                        product_id = cartItem.product_id,
-                                        quantity = cartItem.quantity,
-                                        price_at_time = cartItem.product?.price ?: 0.0,
-                                        selected_variations = cartItem.selected_variations
-                                    )
-                                }
+                                // Update order items with the new order ID
+                                val finalOrderItems = orderItemsList.map { it.copy(order_id = orderId) }
+                                client.from("order_items").insert(finalOrderItems)
 
-                                client.from("order_items").insert(orderItems)
-
-                                // Clear cart
-                                client.from("cart_items").delete {
-                                    filter { eq("user_id", userId) }
+                                // Clear cart only if it was a cart purchase
+                                if (productId == null) {
+                                    client.from("cart_items").delete {
+                                        filter { eq("user_id", userId) }
+                                    }
                                 }
 
                                 Toast.makeText(context, "Pedido realizado com sucesso!", Toast.LENGTH_LONG).show()
