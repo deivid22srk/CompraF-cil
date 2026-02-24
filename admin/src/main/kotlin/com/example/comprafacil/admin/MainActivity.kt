@@ -360,10 +360,10 @@ fun AdminTheme(content: @Composable () -> Unit) {
     if (!view.isInEditMode) {
         SideEffect {
             val window = (view.context as Activity).window
-            window.statusBarColor = colorScheme.background.toArgb()
-            window.navigationBarColor = colorScheme.background.toArgb()
-            WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars = false
-            WindowCompat.getInsetsController(window, view).isAppearanceLightNavigationBars = false
+            WindowCompat.getInsetsController(window, view).apply {
+                isAppearanceLightStatusBars = false
+                isAppearanceLightNavigationBars = false
+            }
         }
     }
 
@@ -395,7 +395,7 @@ fun AdminPanel() {
                 NavigationBarItem(
                     selected = selectedTab == 1,
                     onClick = { selectedTab = 1 },
-                    icon = { Icon(Icons.Default.List, contentDescription = null) },
+                    icon = { Icon(Icons.AutoMirrored.Filled.List, contentDescription = null) },
                     label = { Text("Produtos") }
                 )
                 NavigationBarItem(
