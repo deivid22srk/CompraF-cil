@@ -1,27 +1,23 @@
 import { useEffect, useState } from 'react'
-import { Search, Download, SearchX } from 'lucide-react'
+import { Search, SearchX } from 'lucide-react'
 import { productService } from '../services/productService'
-import { configService } from '../services/configService'
 import type { Product } from '../types/database'
 import ProductCard from '../components/ProductCard'
 import LoadingSpinner from '../components/LoadingSpinner'
 
 export default function Home() {
   const [products, setProducts] = useState<Product[]>([])
-  const [downloadUrl, setDownloadUrl] = useState('')
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
 
   useEffect(() => {
     async function fetchData() {
       try {
-        const [productsData, url] = await Promise.all([
-          productService.getProducts(),
-          configService.getDownloadUrl()
+        const [productsData] = await Promise.all([
+          productService.getProducts()
         ])
 
         setProducts(productsData)
-        if (url) setDownloadUrl(url)
       } catch (error) {
         console.error('Error fetching data:', error)
       } finally {
@@ -38,25 +34,12 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-background text-white">
-      <header className="bg-gradient-to-b from-primary to-orange-400 p-8 md:p-12 rounded-b-[3rem] shadow-2xl mb-8">
+      <div className="bg-gradient-to-b from-primary to-orange-400 p-8 md:p-12 rounded-b-[3rem] shadow-2xl mb-8">
         <div className="max-w-6xl mx-auto">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-8">
             <div className="space-y-2">
-              <h1 className="text-4xl md:text-5xl font-black text-black tracking-tight">CompraFácil</h1>
-              <p className="text-black/70 font-bold text-sm md:text-base">Sua compra na palma da mão</p>
-              {downloadUrl && (
-                <div className="pt-2">
-                  <a
-                    href={downloadUrl}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="inline-flex bg-black text-primary px-6 py-3 rounded-2xl text-sm font-black items-center gap-2 hover:scale-105 transition-transform shadow-xl"
-                  >
-                    <Download size={18} />
-                    BAIXAR APP AGORA
-                  </a>
-                </div>
-              )}
+              <h1 className="text-4xl md:text-5xl font-black text-black tracking-tight italic uppercase">Promoções da Semana</h1>
+              <p className="text-black/70 font-bold text-sm md:text-base uppercase tracking-[0.2em]">As melhores ofertas para você</p>
             </div>
             <div className="relative flex-1 max-w-lg">
               <div className="absolute inset-0 bg-black/10 blur-xl rounded-3xl"></div>
@@ -73,7 +56,7 @@ export default function Home() {
             </div>
           </div>
         </div>
-      </header>
+      </div>
 
       <main className="max-w-6xl mx-auto p-6">
         <div className="bg-primary/5 border border-primary/10 rounded-3xl p-6 mb-12 flex items-center justify-center gap-3">

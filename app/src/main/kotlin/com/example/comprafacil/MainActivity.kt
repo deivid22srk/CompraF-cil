@@ -42,6 +42,8 @@ import io.github.jan.supabase.gotrue.*
 import io.github.jan.supabase.postgrest.from
 import io.github.jan.supabase.realtime.*
 import kotlinx.serialization.json.jsonPrimitive
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
@@ -297,7 +299,7 @@ class MainActivity : ComponentActivity() {
                                 onBack = { navController.popBackStack() },
                                 onBuyNow = { pid, qty, vars ->
                                     val varsJson = if (vars.isNotEmpty()) {
-                                        kotlinx.serialization.json.Json.encodeToString(vars)
+                                        Json.encodeToString(vars)
                                     } else null
 
                                     val route = buildString {
