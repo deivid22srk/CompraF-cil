@@ -20,6 +20,9 @@ export default function Checkout() {
   const [customerName, setCustomerName] = useState('')
   const [whatsapp, setWhatsapp] = useState('')
   const [address, setAddress] = useState('')
+  const [latitude, setLatitude] = useState<number | null>(null)
+  const [longitude, setLongitude] = useState<number | null>(null)
+  const [gettingLocation, setGettingLocation] = useState(false)
   const [paymentMethod, setPaymentMethod] = useState('dinheiro')
   const [deliveryFee, setDeliveryFee] = useState(0)
 
@@ -86,6 +89,29 @@ export default function Checkout() {
   const subtotal = items.reduce((acc, item) => acc + (item.product?.price || 0) * item.quantity, 0)
   const total = subtotal + deliveryFee
 
+  const handleGetLocation = () => {
+    if (!navigator.geolocation) {
+      alert('Seu navegador não suporta geolocalização.')
+      return
+    }
+
+    setGettingLocation(true)
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        setLatitude(position.coords.latitude)
+        setLongitude(position.coords.longitude)
+        setGettingLocation(false)
+        alert('Localização capturada com sucesso!')
+      },
+      (error) => {
+        console.error('Error getting location:', error)
+        setGettingLocation(false)
+        alert('Não foi possível obter sua localização. Por favor, preencha o endereço manualmente.')
+      },
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+    )
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!customerName || !whatsapp || !address) {
@@ -101,8 +127,8 @@ export default function Checkout() {
         whatsapp,
         location: address,
         total_price: total,
-        latitude: null,
-        longitude: null,
+        latitude: latitude,
+        longitude: longitude,
         payment_method: paymentMethod,
         status: 'pendente'
       }
@@ -210,7 +236,18 @@ export default function Checkout() {
               <h2 className="text-2xl font-black uppercase">Onde Entregar?</h2>
             </div>
             <div className="space-y-2">
-              <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest px-1">Endereço de Entrega</label>
+              <div className="flex justify-between items-center px-1">
+                <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Endereço de Entrega</label>
+                <button
+                  type="button"
+                  onClick={handleGetLocation}
+                  disabled={gettingLocation}
+                  className={`text-[10px] font-black uppercase tracking-widest flex items-center gap-1 transition-colors ${latitude ? 'text-green-500' : 'text-primary hover:text-orange-400'}`}
+                >
+                  {gettingLocation ? <Loader2 size={12} className="animate-spin" /> : <MapPin size={12} />}
+                  {latitude ? 'Localização Capturada' : 'Obter Localização Exata'}
+                </button>
+              </div>
               <div className="relative">
                 <MapPin className="absolute left-5 top-4 text-gray-500 w-5 h-5" />
                 <textarea
@@ -222,6 +259,11 @@ export default function Checkout() {
                   placeholder="Rua, número, bairro e pontos de referência..."
                 />
               </div>
+              {latitude && (
+                <p className="text-[10px] text-green-500/70 font-bold px-1 italic">
+                  * Coordenadas GPS anexadas ao pedido para facilitar a entrega.
+                </p>
+              )}
             </div>
           </section>
 

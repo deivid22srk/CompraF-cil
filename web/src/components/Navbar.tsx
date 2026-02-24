@@ -67,6 +67,12 @@ export default function Navbar() {
             </a>
           )}
 
+          {user && (
+            <Link to="/orders" className="text-white/70 hover:text-white transition-colors flex items-center gap-2 font-bold text-sm">
+              Meus Pedidos
+            </Link>
+          )}
+
           <Link to="/cart" className="relative p-2 text-white/70 hover:text-primary transition-colors">
             <ShoppingCart size={24} />
             {cartCount > 0 && (
@@ -78,12 +84,12 @@ export default function Navbar() {
 
           {user ? (
             <div className="flex items-center gap-4">
-              <div className="flex items-center gap-2 text-sm font-bold text-white/90">
+              <Link to="/orders" className="flex items-center gap-2 text-sm font-bold text-white/90">
                 <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-primary">
                   <User size={18} />
                 </div>
                 {user.email?.split('@')[0]}
-              </div>
+              </Link>
               <button
                 onClick={handleLogout}
                 className="p-2 text-gray-500 hover:text-red-500 transition-colors"
@@ -118,11 +124,23 @@ export default function Navbar() {
             {cartCount > 0 && <span className="bg-primary text-black px-2 rounded-full text-xs font-black">{cartCount}</span>}
           </Link>
 
+          {downloadUrl && (
+            <a
+              href={downloadUrl}
+              target="_blank"
+              rel="noreferrer"
+              className="flex items-center gap-3 text-lg font-bold text-secondary"
+              onClick={() => setIsMenuOpen(false)}
+            >
+              <Download /> Baixar Aplicativo
+            </a>
+          )}
+
           {user ? (
             <>
-              <div className="flex items-center gap-3 text-lg font-bold">
-                <User className="text-primary" /> {user.email}
-              </div>
+              <Link to="/orders" className="flex items-center gap-3 text-lg font-bold" onClick={() => setIsMenuOpen(false)}>
+                <User className="text-primary" /> Meus Pedidos
+              </Link>
               <button onClick={handleLogout} className="flex items-center gap-3 text-red-500 font-bold text-lg">
                 <LogOut /> Sair
               </button>

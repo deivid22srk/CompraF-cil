@@ -1,25 +1,23 @@
-import { supabase } from '../supabaseClient';
+import { supabase } from '../supabaseClient'
 
 export const configService = {
-  async getDownloadUrl() {
+  async getConfig() {
     const { data, error } = await supabase
       .from('app_config')
-      .select('value')
-      .eq('key', 'download_url')
-      .single();
+      .select('*')
 
-    if (error) return null;
-    return data.value as string;
+    if (error) throw error
+
+    const config: Record<string, any> = {}
+    data.forEach(item => {
+      config[item.key] = item.value
+    })
+
+    return config
   },
 
-  async getDeliveryFee() {
-    const { data, error } = await supabase
-      .from('app_config')
-      .select('value')
-      .eq('key', 'delivery_fee')
-      .single();
-
-    if (error) return 0;
-    return parseFloat(data.value) || 0;
+  async getDownloadUrl() {
+    const config = await this.getConfig()
+    return config.download_url as string || ''
   }
-};
+}

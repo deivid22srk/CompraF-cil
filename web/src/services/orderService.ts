@@ -36,5 +36,15 @@ export const orderService = {
 
     if (error) throw error
     return data as Order[]
+  },
+
+  async getOrderItems(orderId: string) {
+    const { data, error } = await supabase
+      .from('order_items')
+      .select('*, product:products(*)')
+      .eq('order_id', orderId)
+
+    if (error) throw error
+    return data
   }
 }

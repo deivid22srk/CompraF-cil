@@ -21,6 +21,9 @@ export default function ProductDetails() {
   const [quantity, setQuantity] = useState(1)
   const [selectedVariations, setSelectedVariations] = useState<Record<string, string>>({})
 
+  const isOutOfStock = product?.stock_quantity === 0;
+  const maxStock = product?.stock_quantity ?? 99;
+
   useEffect(() => {
     if (id) {
       fetchData(id)
@@ -163,8 +166,15 @@ export default function ProductDetails() {
             </button>
           </div>
 
-          <div className="flex items-center gap-2 mb-6 text-primary">
-            <span className="text-3xl font-black">R$ {product.price.toFixed(2)}</span>
+          <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center gap-2 text-primary">
+              <span className="text-3xl font-black">R$ {product.price.toFixed(2)}</span>
+            </div>
+            {product.stock_quantity !== undefined && (
+              <span className={`text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-widest ${isOutOfStock ? 'bg-red-500/10 text-red-500 border border-red-500/20' : 'bg-green-500/10 text-green-500 border border-green-500/20'}`}>
+                {isOutOfStock ? 'Esgotado' : `${product.stock_quantity} Disponíveis`}
+              </span>
+            )}
           </div>
 
           <p className="text-gray-400 leading-relaxed mb-6 flex-1">
@@ -203,14 +213,16 @@ export default function ProductDetails() {
               <div className="flex items-center bg-card rounded-2xl border border-white/5">
                 <button
                   onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                  className="p-3 text-gray-400 hover:text-white"
+                  className="p-3 text-gray-400 hover:text-white disabled:opacity-20"
+                  disabled={isOutOfStock}
                 >
                   <Minus size={20} />
                 </button>
-                <span className="w-10 text-center font-black text-lg">{quantity}</span>
+                <span className="w-10 text-center font-black text-lg">{isOutOfStock ? 0 : quantity}</span>
                 <button
-                  onClick={() => setQuantity(quantity + 1)}
-                  className="p-3 text-primary"
+                  onClick={() => setQuantity(Math.min(maxStock, quantity + 1))}
+                  className="p-3 text-primary disabled:opacity-20"
+                  disabled={isOutOfStock || quantity >= maxStock}
                 >
                   <Plus size={20} />
                 </button>
@@ -220,18 +232,19 @@ export default function ProductDetails() {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <button
                 onClick={handleAddToCart}
-                disabled={isAdding}
-                className="flex items-center justify-center gap-3 py-5 bg-card border border-white/10 rounded-[1.5rem] font-black uppercase text-sm hover:bg-white/5 transition-all"
+                disabled={isAdding || isOutOfStock}
+                className="flex items-center justify-center gap-3 py-5 bg-card border border-white/10 rounded-[1.5rem] font-black uppercase text-sm hover:bg-white/5 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {isAdding ? <Loader2 className="animate-spin" /> : <ShoppingCart size={20} />}
-                Colocar no Carrinho
+                {isOutOfStock ? 'Sem Estoque' : 'Colocar no Carrinho'}
               </button>
               <button
                 onClick={handleBuyNow}
-                className="flex items-center justify-center gap-3 py-5 bg-primary text-black rounded-[1.5rem] font-black uppercase text-sm hover:scale-[1.02] active:scale-95 transition-all shadow-xl shadow-primary/20"
+                disabled={isOutOfStock}
+                className="flex items-center justify-center gap-3 py-5 bg-primary text-black rounded-[1.5rem] font-black uppercase text-sm hover:scale-[1.02] active:scale-95 transition-all shadow-xl shadow-primary/20 disabled:opacity-50 disabled:bg-gray-600 disabled:cursor-not-allowed"
               >
                 <CheckCircle2 size={20} />
-                Comprar Agora
+                {isOutOfStock ? 'Indisponível' : 'Comprar Agora'}
               </button>
             </div>
 
