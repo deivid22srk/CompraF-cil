@@ -12,14 +12,17 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.SearchOff
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
@@ -28,6 +31,7 @@ import com.example.comprafacil.core.data.Category
 import com.example.comprafacil.core.data.Product
 import com.example.comprafacil.core.utils.CurrencyUtils
 import com.example.comprafacil.ui.components.ProductCard
+import com.example.comprafacil.ui.theme.PrimaryGradient
 import com.example.comprafacil.ui.viewmodel.HomeViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -55,61 +59,81 @@ fun HomeScreen(
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .background(MaterialTheme.colorScheme.primary)
-                .padding(bottom = 16.dp)
-        ) {
-            Column(modifier = Modifier.padding(16.dp)) {
-                Text(
-                    "CompraFácil",
-                    fontSize = 24.sp,
-                    fontWeight = FontWeight.ExtraBold,
-                    color = MaterialTheme.colorScheme.onPrimary
+                .background(
+                    brush = Brush.verticalGradient(PrimaryGradient),
+                    shape = RoundedCornerShape(bottomStart = 32.dp, bottomEnd = 32.dp)
                 )
-                Spacer(modifier = Modifier.height(4.dp))
+                .padding(bottom = 24.dp)
+        ) {
+            Column(modifier = Modifier.padding(top = 16.dp, start = 20.dp, end = 20.dp)) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column {
+                        Text(
+                            "CompraFácil",
+                            fontSize = 28.sp,
+                            fontWeight = FontWeight.Black,
+                            color = MaterialTheme.colorScheme.onPrimary
+                        )
+                        Text(
+                            "Sua compra na palma da mão",
+                            fontSize = 12.sp,
+                            color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.8f)
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
 
                 // Availability Notice
                 Surface(
-                    color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.1f),
-                    shape = RoundedCornerShape(8.dp)
+                    color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.15f),
+                    shape = RoundedCornerShape(12.dp)
                 ) {
                     Row(
-                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Icon(
                             Icons.Default.Info,
                             contentDescription = null,
                             tint = MaterialTheme.colorScheme.onPrimary,
-                            modifier = Modifier.size(14.dp)
+                            modifier = Modifier.size(16.dp)
                         )
-                        Spacer(modifier = Modifier.width(4.dp))
+                        Spacer(modifier = Modifier.width(8.dp))
                         Text(
-                            "Disponível apenas em Sítio Riacho dos Barreiros e locais próximos",
-                            fontSize = 11.sp,
+                            "Entrega em Sítio Riacho dos Barreiros e região",
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Medium,
                             color = MaterialTheme.colorScheme.onPrimary
                         )
                     }
                 }
 
-                Spacer(modifier = Modifier.height(12.dp))
+                Spacer(modifier = Modifier.height(20.dp))
+
                 Surface(
                     onClick = onSearchClick,
-                    shape = RoundedCornerShape(16.dp),
+                    shape = RoundedCornerShape(20.dp),
                     color = MaterialTheme.colorScheme.surface,
+                    tonalElevation = 8.dp,
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Row(
-                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
+                        modifier = Modifier.padding(horizontal = 20.dp, vertical = 14.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Icon(
                             Icons.Default.Search,
                             contentDescription = null,
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                            tint = MaterialTheme.colorScheme.primary
                         )
                         Spacer(modifier = Modifier.width(12.dp))
                         Text(
-                            "Buscar produtos...",
+                            "O que você procura hoje?",
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             fontSize = 16.sp
                         )
@@ -119,7 +143,7 @@ fun HomeScreen(
         }
 
         // Categories
-        Spacer(modifier = Modifier.height(8.dp))
+        Spacer(modifier = Modifier.height(16.dp))
         LazyRow(
             contentPadding = PaddingValues(horizontal = 16.dp),
             horizontalArrangement = Arrangement.spacedBy(12.dp)
@@ -142,7 +166,33 @@ fun HomeScreen(
 
         if (loading) {
             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                CircularProgressIndicator(color = MaterialTheme.colorScheme.secondary)
+                CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
+            }
+        } else if (filteredProducts.isEmpty()) {
+            Column(
+                modifier = Modifier.fillMaxSize().padding(32.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
+            ) {
+                Icon(
+                    Icons.Default.SearchOff,
+                    contentDescription = null,
+                    modifier = Modifier.size(80.dp),
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.3f)
+                )
+                Spacer(modifier = Modifier.height(16.dp))
+                Text(
+                    "Nenhum produto encontrado",
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+                Text(
+                    "Tente buscar com outro termo ou categoria.",
+                    fontSize = 14.sp,
+                    textAlign = TextAlign.Center,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
             }
         } else {
             LazyVerticalGrid(
@@ -163,15 +213,17 @@ fun HomeScreen(
 fun CategoryChip(name: String, isSelected: Boolean, onClick: () -> Unit) {
     Surface(
         onClick = onClick,
-        shape = RoundedCornerShape(12.dp),
-        color = if (isSelected) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.surfaceVariant,
-        tonalElevation = 2.dp
+        shape = RoundedCornerShape(16.dp),
+        color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceVariant,
+        tonalElevation = if (isSelected) 4.dp else 0.dp,
+        border = if (isSelected) null else androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.5f))
     ) {
         Text(
             text = name,
-            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
-            fontWeight = FontWeight.Bold,
-            color = if (isSelected) MaterialTheme.colorScheme.onSecondary else MaterialTheme.colorScheme.onSurfaceVariant
+            modifier = Modifier.padding(horizontal = 20.dp, vertical = 10.dp),
+            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+            fontSize = 14.sp,
+            color = if (isSelected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant
         )
     }
 }

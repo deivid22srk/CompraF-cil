@@ -14,27 +14,35 @@ import androidx.core.view.WindowCompat
 
 private val DarkColorScheme = darkColorScheme(
     primary = PrimaryOrange,
-    secondary = SecondaryAmber,
-    background = BackgroundDark,
-    surface = SurfaceDark,
-    surfaceVariant = CardDark,
     onPrimary = Color.Black,
+    primaryContainer = PrimaryDark,
+    onPrimaryContainer = Color.White,
+    secondary = SecondaryAmber,
+    onSecondary = Color.Black,
+    background = BackgroundDark,
     onBackground = Color.White,
+    surface = SurfaceDark,
     onSurface = Color.White,
+    surfaceVariant = CardDark,
     onSurfaceVariant = Color.White.copy(alpha = 0.7f),
-    outline = DividerGray
+    error = ErrorRed,
+    outline = Color(0xFF333333)
 )
 
 private val LightColorScheme = lightColorScheme(
     primary = PrimaryOrange,
+    onPrimary = Color.White,
+    primaryContainer = PrimaryLight,
+    onPrimaryContainer = Color.Black,
     secondary = SecondaryAmber,
+    onSecondary = Color.Black,
     background = BackgroundLight,
-    surface = SurfaceLight,
-    surfaceVariant = CardLight,
-    onPrimary = Color.Black,
     onBackground = Color.Black,
+    surface = SurfaceLight,
     onSurface = Color.Black,
+    surfaceVariant = CardLight,
     onSurfaceVariant = Color.Black.copy(alpha = 0.6f),
+    error = ErrorRed,
     outline = Color(0xFFE0E0E0)
 )
 

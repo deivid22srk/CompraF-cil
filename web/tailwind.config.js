@@ -8,8 +8,8 @@ export default {
     extend: {
       colors: {
         primary: "#FF9800",
-        secondary: "#FDCB58",
-        background: "#121212",
+        secondary: "#FFC107",
+        background: "#0F0F0F",
         surface: "#1A1A1A",
         card: "#242424",
       },

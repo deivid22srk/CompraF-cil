@@ -305,3 +305,8 @@ BEGIN
         ALTER PUBLICATION supabase_realtime ADD TABLE order_status_history;
     END IF;
 END $$;
+
+-- Set REPLICA IDENTITY to FULL to ensure all columns are sent in Realtime UPDATE events
+-- This is critical for RLS and client-side filtering (e.g., user_id)
+ALTER TABLE orders REPLICA IDENTITY FULL;
+ALTER TABLE order_status_history REPLICA IDENTITY FULL;

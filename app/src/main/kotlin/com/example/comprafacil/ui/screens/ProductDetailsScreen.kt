@@ -43,7 +43,11 @@ import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
-fun ProductDetailsScreen(productId: String, onBack: () -> Unit) {
+fun ProductDetailsScreen(
+    productId: String,
+    onBack: () -> Unit,
+    onBuyNow: (String, Int, Map<String, String>) -> Unit
+) {
     val client = SupabaseConfig.client
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
@@ -68,7 +72,7 @@ fun ProductDetailsScreen(productId: String, onBack: () -> Unit) {
 
     if (loading) {
         Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-            CircularProgressIndicator(color = MaterialTheme.colorScheme.secondary)
+            CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
         }
     } else if (product != null) {
         Scaffold(
@@ -106,72 +110,98 @@ fun ProductDetailsScreen(productId: String, onBack: () -> Unit) {
                             }
                         }
                         Spacer(modifier = Modifier.width(16.dp))
-                        Button(
-                            onClick = {
-                                if ((product?.stock_quantity ?: 0) <= 0) {
-                                    Toast.makeText(context, "Produto sem estoque", Toast.LENGTH_SHORT).show()
-                                    return@Button
-                                }
-                                scope.launch {
-                                    val userId = client.auth.currentUserOrNull()?.id
-                                    if (userId != null) {
-                                        try {
-                                            // Validate variations
-                                            val missingVariations = product?.variations?.filter { !selectedVariations.containsKey(it.name) } ?: emptyList()
-                                            if (missingVariations.isNotEmpty()) {
-                                                Toast.makeText(context, "Selecione: ${missingVariations.first().name}", Toast.LENGTH_SHORT).show()
-                                                return@launch
-                                            }
-
-                                            // For variations, we often want separate entries if variations differ,
-                                            // or we check if exact same variation exists.
-                                            val existing = client.from("cart_items").select {
-                                                filter {
-                                                    eq("user_id", userId)
-                                                    eq("product_id", productId)
-                                                }
-                                            }.decodeAs<List<CartItem>>().find { it.selected_variations == selectedVariations }
-
-                                            if (existing != null) {
-                                                val newQuantity = existing.quantity + quantity
-                                                if (newQuantity > (product?.stock_quantity ?: 0)) {
-                                                    Toast.makeText(context, "Quantidade total no carrinho excede o estoque", Toast.LENGTH_LONG).show()
-                                                } else {
-                                                    client.from("cart_items").update({
-                                                        set("quantity", newQuantity)
-                                                    }) {
-                                                        filter { eq("id", existing.id!!) }
-                                                    }
-                                                    Toast.makeText(context, "Carrinho atualizado!", Toast.LENGTH_SHORT).show()
-                                                }
-                                            } else {
-                                                val cartItem = CartItem(
-                                                    user_id = userId,
-                                                    product_id = productId,
-                                                    quantity = quantity,
-                                                    selected_variations = selectedVariations.ifEmpty { null }
-                                                )
-                                                client.from("cart_items").insert(cartItem)
-                                                Toast.makeText(context, "Adicionado ao carrinho!", Toast.LENGTH_SHORT).show()
-                                            }
-                                        } catch (e: Exception) {
-                                            Toast.makeText(context, "Erro ao adicionar: ${e.message}", Toast.LENGTH_LONG).show()
-                                        }
-                                    } else {
-                                        Toast.makeText(context, "Faça login primeiro", Toast.LENGTH_SHORT).show()
+                        Column(modifier = Modifier.weight(1f)) {
+                            Button(
+                                onClick = {
+                                    if ((product?.stock_quantity ?: 0) <= 0) {
+                                        Toast.makeText(context, "Produto sem estoque", Toast.LENGTH_SHORT).show()
+                                        return@Button
                                     }
-                                }
-                            },
-                            modifier = Modifier.weight(1f).height(56.dp),
-                            shape = RoundedCornerShape(16.dp),
-                            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.secondary)
-                        ) {
-                            Text(
-                                "ADICIONAR R$ ${String.format("%.2f", product!!.price * quantity)}",
-                                color = MaterialTheme.colorScheme.onSecondary,
-                                fontWeight = FontWeight.Bold,
-                                fontSize = 16.sp
-                            )
+                                    // Validate variations
+                                    val missingVariations = product?.variations?.filter { !selectedVariations.containsKey(it.name) } ?: emptyList()
+                                    if (missingVariations.isNotEmpty()) {
+                                        Toast.makeText(context, "Selecione: ${missingVariations.first().name}", Toast.LENGTH_SHORT).show()
+                                        return@Button
+                                    }
+                                    onBuyNow(productId, quantity, selectedVariations)
+                                },
+                                modifier = Modifier.fillMaxWidth().height(44.dp),
+                                shape = RoundedCornerShape(12.dp),
+                                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
+                            ) {
+                                Text(
+                                    "COMPRAR AGORA",
+                                    color = MaterialTheme.colorScheme.onPrimary,
+                                    fontWeight = FontWeight.Black,
+                                    fontSize = 14.sp
+                                )
+                            }
+                            Spacer(modifier = Modifier.height(8.dp))
+                            OutlinedButton(
+                                onClick = {
+                                    if ((product?.stock_quantity ?: 0) <= 0) {
+                                        Toast.makeText(context, "Produto sem estoque", Toast.LENGTH_SHORT).show()
+                                        return@OutlinedButton
+                                    }
+                                    scope.launch {
+                                        val userId = client.auth.currentUserOrNull()?.id
+                                        if (userId != null) {
+                                            try {
+                                                // Validate variations
+                                                val missingVariations = product?.variations?.filter { !selectedVariations.containsKey(it.name) } ?: emptyList()
+                                                if (missingVariations.isNotEmpty()) {
+                                                    Toast.makeText(context, "Selecione: ${missingVariations.first().name}", Toast.LENGTH_SHORT).show()
+                                                    return@launch
+                                                }
+
+                                                val existing = client.from("cart_items").select {
+                                                    filter {
+                                                        eq("user_id", userId)
+                                                        eq("product_id", productId)
+                                                    }
+                                                }.decodeAs<List<CartItem>>().find { it.selected_variations == selectedVariations }
+
+                                                if (existing != null) {
+                                                    val newQuantity = existing.quantity + quantity
+                                                    if (newQuantity > (product?.stock_quantity ?: 0)) {
+                                                        Toast.makeText(context, "Quantidade total no carrinho excede o estoque", Toast.LENGTH_LONG).show()
+                                                    } else {
+                                                        client.from("cart_items").update({
+                                                            set("quantity", newQuantity)
+                                                        }) {
+                                                            filter { eq("id", existing.id!!) }
+                                                        }
+                                                        Toast.makeText(context, "Carrinho atualizado!", Toast.LENGTH_SHORT).show()
+                                                    }
+                                                } else {
+                                                    val cartItem = CartItem(
+                                                        user_id = userId,
+                                                        product_id = productId,
+                                                        quantity = quantity,
+                                                        selected_variations = selectedVariations.ifEmpty { null }
+                                                    )
+                                                    client.from("cart_items").insert(cartItem)
+                                                    Toast.makeText(context, "Adicionado ao carrinho!", Toast.LENGTH_SHORT).show()
+                                                }
+                                            } catch (e: Exception) {
+                                                Toast.makeText(context, "Erro ao adicionar: ${e.message}", Toast.LENGTH_LONG).show()
+                                            }
+                                        } else {
+                                            Toast.makeText(context, "Faça login primeiro", Toast.LENGTH_SHORT).show()
+                                        }
+                                    }
+                                },
+                                modifier = Modifier.fillMaxWidth().height(44.dp),
+                                shape = RoundedCornerShape(12.dp),
+                                border = androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.primary)
+                            ) {
+                                Text(
+                                    "ADCIONAR AO CARRINHO",
+                                    color = MaterialTheme.colorScheme.primary,
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 12.sp
+                                )
+                            }
                         }
                     }
                 }
@@ -318,10 +348,10 @@ fun ProductDetailsScreen(productId: String, onBack: () -> Unit) {
                     Spacer(modifier = Modifier.height(12.dp))
 
                     Text(
-                        "R$ ${String.format("%.2f", product!!.price)}",
-                        style = MaterialTheme.typography.titleLarge,
-                        color = MaterialTheme.colorScheme.secondary,
-                        fontWeight = FontWeight.SemiBold
+                        com.example.comprafacil.core.utils.CurrencyUtils.formatPrice(product!!.price),
+                        style = MaterialTheme.typography.headlineSmall,
+                        color = MaterialTheme.colorScheme.primary,
+                        fontWeight = FontWeight.Black
                     )
 
                     Spacer(modifier = Modifier.height(24.dp))

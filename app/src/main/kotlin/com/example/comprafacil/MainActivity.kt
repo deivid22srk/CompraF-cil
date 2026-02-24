@@ -36,10 +36,14 @@ import android.net.Uri
 import androidx.compose.ui.window.DialogProperties
 import com.example.comprafacil.core.data.AppConfig
 import com.example.comprafacil.utils.NotificationHelper
+import com.example.comprafacil.core.data.Order
+import com.russhwolf.settings.SharedPreferencesSettings
 import io.github.jan.supabase.gotrue.*
 import io.github.jan.supabase.postgrest.from
 import io.github.jan.supabase.realtime.*
 import kotlinx.serialization.json.jsonPrimitive
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
@@ -127,22 +131,66 @@ class MainActivity : ComponentActivity() {
                     val userId = if (status is SessionStatus.Authenticated) {
                         status.session.user?.id
                     } else null
+
                     if (userId != null) {
+                        // 1. Initial Check: Fetch current status of active orders to catch updates while app was closed
+                        launch {
+                            try {
+                                val settings = SharedPreferencesSettings(getSharedPreferences("order_notifications", android.content.Context.MODE_PRIVATE))
+                                val orders = SupabaseConfig.client.from("orders").select {
+                                    filter {
+                                        eq("user_id", userId)
+                                        neq("status", "concluído")
+                                        neq("status", "cancelado")
+                                    }
+                                }.decodeAs<List<Order>>()
+
+                                for (order in orders) {
+                                    val orderId = order.id ?: continue
+                                    val currentStatus = order.status ?: "pendente"
+                                    val lastKnownStatus = settings.getString("order_$orderId", "pendente")
+
+                                    if (currentStatus != lastKnownStatus) {
+                                        notificationHelper.showNotification(
+                                            "Atualização no Pedido #${orderId.takeLast(6)}",
+                                            "O status mudou para: ${currentStatus.uppercase()}"
+                                        )
+                                        settings.putString("order_$orderId", currentStatus)
+                                    }
+                                }
+                            } catch (e: Exception) {
+                                // Silent fail for initial check
+                            }
+                        }
+
+                        // 2. Realtime Listener: Subscribe to updates
                         val channel = SupabaseConfig.client.realtime.channel("orders_channel_$userId")
                         val changeFlow = channel.postgresChangeFlow<PostgresAction.Update>(schema = "public") {
                             table = "orders"
                         }
 
                         changeFlow.onEach { change ->
-                            val newStatus = change.record["status"]?.jsonPrimitive?.content
-                            val orderId = change.record["id"]?.jsonPrimitive?.content?.takeLast(6)
                             val orderUserId = change.record["user_id"]?.jsonPrimitive?.content
 
+                            // Client-side filtering (Reliable now with REPLICA IDENTITY FULL)
                             if (orderUserId == userId) {
-                                notificationHelper.showNotification(
-                                    "Atualização no Pedido",
-                                    "O status do seu pedido #$orderId mudou para: $newStatus"
-                                )
+                                val newStatus = change.record["status"]?.jsonPrimitive?.content
+                                val orderId = change.record["id"]?.jsonPrimitive?.content?.takeLast(6)
+
+                                // Save status to settings to avoid double notifications with worker/initial check
+                                val fullOrderId = change.record["id"]?.jsonPrimitive?.content
+                                if (fullOrderId != null && newStatus != null) {
+                                    val settings = SharedPreferencesSettings(getSharedPreferences("order_notifications", android.content.Context.MODE_PRIVATE))
+                                    val lastKnownStatus = settings.getString("order_$fullOrderId", "pendente")
+
+                                    if (newStatus != lastKnownStatus) {
+                                        notificationHelper.showNotification(
+                                            "Atualização no Pedido #$orderId",
+                                            "O status mudou para: ${newStatus.uppercase()}"
+                                        )
+                                        settings.putString("order_$fullOrderId", newStatus)
+                                    }
+                                }
                             }
                         }.launchIn(this)
 
@@ -248,7 +296,21 @@ class MainActivity : ComponentActivity() {
                             val productId = backStackEntry.arguments?.getString("productId") ?: ""
                             ProductDetailsScreen(
                                 productId = productId,
-                                onBack = { navController.popBackStack() }
+                                onBack = { navController.popBackStack() },
+                                onBuyNow = { pid, qty, vars ->
+                                    val varsJson = if (vars.isNotEmpty()) {
+                                        Json.encodeToString(vars)
+                                    } else null
+
+                                    val route = buildString {
+                                        append("checkout?productId=$pid")
+                                        append("&quantity=$qty")
+                                        if (varsJson != null) {
+                                            append("&variations=${Uri.encode(varsJson)}")
+                                        }
+                                    }
+                                    navController.navigate(route)
+                                }
                             )
                         }
                         composable("cart") {
@@ -258,8 +320,18 @@ class MainActivity : ComponentActivity() {
                                 }
                             )
                         }
-                        composable("checkout") {
+                        composable(
+                            "checkout?productId={productId}&quantity={quantity}&variations={variations}",
+                            arguments = listOf(
+                                navArgument("productId") { type = NavType.StringType; nullable = true; defaultValue = null },
+                                navArgument("quantity") { type = NavType.IntType; defaultValue = 1 },
+                                navArgument("variations") { type = NavType.StringType; nullable = true; defaultValue = null }
+                            )
+                        ) { backStackEntry ->
                             CheckoutScreen(
+                                productId = backStackEntry.arguments?.getString("productId"),
+                                quantity = backStackEntry.arguments?.getInt("quantity") ?: 1,
+                                variationsJson = backStackEntry.arguments?.getString("variations"),
                                 onBack = { navController.popBackStack() },
                                 onOrderFinished = {
                                     navController.navigate("home") {
