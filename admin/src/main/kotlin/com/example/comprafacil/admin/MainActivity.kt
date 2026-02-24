@@ -52,6 +52,7 @@ import com.example.comprafacil.core.data.*
 import com.example.comprafacil.admin.utils.NotificationHelper
 import com.example.comprafacil.admin.utils.NewOrderWorker
 import com.example.comprafacil.admin.ui.screens.*
+import com.russhwolf.settings.SharedPreferencesSettings
 import io.github.jan.supabase.gotrue.SessionStatus
 import io.github.jan.supabase.gotrue.auth
 import io.github.jan.supabase.postgrest.from
@@ -120,18 +121,51 @@ class MainActivity : ComponentActivity() {
 
                         // Realtime Listener for New Orders
                         try {
-                            val channel = SupabaseConfig.client.realtime.channel("admin_orders")
+                            // 1. Initial check for new orders while app was closed
+                            launch {
+                                try {
+                                    val settings = SharedPreferencesSettings(getSharedPreferences("admin_order_notifs", android.content.Context.MODE_PRIVATE))
+                                    val orders = SupabaseConfig.client.from("orders").select {
+                                        order("created_at", io.github.jan.supabase.postgrest.query.Order.DESCENDING)
+                                        limit(10)
+                                    }.decodeAs<List<Order>>()
+
+                                    for (order in orders) {
+                                        val orderId = order.id ?: continue
+                                        val isNotified = settings.getBoolean("notified_$orderId", false)
+                                        if (!isNotified) {
+                                            notificationHelper.showNotification(
+                                                "Novo Pedido Recebido!",
+                                                "Pedido #${orderId.takeLast(6)} de ${order.customer_name ?: "Cliente"}"
+                                            )
+                                            settings.putBoolean("notified_$orderId", true)
+                                        }
+                                    }
+                                } catch (e: Exception) {}
+                            }
+
+                            // 2. Realtime subscription
+                            val channel = SupabaseConfig.client.realtime.channel("admin_orders_channel")
                             val insertFlow = channel.postgresChangeFlow<PostgresAction.Insert>(schema = "public") {
                                 this.table = "orders"
                             }
                             insertFlow.onEach { change ->
                                 val customerName = change.record["customer_name"]?.jsonPrimitive?.content ?: "Cliente"
-                                val orderId = change.record["id"]?.jsonPrimitive?.content?.takeLast(6) ?: ""
+                                val orderIdStr = change.record["id"]?.jsonPrimitive?.content ?: ""
+                                val shortOrderId = orderIdStr.takeLast(6)
+
+                                // Mark as notified in settings
+                                if (orderIdStr.isNotBlank()) {
+                                    val settings = SharedPreferencesSettings(getSharedPreferences("admin_order_notifs", android.content.Context.MODE_PRIVATE))
+                                    settings.putBoolean("notified_$orderIdStr", true)
+                                }
+
                                 notificationHelper.showNotification(
                                     "Novo Pedido Recebido!",
-                                    "Pedido #$orderId de $customerName"
+                                    "Pedido #$shortOrderId de $customerName"
                                 )
                             }.launchIn(this)
+
                             channel.subscribe()
                         } catch (e: Exception) {}
                     }

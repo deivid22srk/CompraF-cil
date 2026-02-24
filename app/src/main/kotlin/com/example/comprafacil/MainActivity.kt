@@ -36,9 +36,13 @@ import android.net.Uri
 import androidx.compose.ui.window.DialogProperties
 import com.example.comprafacil.core.data.AppConfig
 import com.example.comprafacil.utils.NotificationHelper
+import com.example.comprafacil.core.data.Order
+import com.russhwolf.settings.SharedPreferencesSettings
 import io.github.jan.supabase.gotrue.*
 import io.github.jan.supabase.postgrest.from
 import io.github.jan.supabase.realtime.*
+import io.github.jan.supabase.realtime.FilterOperator
+import io.github.jan.supabase.realtime.PostgresType
 import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
@@ -127,23 +131,60 @@ class MainActivity : ComponentActivity() {
                     val userId = if (status is SessionStatus.Authenticated) {
                         status.session.user?.id
                     } else null
+
                     if (userId != null) {
+                        // 1. Initial Check: Fetch current status of active orders to catch updates while app was closed
+                        launch {
+                            try {
+                                val settings = SharedPreferencesSettings(getSharedPreferences("order_notifications", android.content.Context.MODE_PRIVATE))
+                                val orders = SupabaseConfig.client.from("orders").select {
+                                    filter {
+                                        eq("user_id", userId)
+                                        neq("status", "concluído")
+                                        neq("status", "cancelado")
+                                    }
+                                }.decodeAs<List<Order>>()
+
+                                for (order in orders) {
+                                    val orderId = order.id ?: continue
+                                    val currentStatus = order.status ?: "pendente"
+                                    val lastKnownStatus = settings.getString("order_$orderId", "pendente")
+
+                                    if (currentStatus != lastKnownStatus) {
+                                        notificationHelper.showNotification(
+                                            "Atualização no Pedido #${orderId.takeLast(6)}",
+                                            "O status mudou para: ${currentStatus.uppercase()}"
+                                        )
+                                        settings.putString("order_$orderId", currentStatus)
+                                    }
+                                }
+                            } catch (e: Exception) {
+                                // Silent fail for initial check
+                            }
+                        }
+
+                        // 2. Realtime Listener: Subscribe to updates
                         val channel = SupabaseConfig.client.realtime.channel("orders_channel_$userId")
                         val changeFlow = channel.postgresChangeFlow<PostgresAction.Update>(schema = "public") {
                             table = "orders"
+                            filter("user_id", PostgresType.UUID, FilterOperator.EQ, userId)
                         }
 
                         changeFlow.onEach { change ->
                             val newStatus = change.record["status"]?.jsonPrimitive?.content
                             val orderId = change.record["id"]?.jsonPrimitive?.content?.takeLast(6)
-                            val orderUserId = change.record["user_id"]?.jsonPrimitive?.content
 
-                            if (orderUserId == userId) {
-                                notificationHelper.showNotification(
-                                    "Atualização no Pedido",
-                                    "O status do seu pedido #$orderId mudou para: $newStatus"
-                                )
+                            // Save status to settings to avoid double notifications with worker/initial check
+                            val fullOrderId = change.record["id"]?.jsonPrimitive?.content
+                            if (fullOrderId != null && newStatus != null) {
+                                val settings = SharedPreferencesSettings(getSharedPreferences("order_notifications", android.content.Context.MODE_PRIVATE))
+                                settings.putString("order_$fullOrderId", newStatus)
                             }
+
+                            notificationHelper.showNotification(
+                                "Atualização no Pedido #$orderId",
+                                "O status mudou para: ${newStatus?.uppercase()}"
+                            )
                         }.launchIn(this)
 
                         channel.subscribe()
