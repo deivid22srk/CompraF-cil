@@ -40,6 +40,7 @@ export default function Orders() {
         },
         (payload) => {
           const updatedOrder = payload.new as Order
+          if (!updatedOrder.id) return
           setOrders(prev => prev.map(o => o.id === updatedOrder.id ? updatedOrder : o))
         }
       )
@@ -122,7 +123,7 @@ export default function Orders() {
             const status = getStatusInfo(order.status)
             return (
               <div
-                key={order.id}
+                key={order.id || Math.random().toString()}
                 className="group bg-card hover:bg-white/[0.03] rounded-3xl p-6 border border-white/5 transition-all"
               >
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
@@ -132,14 +133,14 @@ export default function Orders() {
                     </div>
                     <div>
                       <div className="flex items-center gap-3 mb-1">
-                        <span className="text-xs font-black text-gray-500 uppercase tracking-widest">Pedido #{order.id.slice(0, 8)}</span>
+                        <span className="text-xs font-black text-gray-500 uppercase tracking-widest">Pedido #{order.id?.slice(0, 8) || '...'}</span>
                         <span className={`text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full ${status.bg} ${status.color}`}>
                           {status.label}
                         </span>
                       </div>
                       <h3 className="text-lg font-bold">R$ {order.total_price.toFixed(2)}</h3>
                       <p className="text-xs text-gray-500 font-bold">
-                        {format(new Date(order.created_at!), "d 'de' MMMM 'às' HH:mm", { locale: ptBR })}
+                        {order.created_at ? format(new Date(order.created_at), "d 'de' MMMM 'às' HH:mm", { locale: ptBR }) : '...'}
                       </p>
                     </div>
                   </div>

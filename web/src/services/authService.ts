@@ -12,6 +12,10 @@ export const authService = {
     return user
   },
 
+  async getCurrentUser() {
+    return this.getUser()
+  },
+
   async getProfile(userId: string) {
     const { data, error } = await supabase
       .from('profiles')

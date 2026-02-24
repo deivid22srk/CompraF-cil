@@ -19,5 +19,10 @@ export const configService = {
   async getDownloadUrl() {
     const config = await this.getConfig()
     return config.download_url as string || ''
+  },
+
+  async getDeliveryFee() {
+    const config = await this.getConfig()
+    return parseFloat(config.delivery_fee) || 0
   }
 }

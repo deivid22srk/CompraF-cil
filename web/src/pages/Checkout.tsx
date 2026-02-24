@@ -135,9 +135,9 @@ export default function Checkout() {
 
       const orderItems: OrderItem[] = items.map(item => ({
         order_id: '', // Will be filled by service
-        product_id: item.product_id || item.product.id,
+        product_id: item.product_id || item.product?.id || '',
         quantity: item.quantity,
-        price_at_time: item.product.price,
+        price_at_time: item.product?.price || 0,
         selected_variations: item.selected_variations
       }))
 
@@ -314,10 +314,10 @@ export default function Checkout() {
               {items.map((item, idx) => (
                 <div key={idx} className="flex justify-between gap-4 border-b border-white/5 pb-4 last:border-0 last:pb-0">
                   <div className="min-w-0">
-                    <p className="font-black truncate uppercase text-sm">{item.product.name}</p>
-                    <p className="text-xs text-gray-500 font-bold tracking-widest uppercase">{item.quantity} UN x R$ {item.product.price.toFixed(2)}</p>
+                    <p className="font-black truncate uppercase text-sm">{item.product?.name || 'Produto'}</p>
+                    <p className="text-xs text-gray-500 font-bold tracking-widest uppercase">{item.quantity} UN x R$ {(item.product?.price || 0).toFixed(2)}</p>
                   </div>
-                  <span className="font-black text-white whitespace-nowrap">R$ {(item.quantity * item.product.price).toFixed(2)}</span>
+                  <span className="font-black text-white whitespace-nowrap">R$ {(item.quantity * (item.product?.price || 0)).toFixed(2)}</span>
                 </div>
               ))}
             </div>
