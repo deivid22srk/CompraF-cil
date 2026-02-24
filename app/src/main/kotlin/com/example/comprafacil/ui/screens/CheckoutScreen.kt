@@ -77,7 +77,7 @@ fun CheckoutScreen(
         ) {
             // Permission granted
         } else {
-            Toast.makeText(context, "Permissão de localização negada", Toast.LENGTH_SHORT).show()
+            Toast.makeText(context, "Não foi possível obter a localização exata e preciso da permissão de localização para saber onde o produto será entregue", Toast.LENGTH_LONG).show()
         }
     }
 
@@ -135,7 +135,7 @@ fun CheckoutScreen(
                     longitude = result.longitude
                     Toast.makeText(context, "Localização capturada!", Toast.LENGTH_SHORT).show()
                 } else {
-                    Toast.makeText(context, "Não foi possível obter a localização", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(context, "Não foi possível obter a localização exata e preciso da permissão de localização para saber onde o produto será entregue", Toast.LENGTH_LONG).show()
                 }
             } catch (e: Exception) {
                 Toast.makeText(context, "Erro ao obter localização: ${e.message}", Toast.LENGTH_SHORT).show()
