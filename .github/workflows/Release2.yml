@@ -1,0 +1,120 @@
+name: Android Release
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+  workflow_dispatch:
+    inputs:
+      build_android_store:
+        description: 'Build Android Store App'
+        required: true
+        type: boolean
+        default: true
+      build_flutter_android:
+        description: 'Build Flutter Android App'
+        required: true
+        type: boolean
+        default: true
+      build_android_admin:
+        description: 'Build Android Admin App'
+        required: true
+        type: boolean
+        default: true
+      build_web:
+        description: 'Build Web Application'
+        required: true
+        type: boolean
+        default: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout the Repository
+      uses: actions/checkout@v4
+
+    - name: Set up JDK 17
+      if: github.event_name != 'workflow_dispatch' || inputs.build_android_store || inputs.build_android_admin
+      uses: actions/setup-java@v4
+      with:
+        java-version: '17'
+        distribution: 'temurin'
+        cache: gradle
+
+    - name: Grant execute permission for gradlew
+      if: github.event_name != 'workflow_dispatch' || inputs.build_android_store || inputs.build_android_admin
+      run: chmod +x gradlew
+
+    - name: Build Android Store Release APK
+      if: github.event_name != 'workflow_dispatch' || inputs.build_android_store
+      run: ./gradlew :app:assembleRelease
+
+    - name: Build Android Admin Release APK
+      if: github.event_name != 'workflow_dispatch' || inputs.build_android_admin
+      run: ./gradlew :admin:assembleRelease
+
+    - name: Set up Node.js
+      if: github.event_name != 'workflow_dispatch' || inputs.build_web
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        cache: 'npm'
+        cache-dependency-path: 'web/package-lock.json'
+
+    - name: Install Web Dependencies
+      if: github.event_name != 'workflow_dispatch' || inputs.build_web
+      run: |
+        cd web
+        npm install --legacy-peer-deps
+
+    - name: Build Web Application
+      if: github.event_name != 'workflow_dispatch' || inputs.build_web
+      run: |
+        cd web
+        npm run build
+
+    - name: Upload Web Release Artifact
+      if: github.event_name != 'workflow_dispatch' || inputs.build_web
+      uses: actions/upload-artifact@v4
+      with:
+        name: CompraFacil-Web-Release
+        path: ./web/dist
+
+    - name: Upload Store Release APK
+      if: github.event_name != 'workflow_dispatch' || inputs.build_android_store
+      uses: actions/upload-artifact@v4
+      with:
+        name: CompraFacil-Store-Release
+        path: ./app/build/outputs/apk/release/*.apk
+
+    - name: Upload Admin Release APK
+      if: github.event_name != 'workflow_dispatch' || inputs.build_android_admin
+      uses: actions/upload-artifact@v4
+      with:
+        name: CompraFacil-Admin-Release
+        path: ./admin/build/outputs/apk/release/*.apk
+
+    - name: Set up Flutter
+      if: github.event_name != 'workflow_dispatch' || inputs.build_flutter_android
+      uses: subosito/flutter-action@v2
+      with:
+        flutter-version: '3.38.7'
+        channel: 'stable'
+        cache: true
+
+    - name: Build Flutter Android APK
+      if: github.event_name != 'workflow_dispatch' || inputs.build_flutter_android
+      run: |
+        cd comprafacil_flutter
+        flutter pub get
+        flutter build apk --release --split-per-abi --obfuscate --split-debug-info=build/app/outputs/symbols
+
+    - name: Upload Flutter Release APK
+      if: github.event_name != 'workflow_dispatch' || inputs.build_flutter_android
+      uses: actions/upload-artifact@v4
+      with:
+        name: CompraFacil-Flutter-Release
+        path: ./comprafacil_flutter/build/app/outputs/flutter-apk/*.apk
