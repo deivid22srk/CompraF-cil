@@ -42,7 +42,7 @@ class CartScreen extends ConsumerWidget {
                           margin: const EdgeInsets.only(bottom: 16),
                           padding: const EdgeInsets.all(12),
                           decoration: BoxDecoration(
-                            color: Colors.white,
+                            color: Theme.of(context).cardColor,
                             borderRadius: BorderRadius.circular(20),
                             boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10)],
                           ),
@@ -105,10 +105,10 @@ class CartScreen extends ConsumerWidget {
                   ),
                   Container(
                     padding: const EdgeInsets.all(32),
-                    decoration: const BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.vertical(top: Radius.circular(30)),
-                      boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 10)],
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).cardColor,
+                      borderRadius: const BorderRadius.vertical(top: Radius.circular(30)),
+                      boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 10)],
                     ),
                     child: Column(
                       children: [

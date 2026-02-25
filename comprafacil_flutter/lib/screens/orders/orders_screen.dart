@@ -27,9 +27,9 @@ class OrdersScreen extends ConsumerWidget {
                     margin: const EdgeInsets.only(bottom: 16),
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
-                      color: Colors.white,
+                      color: Theme.of(context).cardColor,
                       borderRadius: BorderRadius.circular(20),
-                      boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 10)],
+                      boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 10)],
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,

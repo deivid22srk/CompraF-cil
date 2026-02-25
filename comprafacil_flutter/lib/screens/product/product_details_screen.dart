@@ -27,7 +27,7 @@ class _ProductDetailsScreenState extends ConsumerState<ProductDetailsScreen> {
     final currencyFormat = NumberFormat.currency(locale: 'pt_BR', symbol: 'R\$');
 
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: CustomScrollView(
         slivers: [
           SliverAppBar(
@@ -116,9 +116,9 @@ class _ProductDetailsScreenState extends ConsumerState<ProductDetailsScreen> {
           SliverToBoxAdapter(
             child: Container(
               padding: const EdgeInsets.all(24),
-              decoration: const BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.vertical(top: Radius.circular(40)),
+              decoration: BoxDecoration(
+                color: Theme.of(context).scaffoldBackgroundColor,
+                borderRadius: const BorderRadius.vertical(top: Radius.circular(40)),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -178,8 +178,8 @@ class _ProductDetailsScreenState extends ConsumerState<ProductDetailsScreen> {
                               onTap: () => setState(() => _selectedVariations[v.name] = val),
                               child: Chip(
                                 label: Text(val),
-                                backgroundColor: isSelected ? AppTheme.primaryColor : Colors.grey[200],
-                                labelStyle: TextStyle(color: isSelected ? Colors.white : Colors.black),
+                                backgroundColor: isSelected ? AppTheme.primaryColor : Theme.of(context).cardColor,
+                                labelStyle: TextStyle(color: isSelected ? Colors.white : Theme.of(context).textTheme.bodyLarge?.color),
                               ),
                             );
                           }).toList(),
@@ -191,7 +191,7 @@ class _ProductDetailsScreenState extends ConsumerState<ProductDetailsScreen> {
                     children: [
                       Container(
                         decoration: BoxDecoration(
-                          color: Colors.grey[100],
+                          color: Theme.of(context).cardColor,
                           borderRadius: BorderRadius.circular(16),
                         ),
                         child: Row(
@@ -236,8 +236,8 @@ class _ProductDetailsScreenState extends ConsumerState<ProductDetailsScreen> {
           bottom: MediaQuery.of(context).padding.bottom + 24,
         ),
         decoration: BoxDecoration(
-          color: Colors.white,
-          boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 10)],
+          color: Theme.of(context).cardColor,
+          boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 10)],
         ),
         child: Row(
           children: [

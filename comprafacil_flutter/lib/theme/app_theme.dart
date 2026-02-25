@@ -9,12 +9,14 @@ class AppTheme {
 
   static final ThemeData lightTheme = ThemeData(
     useMaterial3: true,
+    scaffoldBackgroundColor: backgroundColor,
+    cardColor: Colors.white,
     colorScheme: ColorScheme.fromSeed(
       seedColor: primaryColor,
       primary: primaryColor,
       secondary: secondaryColor,
       tertiary: accentColor,
-      surface: backgroundColor,
+      surface: Colors.white,
     ),
     textTheme: GoogleFonts.poppinsTextTheme(),
     appBarTheme: AppBarTheme(
@@ -50,11 +52,14 @@ class AppTheme {
   static final ThemeData darkTheme = ThemeData(
     useMaterial3: true,
     brightness: Brightness.dark,
+    scaffoldBackgroundColor: const Color(0xFF121212),
+    cardColor: const Color(0xFF1E1E1E),
     colorScheme: ColorScheme.fromSeed(
       seedColor: primaryColor,
       primary: primaryColor,
       secondary: secondaryColor,
       tertiary: accentColor,
+      surface: const Color(0xFF1E1E1E),
       brightness: Brightness.dark,
     ),
     textTheme: GoogleFonts.poppinsTextTheme(ThemeData.dark().textTheme),

@@ -21,7 +21,7 @@ class CategoryChip extends StatelessWidget {
         margin: const EdgeInsets.only(right: 12),
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
         decoration: BoxDecoration(
-          color: isSelected ? AppTheme.primaryColor : Colors.white,
+          color: isSelected ? AppTheme.primaryColor : Theme.of(context).cardColor,
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
             if (isSelected)
@@ -35,7 +35,7 @@ class CategoryChip extends StatelessWidget {
         child: Text(
           label,
           style: TextStyle(
-            color: isSelected ? Colors.white : Colors.grey[800],
+            color: isSelected ? Colors.white : Theme.of(context).textTheme.bodyLarge?.color,
             fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
           ),
         ),

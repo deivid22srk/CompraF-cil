@@ -94,11 +94,12 @@ class CartNotifier extends StateNotifier<AsyncValue<List<CartItem>>> {
   }
 
   bool _mapEquals(Map? a, Map? b) {
-    if (a == null && b == null) return true;
-    if (a == null || b == null) return false;
-    if (a.length != b.length) return false;
-    for (final key in a.keys) {
-      if (b[key] != a[key]) return false;
+    final mapA = a ?? {};
+    final mapB = b ?? {};
+
+    if (mapA.length != mapB.length) return false;
+    for (final key in mapA.keys) {
+      if (mapB[key] != mapA[key]) return false;
     }
     return true;
   }
