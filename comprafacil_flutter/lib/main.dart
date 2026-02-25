@@ -48,7 +48,7 @@ class CompraFacilApp extends ConsumerWidget {
           return isAdminMode ? const AdminHomeScreen() : const HomeScreen();
         },
         loading: () => const SplashScreen(),
-        error: (e, s) => Scaffold(body: Center(child: Text('Erro: $e'))),
+        error: (e, s) => const LoginScreen(),
       ),
     );
   }

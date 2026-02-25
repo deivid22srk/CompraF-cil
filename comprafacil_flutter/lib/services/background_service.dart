@@ -19,6 +19,7 @@ class BackgroundService {
         initialNotificationTitle: 'CompraFacil em Execução',
         initialNotificationContent: 'Monitorando pedidos...',
         foregroundServiceNotificationId: 888,
+        foregroundServiceTypes: [AndroidForegroundType.dataSync],
       ),
       iosConfiguration: IosConfiguration(
         autoStart: true,
