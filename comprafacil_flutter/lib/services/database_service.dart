@@ -1,3 +1,4 @@
+import 'dart:typed_data';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/product_models.dart';
 import '../models/user_models.dart';
@@ -61,5 +62,22 @@ class DatabaseService {
       config[item['key']] = item['value'];
     }
     return config;
+  }
+
+  // Update Profile
+  Future<void> updateProfile(Profile profile) async {
+    await _client.from('profiles').upsert({
+      'id': profile.id,
+      'full_name': profile.fullName,
+      'avatar_url': profile.avatarUrl,
+      'whatsapp': profile.whatsapp,
+    });
+  }
+
+  // Upload Avatar
+  Future<String> uploadAvatar(String userId, List<int> bytes, String fileName) async {
+    final path = 'avatars/$userId/$fileName';
+    await _client.storage.from('avatars').uploadBinary(path, Uint8List.fromList(bytes));
+    return _client.storage.from('avatars').getPublicUrl(path);
   }
 }
