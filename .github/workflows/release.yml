@@ -110,7 +110,7 @@ jobs:
       run: |
         cd comprafacil_flutter
         flutter pub get
-        flutter build apk --release --split-per-abi --obfuscate --split-debug-info=build/app/outputs/symbols
+        flutter build apk --release --target-platform android-arm,android-arm64 --split-per-abi --obfuscate --split-debug-info=build/app/outputs/symbols
 
     - name: Upload Flutter Release APK
       if: github.event_name != 'workflow_dispatch' || inputs.build_flutter_android
