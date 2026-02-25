@@ -144,6 +144,32 @@ class Order {
   }
 }
 
+class OrderStatusHistory {
+  final String id;
+  final String orderId;
+  final String status;
+  final String? notes;
+  final DateTime createdAt;
+
+  OrderStatusHistory({
+    required this.id,
+    required this.orderId,
+    required this.status,
+    this.notes,
+    required this.createdAt,
+  });
+
+  factory OrderStatusHistory.fromJson(Map<String, dynamic> json) {
+    return OrderStatusHistory(
+      id: json['id'],
+      orderId: json['order_id'],
+      status: json['status'],
+      notes: json['notes'],
+      createdAt: DateTime.parse(json['created_at']),
+    );
+  }
+}
+
 class OrderItem {
   final String? id;
   final String orderId;

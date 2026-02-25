@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../../providers/order_provider.dart';
 import '../../theme/app_theme.dart';
+import 'order_details_screen.dart';
 
 class OrdersScreen extends ConsumerWidget {
   const OrdersScreen({super.key});
@@ -23,8 +24,14 @@ class OrdersScreen extends ConsumerWidget {
                 itemCount: orders.length,
                 itemBuilder: (context, index) {
                   final order = orders[index];
-                  return Container(
-                    margin: const EdgeInsets.only(bottom: 16),
+                  return InkWell(
+                    onTap: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => OrderDetailsScreen(order: order)),
+                    ),
+                    borderRadius: BorderRadius.circular(20),
+                    child: Container(
+                      margin: const EdgeInsets.only(bottom: 16),
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
                       color: Theme.of(context).cardColor,
@@ -51,7 +58,8 @@ class OrdersScreen extends ConsumerWidget {
                           'Total: ${currencyFormat.format(order.totalPrice)}',
                           style: const TextStyle(color: AppTheme.primaryColor, fontWeight: FontWeight.bold),
                         ),
-                      ],
+                        ],
+                      ),
                     ),
                   );
                 },

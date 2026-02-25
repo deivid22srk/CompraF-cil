@@ -4,6 +4,7 @@ import '../../providers/auth_provider.dart';
 import '../../providers/profile_provider.dart';
 import '../../providers/theme_provider.dart';
 import '../../theme/app_theme.dart';
+import 'addresses_screen.dart';
 import 'edit_profile_screen.dart';
 
 class ProfileScreen extends ConsumerWidget {
@@ -105,7 +106,10 @@ class ProfileScreen extends ConsumerWidget {
                       leading: const Icon(Icons.location_on_outlined),
                       title: const Text('Meus Endereços'),
                       trailing: const Icon(Icons.chevron_right),
-                      onTap: () {},
+                      onTap: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (_) => const AddressesScreen()),
+                      ),
                     ),
                   ],
                 ),

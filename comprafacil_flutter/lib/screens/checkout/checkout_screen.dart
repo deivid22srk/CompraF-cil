@@ -4,6 +4,7 @@ import 'package:geolocator/geolocator.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../providers/cart_provider.dart';
 import '../../providers/auth_provider.dart';
+import '../../providers/address_provider.dart';
 import '../../theme/app_theme.dart';
 import '../../models/product_models.dart';
 
@@ -128,6 +129,8 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final addressesAsync = ref.watch(addressesProvider);
+
     return Scaffold(
       appBar: AppBar(title: const Text('Checkout')),
       body: SingleChildScrollView(
@@ -142,6 +145,44 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
           children: [
             const Text('Informações de Entrega', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
             const SizedBox(height: 16),
+            addressesAsync.when(
+              data: (addresses) => addresses.isEmpty
+                  ? const SizedBox.shrink()
+                  : Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text('Selecionar Endereço Salvo', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500)),
+                        const SizedBox(height: 8),
+                        DropdownButtonFormField<Address>(
+                          decoration: const InputDecoration(
+                            border: OutlineInputBorder(),
+                            contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                          ),
+                          hint: const Text('Escolha um endereço'),
+                          items: addresses.map((addr) => DropdownMenuItem(
+                            value: addr,
+                            child: Text(addr.name),
+                          )).toList(),
+                          onChanged: (addr) {
+                            if (addr != null) {
+                              setState(() {
+                                _addressController.text = addr.addressLine;
+                                if (addr.receiverName != null && addr.receiverName!.isNotEmpty) {
+                                  _customerNameController.text = addr.receiverName!;
+                                }
+                                _whatsappController.text = addr.phone;
+                              });
+                            }
+                          },
+                        ),
+                        const SizedBox(height: 16),
+                        const Center(child: Text('OU PREENCHA ABAIXO', style: TextStyle(fontSize: 10, color: Colors.grey))),
+                        const SizedBox(height: 16),
+                      ],
+                    ),
+              loading: () => const LinearProgressIndicator(),
+              error: (e, s) => Text('Erro ao carregar endereços: $e', style: const TextStyle(color: Colors.red, fontSize: 12)),
+            ),
             TextField(
               controller: _customerNameController,
               decoration: const InputDecoration(labelText: 'Seu Nome', border: OutlineInputBorder()),

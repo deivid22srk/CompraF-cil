@@ -42,6 +42,50 @@ class DatabaseService {
     return (response as List).map((json) => Order.fromJson(json)).toList();
   }
 
+  // Addresses
+  Future<List<Address>> getAddresses(String userId) async {
+    final response = await _client
+        .from('addresses')
+        .select()
+        .eq('user_id', userId)
+        .order('created_at', ascending: false);
+
+    return (response as List).map((json) => Address.fromJson(json)).toList();
+  }
+
+  Future<void> saveAddress(Address address) async {
+    final data = address.toJson();
+    if (address.id != null) {
+      await _client.from('addresses').update(data).eq('id', address.id!);
+    } else {
+      await _client.from('addresses').insert(data);
+    }
+  }
+
+  Future<void> deleteAddress(String addressId) async {
+    await _client.from('addresses').delete().eq('id', addressId);
+  }
+
+  // Order History
+  Future<List<OrderStatusHistory>> getOrderStatusHistory(String orderId) async {
+    final response = await _client
+        .from('order_status_history')
+        .select()
+        .eq('order_id', orderId)
+        .order('created_at', ascending: true);
+
+    return (response as List).map((json) => OrderStatusHistory.fromJson(json)).toList();
+  }
+
+  Future<List<Map<String, dynamic>>> getOrderItemsWithProducts(String orderId) async {
+    final response = await _client
+        .from('order_items')
+        .select('*, products(*)')
+        .eq('order_id', orderId);
+
+    return List<Map<String, dynamic>>.from(response);
+  }
+
   // Profile
   Future<Profile?> getProfile(String userId) async {
     final response = await _client
