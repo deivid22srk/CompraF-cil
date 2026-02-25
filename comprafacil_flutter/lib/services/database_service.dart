@@ -161,6 +161,10 @@ class DatabaseService {
     await _client.from('categories').delete().eq('id', categoryId);
   }
 
+  Future<void> deleteOrder(String orderId) async {
+    await _client.from('orders').delete().eq('id', orderId);
+  }
+
   Future<void> updateAppConfig(String key, dynamic value) async {
     await _client.from('app_config').update({'value': value}).eq('key', key);
   }

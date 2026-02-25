@@ -74,7 +74,7 @@ class OrderDetailsScreen extends ConsumerWidget {
                 },
               ),
               const SizedBox(height: 16),
-              if (order.latitude != null && order.longitude != null)
+              if (order.latitude != null && order.longitude != null) ...[
                 ElevatedButton.icon(
                   onPressed: () => Navigator.push(
                     context,
@@ -88,6 +88,38 @@ class OrderDetailsScreen extends ConsumerWidget {
                     foregroundColor: Colors.white,
                   ),
                 ),
+                const SizedBox(height: 16),
+                ElevatedButton.icon(
+                  onPressed: () async {
+                    final url = 'google.navigation:q=${order.latitude},${order.longitude}';
+                    final uri = Uri.parse(url);
+                    if (await canLaunchUrl(uri)) {
+                      await launchUrl(uri);
+                    } else {
+                      final webUrl = 'https://www.google.com/maps/dir/?api=1&destination=${order.latitude},${order.longitude}';
+                      await launchUrl(Uri.parse(webUrl), mode: LaunchMode.externalApplication);
+                    }
+                  },
+                  icon: const Icon(Icons.navigation),
+                  label: const Text('ABRIR NO GOOGLE MAPS'),
+                  style: ElevatedButton.styleFrom(
+                    minimumSize: const Size(double.infinity, 50),
+                    backgroundColor: Colors.green,
+                    foregroundColor: Colors.white,
+                  ),
+                ),
+              ],
+              const SizedBox(height: 16),
+              ElevatedButton.icon(
+                onPressed: () => _confirmDelete(context, ref),
+                icon: const Icon(Icons.delete_forever),
+                label: const Text('EXCLUIR PEDIDO'),
+                style: ElevatedButton.styleFrom(
+                  minimumSize: const Size(double.infinity, 50),
+                  backgroundColor: Colors.red,
+                  foregroundColor: Colors.white,
+                ),
+              ),
             ],
             const Divider(height: 32),
             const Text('Histórico do Pedido', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
@@ -180,9 +212,14 @@ class OrderDetailsScreen extends ConsumerWidget {
           Center(
             child: ElevatedButton.icon(
               onPressed: () async {
-                final whatsappUrl = 'https://wa.me/${order.whatsapp.replaceAll(RegExp(r'[^0-9]'), '')}';
-                if (await canLaunchUrl(Uri.parse(whatsappUrl))) {
-                  await launchUrl(Uri.parse(whatsappUrl), mode: LaunchMode.externalApplication);
+                String phone = order.whatsapp.replaceAll(RegExp(r'[^0-9]'), '');
+                if (phone.length == 11 && !phone.startsWith('55')) {
+                  phone = '55$phone';
+                }
+                final whatsappUrl = 'https://wa.me/$phone';
+                final uri = Uri.parse(whatsappUrl);
+                if (await canLaunchUrl(uri)) {
+                  await launchUrl(uri, mode: LaunchMode.externalApplication);
                 }
               },
               icon: const Icon(Icons.message, size: 18),
@@ -221,6 +258,32 @@ class OrderDetailsScreen extends ConsumerWidget {
                 color: isStatus ? _getStatusColor(value) : null,
               ),
             ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _confirmDelete(BuildContext context, WidgetRef ref) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Excluir Pedido'),
+        content: const Text('Tem certeza que deseja excluir este pedido permanentemente?'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancelar')),
+          TextButton(
+            onPressed: () async {
+              final db = ref.read(databaseServiceProvider);
+              await db.deleteOrder(order.id!);
+              ref.refresh(ordersProvider);
+              if (context.mounted) {
+                Navigator.pop(context); // Close dialog
+                Navigator.pop(context); // Go back to orders list
+                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Pedido excluído.')));
+              }
+            },
+            child: const Text('Excluir', style: TextStyle(color: Colors.red)),
           ),
         ],
       ),
