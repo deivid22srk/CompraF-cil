@@ -141,7 +141,15 @@ class _ProductDetailsScreenState extends ConsumerState<ProductDetailsScreen> {
                               style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
                             ),
                             IconButton(
-                              onPressed: () => setState(() => _quantity++),
+                              onPressed: () {
+                                if (_quantity < widget.product.stockQuantity) {
+                                  setState(() => _quantity++);
+                                } else {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(content: Text('Limite de estoque atingido')),
+                                  );
+                                }
+                              },
                               icon: const Icon(Icons.add),
                             ),
                           ],
@@ -157,7 +165,12 @@ class _ProductDetailsScreenState extends ConsumerState<ProductDetailsScreen> {
         ],
       ),
       bottomSheet: Container(
-        padding: const EdgeInsets.all(24),
+        padding: EdgeInsets.only(
+          left: 24,
+          right: 24,
+          top: 24,
+          bottom: MediaQuery.of(context).padding.bottom + 24,
+        ),
         decoration: BoxDecoration(
           color: Colors.white,
           boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 10)],
@@ -166,15 +179,25 @@ class _ProductDetailsScreenState extends ConsumerState<ProductDetailsScreen> {
           children: [
             Expanded(
               child: OutlinedButton(
-                onPressed: () {
-                  ref.read(cartProvider.notifier).addToCart(
-                    widget.product,
-                    quantity: _quantity,
-                    variations: _selectedVariations,
-                  );
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Adicionado ao carrinho!')),
-                  );
+                onPressed: () async {
+                  try {
+                    await ref.read(cartProvider.notifier).addToCart(
+                      widget.product,
+                      quantity: _quantity,
+                      variations: _selectedVariations,
+                    );
+                    if (mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Adicionado ao carrinho!')),
+                      );
+                    }
+                  } catch (e) {
+                    if (mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text(e.toString().replaceAll('Exception: ', ''))),
+                      );
+                    }
+                  }
                 },
                 style: OutlinedButton.styleFrom(
                   side: const BorderSide(color: AppTheme.primaryColor),
@@ -187,14 +210,23 @@ class _ProductDetailsScreenState extends ConsumerState<ProductDetailsScreen> {
             const SizedBox(width: 16),
             Expanded(
               child: ElevatedButton(
-                onPressed: () {
-                  // Direct checkout logic could be here
-                  ref.read(cartProvider.notifier).addToCart(
-                    widget.product,
-                    quantity: _quantity,
-                    variations: _selectedVariations,
-                  );
-                  Navigator.push(context, MaterialPageRoute(builder: (_) => const CartScreen()));
+                onPressed: () async {
+                  try {
+                    await ref.read(cartProvider.notifier).addToCart(
+                      widget.product,
+                      quantity: _quantity,
+                      variations: _selectedVariations,
+                    );
+                    if (mounted) {
+                      Navigator.push(context, MaterialPageRoute(builder: (_) => const CartScreen()));
+                    }
+                  } catch (e) {
+                    if (mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text(e.toString().replaceAll('Exception: ', ''))),
+                      );
+                    }
+                  }
                 },
                 child: const Text('COMPRAR AGORA'),
               ),

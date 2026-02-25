@@ -79,12 +79,20 @@ class CartScreen extends ConsumerWidget {
                               Row(
                                 children: [
                                   IconButton(
-                                    onPressed: () => ref.read(cartProvider.notifier).updateQuantity(item.id!, item.quantity - 1),
+                                    onPressed: () => ref.read(cartProvider.notifier).updateQuantity(item.id!, item.quantity - 1, product.stockQuantity),
                                     icon: const Icon(Icons.remove_circle_outline),
                                   ),
                                   Text('${item.quantity}'),
                                   IconButton(
-                                    onPressed: () => ref.read(cartProvider.notifier).updateQuantity(item.id!, item.quantity + 1),
+                                    onPressed: () async {
+                                      try {
+                                        await ref.read(cartProvider.notifier).updateQuantity(item.id!, item.quantity + 1, product.stockQuantity);
+                                      } catch (e) {
+                                        ScaffoldMessenger.of(context).showSnackBar(
+                                          SnackBar(content: Text(e.toString().replaceAll('Exception: ', ''))),
+                                        );
+                                      }
+                                    },
                                     icon: const Icon(Icons.add_circle_outline),
                                   ),
                                 ],

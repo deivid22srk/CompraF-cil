@@ -5,6 +5,7 @@ import '../../theme/app_theme.dart';
 import '../../widgets/product_card.dart';
 import '../../widgets/category_chip.dart';
 import '../cart/cart_screen.dart';
+import '../search/search_screen.dart';
 import '../profile/profile_screen.dart';
 import '../orders/orders_screen.dart';
 
@@ -110,17 +111,23 @@ class HomeContent extends ConsumerWidget {
                   ],
                 ),
                 const SizedBox(height: 24),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: const TextField(
-                    decoration: InputDecoration(
-                      hintText: 'O que você procura hoje?',
-                      icon: Icon(Icons.search, color: AppTheme.primaryColor),
-                      border: InputBorder.none,
+                GestureDetector(
+                  onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const SearchScreen())),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: const Row(
+                      children: [
+                        Icon(Icons.search, color: AppTheme.primaryColor),
+                        SizedBox(width: 12),
+                        Text(
+                          'O que você procura hoje?',
+                          style: TextStyle(color: Colors.grey, fontSize: 16),
+                        ),
+                      ],
                     ),
                   ),
                 ),

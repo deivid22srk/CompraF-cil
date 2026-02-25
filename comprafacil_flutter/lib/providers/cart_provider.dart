@@ -41,15 +41,19 @@ class CartNotifier extends StateNotifier<AsyncValue<List<CartItem>>> {
 
     try {
       // Check if already in cart
-      final existing = state.value?.firstWhere(
-        (item) => item.productId == product.id && _mapEquals(item.selectedVariations, variations),
-        orElse: () => CartItem(userId: '', productId: '', quantity: 0),
-      );
+      final existing = state.value?.where(
+        (item) => item.productId == product.id && _mapEquals(item.selectedVariations, variations)
+      ).firstOrNull;
 
-      if (existing != null && existing.quantity > 0) {
+      int currentInCart = existing?.quantity ?? 0;
+      if (currentInCart + quantity > product.stockQuantity) {
+        throw Exception('Limite de estoque atingido');
+      }
+
+      if (existing != null) {
         await _client
             .from('cart_items')
-            .update({'quantity': existing.quantity + quantity})
+            .update({'quantity': currentInCart + quantity})
             .eq('id', existing.id!);
       } else {
         await _client.from('cart_items').insert({
@@ -61,19 +65,24 @@ class CartNotifier extends StateNotifier<AsyncValue<List<CartItem>>> {
       }
       fetchCart();
     } catch (e) {
-      // Handle error
+      rethrow;
     }
   }
 
-  Future<void> updateQuantity(String itemId, int newQuantity) async {
+  Future<void> updateQuantity(String itemId, int newQuantity, int stockQuantity) async {
     try {
       if (newQuantity <= 0) {
         await _client.from('cart_items').delete().eq('id', itemId);
       } else {
+        if (newQuantity > stockQuantity) {
+           throw Exception('Limite de estoque atingido');
+        }
         await _client.from('cart_items').update({'quantity': newQuantity}).eq('id', itemId);
       }
       fetchCart();
-    } catch (e) {}
+    } catch (e) {
+      rethrow;
+    }
   }
 
   Future<void> clearCart() async {
