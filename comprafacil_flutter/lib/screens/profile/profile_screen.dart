@@ -8,6 +8,7 @@ import '../../providers/settings_provider.dart';
 import '../../theme/app_theme.dart';
 import 'addresses_screen.dart';
 import 'edit_profile_screen.dart';
+import 'settings_screen.dart';
 
 class ProfileScreen extends ConsumerWidget {
   const ProfileScreen({super.key});
@@ -104,7 +105,15 @@ class ProfileScreen extends ConsumerWidget {
                       ),
                     ),
                     const Divider(indent: 50),
-                    _buildNotificationSettings(context, ref),
+                ListTile(
+                  leading: const Icon(Icons.notifications_outlined),
+                  title: const Text('Notificações e Apps'),
+                  trailing: const Icon(Icons.chevron_right),
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const SettingsScreen()),
+                  ),
+                ),
                     const Divider(indent: 50),
                     ListTile(
                       leading: const Icon(Icons.location_on_outlined),
@@ -199,48 +208,6 @@ class ProfileScreen extends ConsumerWidget {
     final visibleLength = (name.length / 2).floor();
     final maskedPart = '*' * (name.length - visibleLength);
     return '${name.substring(0, visibleLength)}$maskedPart@$domain';
-  }
-
-  Widget _buildNotificationSettings(BuildContext context, WidgetRef ref) {
-    final settings = ref.watch(settingsProvider);
-    final profile = ref.watch(profileProvider).value;
-
-    return Column(
-      children: [
-        ListTile(
-          leading: const Icon(Icons.notifications_outlined),
-          title: const Text('Notificações de Pedido'),
-          trailing: Switch(
-            value: settings.userNotifEnabled,
-            onChanged: (val) => ref.read(settingsProvider.notifier).updateUserNotif(val),
-            activeColor: AppTheme.primaryColor,
-          ),
-        ),
-        if (profile?.role == 'admin') ...[
-          const Divider(indent: 50),
-          ListTile(
-            leading: const Icon(Icons.notifications_active_outlined),
-            title: const Text('Notificações de Novos Pedidos (ADM)'),
-            trailing: Switch(
-              value: settings.adminNotifEnabled,
-              onChanged: (val) => ref.read(settingsProvider.notifier).updateAdminNotif(val),
-              activeColor: AppTheme.primaryColor,
-            ),
-          ),
-        ],
-        const Divider(indent: 50),
-        ListTile(
-          leading: const Icon(Icons.run_circle_outlined),
-          title: const Text('Serviço de Verificação'),
-          subtitle: const Text('Mantém o app ativo em segundo plano', style: TextStyle(fontSize: 10)),
-          trailing: Switch(
-            value: settings.backgroundServiceEnabled,
-            onChanged: (val) => ref.read(settingsProvider.notifier).updateBackgroundService(val),
-            activeColor: AppTheme.primaryColor,
-          ),
-        ),
-      ],
-    );
   }
 
   Widget _buildSettingCard(BuildContext context, {required Widget child}) {

@@ -52,24 +52,40 @@ class SettingsNotifier extends StateNotifier<SettingsState> {
     state = state.copyWith(adminNotifEnabled: value);
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool('admin_notif_enabled', value);
+    await _syncBackgroundService();
   }
 
   Future<void> updateUserNotif(bool value) async {
     state = state.copyWith(userNotifEnabled: value);
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool('user_notif_enabled', value);
+    await _syncBackgroundService();
   }
 
   Future<void> updateBackgroundService(bool value) async {
     state = state.copyWith(backgroundServiceEnabled: value);
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool('background_service_enabled', value);
+    await _syncBackgroundService();
+  }
 
+  Future<void> _syncBackgroundService() async {
     final service = FlutterBackgroundService();
-    if (value) {
-      await service.startService();
+    final isRunning = await service.isRunning();
+
+    // Service should only run if the master switch is ON
+    // AND at least one type of notification is enabled.
+    final shouldBeRunning = state.backgroundServiceEnabled &&
+                           (state.adminNotifEnabled || state.userNotifEnabled);
+
+    if (shouldBeRunning) {
+      if (!isRunning) {
+        await service.startService();
+      }
     } else {
-      service.invoke('stopService');
+      if (isRunning) {
+        service.invoke('stopService');
+      }
     }
   }
 }
