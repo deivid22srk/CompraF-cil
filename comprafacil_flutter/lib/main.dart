@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'services/supabase_service.dart';
+import 'services/notification_service.dart';
+import 'services/background_service.dart';
 import 'theme/app_theme.dart';
 import 'providers/theme_provider.dart';
 import 'screens/splash_screen.dart';
@@ -13,6 +16,14 @@ import 'providers/admin_provider.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await SupabaseService.initialize();
+  await NotificationService.initialize();
+
+  final prefs = await SharedPreferences.getInstance();
+  final isBgServiceEnabled = prefs.getBool('background_service_enabled') ?? true;
+  if (isBgServiceEnabled) {
+    await BackgroundService.initialize();
+  }
+
   runApp(const ProviderScope(child: CompraFacilApp()));
 }
 
