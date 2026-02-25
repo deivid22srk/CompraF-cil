@@ -72,7 +72,7 @@ class ProfileScreen extends ConsumerWidget {
                             ),
                           ),
                           Text(
-                            user?.email ?? '',
+                            _maskEmail(user?.email ?? ''),
                             style: const TextStyle(
                               color: Colors.white70,
                               fontSize: 14,
@@ -170,6 +170,17 @@ class ProfileScreen extends ConsumerWidget {
         ),
       ),
     );
+  }
+
+  String _maskEmail(String email) {
+    if (email.isEmpty || !email.contains('@')) return email;
+    final parts = email.split('@');
+    final name = parts[0];
+    final domain = parts[1];
+    if (name.length <= 1) return email;
+    final visibleLength = (name.length / 2).floor();
+    final maskedPart = '*' * (name.length - visibleLength);
+    return '${name.substring(0, visibleLength)}$maskedPart@$domain';
   }
 
   Widget _buildSettingCard(BuildContext context, {required Widget child}) {
