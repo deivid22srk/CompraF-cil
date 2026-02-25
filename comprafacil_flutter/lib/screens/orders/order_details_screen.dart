@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../models/user_models.dart';
 import '../../providers/order_provider.dart';
 import '../../providers/admin_provider.dart';
 import '../../providers/product_provider.dart';
 import '../../theme/app_theme.dart';
+import '../admin/delivery_map_screen.dart';
 
 class OrderDetailsScreen extends ConsumerWidget {
   final Order order;
@@ -71,6 +73,21 @@ class OrderDetailsScreen extends ConsumerWidget {
                   }
                 },
               ),
+              const SizedBox(height: 16),
+              if (order.latitude != null && order.longitude != null)
+                ElevatedButton.icon(
+                  onPressed: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => DeliveryMapScreen(order: order)),
+                  ),
+                  icon: const Icon(Icons.map),
+                  label: const Text('VER MAPA E ROTA DE ENTREGA'),
+                  style: ElevatedButton.styleFrom(
+                    minimumSize: const Size(double.infinity, 50),
+                    backgroundColor: Colors.blue,
+                    foregroundColor: Colors.white,
+                  ),
+                ),
             ],
             const Divider(height: 32),
             const Text('Histórico do Pedido', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
@@ -156,6 +173,27 @@ class OrderDetailsScreen extends ConsumerWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           _buildInfoRow('Status Atual', order.status.toUpperCase(), isStatus: true),
+          const Divider(height: 24),
+          _buildInfoRow('Cliente', order.customerName ?? 'N/A'),
+          _buildInfoRow('WhatsApp', order.whatsapp),
+          const SizedBox(height: 8),
+          Center(
+            child: ElevatedButton.icon(
+              onPressed: () async {
+                final whatsappUrl = 'https://wa.me/${order.whatsapp.replaceAll(RegExp(r'[^0-9]'), '')}';
+                if (await canLaunchUrl(Uri.parse(whatsappUrl))) {
+                  await launchUrl(Uri.parse(whatsappUrl), mode: LaunchMode.externalApplication);
+                }
+              },
+              icon: const Icon(Icons.message, size: 18),
+              label: const Text('ABRIR WHATSAPP'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.green,
+                foregroundColor: Colors.white,
+                minimumSize: const Size(double.infinity, 40),
+              ),
+            ),
+          ),
           const Divider(height: 24),
           _buildInfoRow('Data', order.createdAt != null ? dateFormat.format(order.createdAt!) : '-'),
           _buildInfoRow('Total', currencyFormat.format(order.totalPrice), isBold: true),

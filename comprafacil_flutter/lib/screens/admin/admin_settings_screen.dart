@@ -104,7 +104,7 @@ class _AdminSettingsScreenState extends ConsumerState<AdminSettingsScreen> {
               const SizedBox(height: 20),
               Center(
                 child: TextButton.icon(
-                  onPressed: () => ref.read(isAdminModeProvider.notifier).state = false,
+                  onPressed: () => ref.read(isAdminModeProvider.notifier).toggle(false),
                   icon: const Icon(Icons.exit_to_app),
                   label: const Text('Sair do Modo Admin'),
                 ),

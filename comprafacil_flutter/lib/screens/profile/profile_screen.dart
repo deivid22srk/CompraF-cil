@@ -119,7 +119,7 @@ class ProfileScreen extends ConsumerWidget {
                         title: const Text('Alterar para o modo ADM'),
                         trailing: const Icon(Icons.chevron_right),
                         onTap: () {
-                          ref.read(isAdminModeProvider.notifier).state = true;
+                          ref.read(isAdminModeProvider.notifier).toggle(true);
                           ScaffoldMessenger.of(context).showSnackBar(
                             const SnackBar(content: Text('Modo Administrador Ativado')),
                           );

@@ -21,7 +21,8 @@ class _ProductFormScreenState extends ConsumerState<ProductFormScreen> {
   late TextEditingController _priceController;
   late TextEditingController _stockController;
   String? _selectedCategoryId;
-  File? _imageFile;
+  List<File> _newImageFiles = [];
+  List<String> _existingImageUrls = [];
   bool _isLoading = false;
 
   @override
@@ -32,13 +33,17 @@ class _ProductFormScreenState extends ConsumerState<ProductFormScreen> {
     _priceController = TextEditingController(text: widget.product?.price.toString());
     _stockController = TextEditingController(text: widget.product?.stockQuantity.toString());
     _selectedCategoryId = widget.product?.categoryId;
+
+    if (widget.product?.images != null) {
+      _existingImageUrls = widget.product!.images!.map((i) => i.imageUrl).toList();
+    }
   }
 
   Future<void> _pickImage() async {
     final picker = ImagePicker();
-    final pickedFile = await picker.pickImage(source: ImageSource.gallery);
-    if (pickedFile != null) {
-      setState(() => _imageFile = File(pickedFile.path));
+    final pickedFiles = await picker.pickMultiImage();
+    if (pickedFiles.isNotEmpty) {
+      setState(() => _newImageFiles.addAll(pickedFiles.map((p) => File(p.path))));
     }
   }
 
@@ -48,13 +53,18 @@ class _ProductFormScreenState extends ConsumerState<ProductFormScreen> {
     setState(() => _isLoading = true);
     try {
       final db = ref.read(databaseServiceProvider);
-      String? imageUrl = widget.product?.imageUrl;
 
-      if (_imageFile != null) {
-        final bytes = await _imageFile!.readAsBytes();
-        final fileName = '${DateTime.now().millisecondsSinceEpoch}.jpg';
-        imageUrl = await db.uploadProductImage(bytes, fileName);
+      // Upload new images
+      final uploadedUrls = <String>[];
+      for (var file in _newImageFiles) {
+        final bytes = await file.readAsBytes();
+        final fileName = '${DateTime.now().millisecondsSinceEpoch}_${_newImageFiles.indexOf(file)}.jpg';
+        final url = await db.uploadProductImage(bytes, fileName);
+        uploadedUrls.add(url);
       }
+
+      final allImageUrls = [..._existingImageUrls, ...uploadedUrls];
+      final mainImageUrl = allImageUrls.isNotEmpty ? allImageUrls.first : null;
 
       final productData = {
         if (widget.product?.id != null) 'id': widget.product!.id,
@@ -63,10 +73,10 @@ class _ProductFormScreenState extends ConsumerState<ProductFormScreen> {
         'price': double.parse(_priceController.text),
         'stock_quantity': int.parse(_stockController.text),
         'category_id': _selectedCategoryId,
-        'image_url': imageUrl,
+        'image_url': mainImageUrl,
       };
 
-      await db.saveProduct(productData);
+      await db.saveProduct(productData, additionalImages: allImageUrls);
       ref.refresh(productsProvider);
       if (mounted) Navigator.pop(context);
     } catch (e) {
@@ -76,6 +86,30 @@ class _ProductFormScreenState extends ConsumerState<ProductFormScreen> {
     } finally {
       setState(() => _isLoading = false);
     }
+  }
+
+  Widget _buildImageItem(Widget child, {required VoidCallback onDelete}) {
+    return Container(
+      width: 120,
+      margin: const EdgeInsets.only(right: 12),
+      child: Stack(
+        children: [
+          ClipRRect(borderRadius: BorderRadius.circular(16), child: SizedBox(width: 120, height: 120, child: child)),
+          Positioned(
+            top: 4,
+            right: 4,
+            child: GestureDetector(
+              onTap: onDelete,
+              child: CircleAvatar(
+                radius: 12,
+                backgroundColor: Colors.black.withOpacity(0.5),
+                child: const Icon(Icons.close, size: 16, color: Colors.white),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
@@ -93,22 +127,34 @@ class _ProductFormScreenState extends ConsumerState<ProductFormScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Center(
-                    child: GestureDetector(
-                      onTap: _pickImage,
-                      child: Container(
-                        width: 150,
-                        height: 150,
-                        decoration: BoxDecoration(
-                          color: Colors.grey[200],
-                          borderRadius: BorderRadius.circular(20),
+                  const Text('Imagens do Produto', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                  const SizedBox(height: 16),
+                  SizedBox(
+                    height: 120,
+                    child: ListView(
+                      scrollDirection: Axis.horizontal,
+                      children: [
+                        GestureDetector(
+                          onTap: _pickImage,
+                          child: Container(
+                            width: 120,
+                            decoration: BoxDecoration(
+                              color: Colors.grey[200],
+                              borderRadius: BorderRadius.circular(16),
+                            ),
+                            child: const Icon(Icons.add_a_photo, color: Colors.grey),
+                          ),
                         ),
-                        child: _imageFile != null
-                          ? ClipRRect(borderRadius: BorderRadius.circular(20), child: Image.file(_imageFile!, fit: BoxFit.cover))
-                          : (widget.product?.imageUrl != null
-                            ? ClipRRect(borderRadius: BorderRadius.circular(20), child: Image.network(widget.product!.imageUrl!, fit: BoxFit.cover))
-                            : const Icon(Icons.add_a_photo, size: 50, color: Colors.grey)),
-                      ),
+                        const SizedBox(width: 12),
+                        ..._newImageFiles.map((file) => _buildImageItem(
+                          Image.file(file, fit: BoxFit.cover),
+                          onDelete: () => setState(() => _newImageFiles.remove(file)),
+                        )),
+                        ..._existingImageUrls.map((url) => _buildImageItem(
+                          Image.network(url, fit: BoxFit.cover),
+                          onDelete: () => setState(() => _existingImageUrls.remove(url)),
+                        )),
+                      ],
                     ),
                   ),
                   const SizedBox(height: 32),

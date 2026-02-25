@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../../providers/order_provider.dart';
+import '../../providers/admin_provider.dart';
 import '../../models/user_models.dart';
 import '../../theme/app_theme.dart';
 import 'order_details_screen.dart';
@@ -11,6 +12,7 @@ class OrdersScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final isAdminMode = ref.watch(isAdminModeProvider);
     final ordersAsync = ref.watch(ordersProvider);
     final currencyFormat = NumberFormat.currency(locale: 'pt_BR', symbol: 'R\$');
     final dateFormat = DateFormat('dd/MM/yyyy HH:mm');
@@ -53,6 +55,11 @@ class OrdersScreen extends ConsumerWidget {
                           ],
                         ),
                         const Divider(height: 24),
+                        if (isAdminMode) ...[
+                          Text('Cliente: ${order.customerName ?? 'N/A'}', style: const TextStyle(fontWeight: FontWeight.bold)),
+                          Text('WhatsApp: ${order.whatsapp}'),
+                          const SizedBox(height: 8),
+                        ],
                         Text('Data: ${order.createdAt != null ? dateFormat.format(order.createdAt!) : '-'}'),
                         const SizedBox(height: 8),
                         Text(

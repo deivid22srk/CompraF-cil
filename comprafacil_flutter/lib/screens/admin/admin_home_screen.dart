@@ -31,7 +31,7 @@ class _AdminHomeScreenState extends ConsumerState<AdminHomeScreen> {
         actions: [
           IconButton(
             icon: const Icon(Icons.exit_to_app),
-            onPressed: () => ref.read(isAdminModeProvider.notifier).state = false,
+            onPressed: () => ref.read(isAdminModeProvider.notifier).toggle(false),
             tooltip: 'Sair do Modo ADM',
           ),
         ],

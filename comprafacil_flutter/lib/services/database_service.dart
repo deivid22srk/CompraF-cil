@@ -126,11 +126,22 @@ class DatabaseService {
   }
 
   // Admin Methods
-  Future<void> saveProduct(Map<String, dynamic> productData) async {
-    if (productData['id'] != null) {
-      await _client.from('products').update(productData).eq('id', productData['id']);
-    } else {
-      await _client.from('products').insert(productData);
+  Future<void> saveProduct(Map<String, dynamic> productData, {List<String>? additionalImages}) async {
+    final response = await _client.from('products').upsert(productData).select().single();
+    final productId = response['id'];
+
+    if (additionalImages != null) {
+      // Clear old images and insert new ones (simple sync approach)
+      await _client.from('product_images').delete().eq('product_id', productId);
+
+      final imagesToInsert = additionalImages.map((url) => {
+        'product_id': productId,
+        'image_url': url,
+      }).toList();
+
+      if (imagesToInsert.isNotEmpty) {
+        await _client.from('product_images').insert(imagesToInsert);
+      }
     }
   }
 
