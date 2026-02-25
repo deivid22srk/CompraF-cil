@@ -1,0 +1,30 @@
+name: comprafacil_flutter
+description: A new Flutter project for CompraFacil.
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.0.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  cupertino_icons: ^1.0.2
+  supabase_flutter: ^2.6.0
+  flutter_riverpod: ^2.5.1
+  google_fonts: ^6.2.1
+  cached_network_image: ^3.3.1
+  geolocator: ^11.0.0
+  intl: ^0.19.0
+  font_awesome_flutter: ^10.7.0
+  shimmer: ^3.0.0
+  flutter_staggered_animations: ^1.1.1
+  shared_preferences: ^2.2.2
+  url_launcher: ^6.2.5
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^3.0.0
+
+flutter:
+  uses-material-design: true
