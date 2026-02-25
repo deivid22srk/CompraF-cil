@@ -16,14 +16,17 @@ class BackgroundService {
 
     const AndroidNotificationChannel channel = AndroidNotificationChannel(
       'background_service', // id
-      'Serviço em Segundo Plano', // title
+      'CompraFacil Service', // title
       description: 'Monitoramento de pedidos em tempo real', // description
-      importance: Importance.low,
+      importance: Importance.max,
     );
 
     await flutterLocalNotificationsPlugin
         .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>()
         ?.createNotificationChannel(channel);
+
+    // Small delay to ensure channel is created
+    await Future.delayed(const Duration(milliseconds: 500));
 
     await service.configure(
       androidConfiguration: AndroidConfiguration(
@@ -53,12 +56,29 @@ class BackgroundService {
   static void onStart(ServiceInstance service) async {
     DartPluginRegistrant.ensureInitialized();
 
+    if (service is AndroidServiceInstance) {
+      service.setAsForegroundService();
+    }
+
     await SupabaseService.initialize();
+    await NotificationService.initialize();
     final supabase = Supabase.instance.client;
     final prefs = await SharedPreferences.getInstance();
 
     service.on('stopService').listen((event) {
       service.stopSelf();
+    });
+
+    // Update notification periodically to keep it alive and healthy
+    Timer.periodic(const Duration(minutes: 1), (timer) async {
+      if (service is AndroidServiceInstance) {
+        if (await service.isForegroundService()) {
+          service.setForegroundNotificationInfo(
+            title: "CompraFacil Ativo",
+            content: "Monitorando seus pedidos...",
+          );
+        }
+      }
     });
 
     // Monitor for changes in settings (we can use polling or simple event-based refresh if the app is alive)
