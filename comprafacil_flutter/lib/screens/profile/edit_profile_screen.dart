@@ -22,7 +22,11 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
     final profile = ref.read(profileProvider).value;
     if (profile != null) {
       _nameController.text = profile.fullName ?? '';
-      _whatsappController.text = profile.whatsapp ?? '';
+      String whatsapp = profile.whatsapp ?? '';
+      if (whatsapp.startsWith('+55')) {
+        whatsapp = whatsapp.replaceFirst('+55', '').trim();
+      }
+      _whatsappController.text = whatsapp;
     }
   }
 
@@ -47,9 +51,13 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
   Future<void> _saveProfile() async {
     setState(() => _isLoading = true);
     try {
+      String whatsapp = _whatsappController.text.trim();
+      if (whatsapp.isNotEmpty) {
+        whatsapp = '+55 $whatsapp';
+      }
       await ref.read(profileProvider.notifier).updateProfile(
         fullName: _nameController.text,
-        whatsapp: _whatsappController.text,
+        whatsapp: whatsapp,
       );
       if (mounted) {
         Navigator.pop(context);
@@ -104,7 +112,11 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
               const SizedBox(height: 16),
               TextField(
                 controller: _whatsappController,
-                decoration: const InputDecoration(labelText: 'WhatsApp', border: OutlineInputBorder()),
+                decoration: const InputDecoration(
+                  labelText: 'WhatsApp',
+                  border: OutlineInputBorder(),
+                  prefixText: '+55 ',
+                ),
                 keyboardType: TextInputType.phone,
               ),
               const SizedBox(height: 40),

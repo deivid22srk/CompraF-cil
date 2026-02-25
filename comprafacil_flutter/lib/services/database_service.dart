@@ -76,8 +76,8 @@ class DatabaseService {
 
   // Upload Avatar
   Future<String> uploadAvatar(String userId, List<int> bytes, String fileName) async {
-    final path = 'avatars/$userId/$fileName';
-    await _client.storage.from('avatars').uploadBinary(path, Uint8List.fromList(bytes));
-    return _client.storage.from('avatars').getPublicUrl(path);
+    final path = 'avatars/$userId-$fileName';
+    await _client.storage.from('product-images').uploadBinary(path, Uint8List.fromList(bytes));
+    return _client.storage.from('product-images').getPublicUrl(path);
   }
 }
