@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:intl/intl.dart';
 import '../cart/cart_screen.dart';
+import 'zoom_image_screen.dart';
 import '../../models/product_models.dart';
 import '../../providers/cart_provider.dart';
 import '../../theme/app_theme.dart';
@@ -19,6 +20,7 @@ class ProductDetailsScreen extends ConsumerStatefulWidget {
 class _ProductDetailsScreenState extends ConsumerState<ProductDetailsScreen> {
   int _quantity = 1;
   Map<String, String> _selectedVariations = {};
+  int _currentImageIndex = 0;
 
   @override
   Widget build(BuildContext context) {
@@ -32,9 +34,71 @@ class _ProductDetailsScreenState extends ConsumerState<ProductDetailsScreen> {
             expandedHeight: 400,
             pinned: true,
             flexibleSpace: FlexibleSpaceBar(
-              background: CachedNetworkImage(
-                imageUrl: widget.product.imageUrl ?? '',
-                fit: BoxFit.cover,
+              background: Stack(
+                children: [
+                  Builder(
+                    builder: (context) {
+                      final allImages = [
+                        if (widget.product.imageUrl != null) widget.product.imageUrl!,
+                        if (widget.product.images != null)
+                          ...widget.product.images!.map((i) => i.imageUrl),
+                      ].toSet().toList();
+
+                      if (allImages.isEmpty) {
+                        return Container(color: Colors.grey[200]);
+                      }
+
+                      return GestureDetector(
+                        onTap: () => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => ZoomImageScreen(
+                              images: allImages,
+                              initialIndex: _currentImageIndex,
+                            ),
+                          ),
+                        ),
+                        child: PageView.builder(
+                          itemCount: allImages.length,
+                          onPageChanged: (index) => setState(() => _currentImageIndex = index),
+                          itemBuilder: (context, index) {
+                            return CachedNetworkImage(
+                              imageUrl: allImages[index],
+                              fit: BoxFit.cover,
+                            );
+                          },
+                        ),
+                      );
+                    },
+                  ),
+                  Positioned(
+                    bottom: 20,
+                    right: 20,
+                    child: Builder(
+                      builder: (context) {
+                        final allImagesCount = [
+                          if (widget.product.imageUrl != null) widget.product.imageUrl!,
+                          if (widget.product.images != null)
+                            ...widget.product.images!.map((i) => i.imageUrl),
+                        ].toSet().length;
+
+                        if (allImagesCount <= 1) return const SizedBox.shrink();
+
+                        return Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                          decoration: BoxDecoration(
+                            color: Colors.black54,
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          child: Text(
+                            '${_currentImageIndex + 1}/$allImagesCount',
+                            style: const TextStyle(color: Colors.white, fontSize: 12),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                ],
               ),
             ),
             backgroundColor: Colors.white,
