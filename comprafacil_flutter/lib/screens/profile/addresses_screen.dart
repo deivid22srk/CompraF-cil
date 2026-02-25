@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../models/user_models.dart';
 import '../../providers/address_provider.dart';
-import '../../providers/auth_provider.dart';
 import 'add_edit_address_screen.dart';
 
 class AddressesScreen extends ConsumerWidget {

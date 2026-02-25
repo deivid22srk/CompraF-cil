@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../../models/user_models.dart';
 import '../../providers/order_provider.dart';
+import '../../providers/admin_provider.dart';
+import '../../providers/product_provider.dart';
 import '../../theme/app_theme.dart';
 
 class OrderDetailsScreen extends ConsumerWidget {
@@ -12,6 +14,7 @@ class OrderDetailsScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final isAdminMode = ref.watch(isAdminModeProvider);
     final historyAsync = ref.watch(orderStatusHistoryProvider(order.id ?? ''));
     final itemsAsync = ref.watch(orderItemsProvider(order.id ?? ''));
     final currencyFormat = NumberFormat.currency(locale: 'pt_BR', symbol: 'R\$');
@@ -45,6 +48,30 @@ class OrderDetailsScreen extends ConsumerWidget {
               loading: () => const Center(child: CircularProgressIndicator()),
               error: (e, s) => Text('Erro ao carregar itens: $e'),
             ),
+            if (isAdminMode) ...[
+              const SizedBox(height: 24),
+              const Text('Gerenciar Pedido', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+              const SizedBox(height: 16),
+              DropdownButtonFormField<String>(
+                value: order.status.toLowerCase(),
+                decoration: const InputDecoration(labelText: 'Mudar Status', border: OutlineInputBorder()),
+                items: ['pendente', 'aceito', 'em entrega', 'concluído', 'cancelado'].map((s) => DropdownMenuItem(
+                  value: s,
+                  child: Text(s.toUpperCase()),
+                )).toList(),
+                onChanged: (newStatus) async {
+                  if (newStatus != null) {
+                    final db = ref.read(databaseServiceProvider);
+                    await db.updateOrderStatus(order.id!, newStatus);
+                    ref.refresh(orderStatusHistoryProvider(order.id!));
+                    ref.refresh(ordersProvider);
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Status atualizado!')));
+                    }
+                  }
+                },
+              ),
+            ],
             const Divider(height: 32),
             const Text('Histórico do Pedido', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
             const SizedBox(height: 16),

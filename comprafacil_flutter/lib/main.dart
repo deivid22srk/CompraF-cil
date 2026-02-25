@@ -6,7 +6,9 @@ import 'providers/theme_provider.dart';
 import 'screens/splash_screen.dart';
 import 'screens/auth/login_screen.dart';
 import 'screens/home/home_screen.dart';
+import 'screens/admin/admin_home_screen.dart';
 import 'providers/auth_provider.dart';
+import 'providers/admin_provider.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -29,7 +31,11 @@ class CompraFacilApp extends ConsumerWidget {
       darkTheme: AppTheme.darkTheme,
       themeMode: themeMode,
       home: authState.when(
-        data: (user) => user == null ? const LoginScreen() : const HomeScreen(),
+        data: (user) {
+          if (user == null) return const LoginScreen();
+          final isAdminMode = ref.watch(isAdminModeProvider);
+          return isAdminMode ? const AdminHomeScreen() : const HomeScreen();
+        },
         loading: () => const SplashScreen(),
         error: (e, s) => Scaffold(body: Center(child: Text('Erro: $e'))),
       ),

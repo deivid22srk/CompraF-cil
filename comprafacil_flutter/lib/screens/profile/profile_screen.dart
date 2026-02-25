@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/profile_provider.dart';
 import '../../providers/theme_provider.dart';
+import '../../providers/admin_provider.dart';
 import '../../theme/app_theme.dart';
 import 'addresses_screen.dart';
 import 'edit_profile_screen.dart';
@@ -111,6 +112,20 @@ class ProfileScreen extends ConsumerWidget {
                         MaterialPageRoute(builder: (_) => const AddressesScreen()),
                       ),
                     ),
+                    if (profile?.role == 'admin') ...[
+                      const Divider(indent: 50),
+                      ListTile(
+                        leading: const Icon(Icons.admin_panel_settings_outlined),
+                        title: const Text('Alterar para o modo ADM'),
+                        trailing: const Icon(Icons.chevron_right),
+                        onTap: () {
+                          ref.read(isAdminModeProvider.notifier).state = true;
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Modo Administrador Ativado')),
+                          );
+                        },
+                      ),
+                    ],
                   ],
                 ),
               ),

@@ -3,16 +3,21 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/user_models.dart';
 import 'auth_provider.dart';
 import 'product_provider.dart';
+import 'admin_provider.dart';
 
 final ordersProvider = FutureProvider<List<Order>>((ref) async {
   final user = ref.watch(authProvider).value;
   if (user == null) return [];
 
-  final response = await Supabase.instance.client
-      .from('orders')
-      .select()
-      .eq('user_id', user.id)
-      .order('created_at', ascending: false);
+  final isAdminMode = ref.watch(isAdminModeProvider);
+
+  var query = Supabase.instance.client.from('orders').select();
+
+  if (!isAdminMode) {
+    query = query.eq('user_id', user.id);
+  }
+
+  final response = await query.order('created_at', ascending: false);
 
   return (response as List).map((json) => Order.fromJson(json)).toList();
 });

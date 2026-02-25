@@ -124,4 +124,48 @@ class DatabaseService {
     await _client.storage.from('product-images').uploadBinary(path, Uint8List.fromList(bytes));
     return _client.storage.from('product-images').getPublicUrl(path);
   }
+
+  // Admin Methods
+  Future<void> saveProduct(Map<String, dynamic> productData) async {
+    if (productData['id'] != null) {
+      await _client.from('products').update(productData).eq('id', productData['id']);
+    } else {
+      await _client.from('products').insert(productData);
+    }
+  }
+
+  Future<void> deleteProduct(String productId) async {
+    await _client.from('products').delete().eq('id', productId);
+  }
+
+  Future<void> saveCategory(Map<String, dynamic> categoryData) async {
+    if (categoryData['id'] != null) {
+      await _client.from('categories').update(categoryData).eq('id', categoryData['id']);
+    } else {
+      await _client.from('categories').insert(categoryData);
+    }
+  }
+
+  Future<void> deleteCategory(String categoryId) async {
+    await _client.from('categories').delete().eq('id', categoryId);
+  }
+
+  Future<void> updateAppConfig(String key, dynamic value) async {
+    await _client.from('app_config').update({'value': value}).eq('key', key);
+  }
+
+  Future<String> uploadProductImage(List<int> bytes, String fileName) async {
+    final path = 'products/$fileName';
+    await _client.storage.from('product-images').uploadBinary(path, Uint8List.fromList(bytes));
+    return _client.storage.from('product-images').getPublicUrl(path);
+  }
+
+  Future<void> updateOrderStatus(String orderId, String status, {String? notes}) async {
+    await _client.from('orders').update({'status': status}).eq('id', orderId);
+    await _client.from('order_status_history').insert({
+      'order_id': orderId,
+      'status': status,
+      'notes': notes,
+    });
+  }
 }
