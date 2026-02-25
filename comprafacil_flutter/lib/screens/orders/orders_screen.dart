@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../../providers/order_provider.dart';
+import '../../models/user_models.dart';
 import '../../theme/app_theme.dart';
 import 'order_details_screen.dart';
 
@@ -23,7 +24,7 @@ class OrdersScreen extends ConsumerWidget {
                 padding: const EdgeInsets.all(20),
                 itemCount: orders.length,
                 itemBuilder: (context, index) {
-                  final order = orders[index];
+                  final Order order = orders[index];
                   return InkWell(
                     onTap: () => Navigator.push(
                       context,
