@@ -106,7 +106,6 @@ jobs:
       if: github.event_name != 'workflow_dispatch' || inputs.build_flutter_android || inputs.build_flutter_web
       uses: subosito/flutter-action@v2
       with:
-        flutter-version: '3.38.7'
         channel: 'stable'
         cache: true
 
