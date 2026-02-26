@@ -1,7 +1,7 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter/foundation.dart';
 import 'package:package_info_plus/package_info_plus.dart';
-import 'ota_stub.dart' if (dart.library.io) 'package:ota_update/ota_update.dart';
+import 'package:comprafacil_flutter/utils/platform_stubs.dart' if (dart.library.io) 'package:ota_update/ota_update.dart';
 
 class UpdateService {
   static Future<Map<String, dynamic>?> checkForUpdate() async {

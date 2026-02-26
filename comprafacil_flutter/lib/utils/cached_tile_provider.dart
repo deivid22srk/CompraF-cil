@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:dio/dio.dart';
-import 'dart:io' if (dart.library.html) 'dart:html';
-import 'package:path_provider/path_provider.dart';
+import 'package:comprafacil_flutter/utils/platform_stubs.dart' if (dart.library.io) 'dart:io' as io;
+import 'package:comprafacil_flutter/utils/platform_stubs.dart' if (dart.library.io) 'package:path_provider/path_provider.dart' as path;
 import 'dart:ui' as ui;
 import 'dart:typed_data';
 
@@ -50,8 +50,8 @@ class CachedNetworkImageProvider extends ImageProvider<CachedNetworkImageProvide
       return decode(await ui.ImmutableBuffer.fromUint8List(Uint8List.fromList(response.data!)));
     }
 
-    final cacheDir = await getTemporaryDirectory();
-    final file = File('${cacheDir.path}/tiles/${coordinates.z}/${coordinates.x}/${coordinates.y}.png');
+    final cacheDir = await path.getTemporaryDirectory();
+    final file = io.File('${cacheDir.path}/tiles/${coordinates.z}/${coordinates.x}/${coordinates.y}.png');
 
     if (await file.exists()) {
       final bytes = await file.readAsBytes();

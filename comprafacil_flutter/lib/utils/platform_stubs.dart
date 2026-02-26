@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 enum OtaStatus {
   DOWNLOADING,
   INSTALLING,
@@ -22,3 +24,20 @@ class OtaUpdate {
     return Stream.value(OtaEvent(OtaStatus.INTERNAL_ERROR, 'Not supported on this platform'));
   }
 }
+
+// dart:io stubs
+class File {
+  final String path;
+  File(this.path);
+  Future<bool> exists() async => false;
+  Future<void> create({bool recursive = false}) async {}
+  Future<void> writeAsBytes(List<int> bytes) async {}
+  Future<Uint8List> readAsBytes() async => Uint8List(0);
+}
+
+class Directory {
+  final String path;
+  Directory(this.path);
+}
+
+Future<Directory> getTemporaryDirectory() async => Directory('');

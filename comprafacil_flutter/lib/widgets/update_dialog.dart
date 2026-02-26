@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../services/ota_stub.dart' if (dart.library.io) 'package:ota_update/ota_update.dart';
+import 'package:comprafacil_flutter/utils/platform_stubs.dart' if (dart.library.io) 'package:ota_update/ota_update.dart';
 import '../services/update_service.dart';
 import '../theme/app_theme.dart';
 
