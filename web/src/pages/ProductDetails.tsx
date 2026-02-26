@@ -1,11 +1,10 @@
 import { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { ArrowLeft, Share2, ShoppingCart, CheckCircle2, Plus, Minus, Loader2 } from 'lucide-react'
+import { ArrowLeft, Share2, Smartphone, Download } from 'lucide-react'
 import { Helmet } from 'react-helmet-async'
 import { productService } from '../services/productService'
-import { authService } from '../services/authService'
-import { cartService } from '../services/cartService'
-import type { Product, ProductImage, CartItem } from '../types/database'
+import { configService } from '../services/configService'
+import type { Product, ProductImage } from '../types/database'
 import LoadingSpinner from '../components/LoadingSpinner'
 import ImageGallery from '../components/ImageGallery'
 import ImageWithLoading from '../components/ImageWithLoading'
@@ -17,12 +16,7 @@ export default function ProductDetails() {
   const [images, setImages] = useState<ProductImage[]>([])
   const [selectedImage, setSelectedImage] = useState('')
   const [loading, setLoading] = useState(true)
-  const [isAdding, setIsAdding] = useState(false)
-  const [quantity, setQuantity] = useState(1)
-  const [selectedVariations, setSelectedVariations] = useState<Record<string, string>>({})
-
-  const isOutOfStock = product?.stock_quantity === 0;
-  const maxStock = product?.stock_quantity ?? 99;
+  const [downloadUrl, setDownloadUrl] = useState('')
 
   useEffect(() => {
     if (id) {
@@ -32,9 +26,10 @@ export default function ProductDetails() {
 
   async function fetchData(productId: string) {
     try {
-      const [productData, imagesData] = await Promise.all([
+      const [productData, imagesData, config] = await Promise.all([
         productService.getProductById(productId),
-        productService.getProductImages(productId)
+        productService.getProductImages(productId),
+        configService.getConfig()
       ])
 
       if (productData) {
@@ -42,6 +37,7 @@ export default function ProductDetails() {
         setSelectedImage(productData.image_url)
       }
       if (imagesData) setImages(imagesData)
+      if (config.download_url) setDownloadUrl(config.download_url)
     } catch (error) {
       console.error('Error fetching product details:', error)
     } finally {
@@ -72,56 +68,6 @@ export default function ProductDetails() {
     { id: 'main', image_url: product.image_url },
     ...images.filter(img => img.image_url !== product.image_url)
   ]
-
-  const handleAddToCart = async () => {
-    try {
-      const user = await authService.getUser()
-      if (!user) {
-        navigate('/login')
-        return
-      }
-
-      // Check variations
-      const missing = product.variations?.find(v => !selectedVariations[v.name])
-      if (missing) {
-        alert(`Por favor, selecione: ${missing.name}`)
-        return
-      }
-
-      setIsAdding(true)
-      const cartItem: CartItem = {
-        user_id: user.id,
-        product_id: product.id,
-        quantity,
-        selected_variations: Object.keys(selectedVariations).length > 0 ? selectedVariations : null
-      }
-
-      await cartService.addToCart(cartItem)
-      alert('Produto adicionado ao carrinho!')
-    } catch (error: any) {
-      alert('Erro ao adicionar: ' + error.message)
-    } finally {
-      setIsAdding(false)
-    }
-  }
-
-  const handleBuyNow = async () => {
-    const user = await authService.getUser()
-    if (!user) {
-      navigate('/login')
-      return
-    }
-
-    // Check variations
-    const missing = product.variations?.find(v => !selectedVariations[v.name])
-    if (missing) {
-      alert(`Por favor, selecione: ${missing.name}`)
-      return
-    }
-
-    const varsJson = encodeURIComponent(JSON.stringify(selectedVariations))
-    navigate(`/checkout?productId=${product.id}&quantity=${quantity}&variations=${varsJson}`)
-  }
 
   return (
     <div className="max-w-4xl mx-auto p-6 lg:py-12">
@@ -171,8 +117,8 @@ export default function ProductDetails() {
               <span className="text-3xl font-black">R$ {product.price.toFixed(2)}</span>
             </div>
             {product.stock_quantity !== undefined && (
-              <span className={`text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-widest ${isOutOfStock ? 'bg-red-500/10 text-red-500 border border-red-500/20' : 'bg-green-500/10 text-green-500 border border-green-500/20'}`}>
-                {isOutOfStock ? 'Esgotado' : `${product.stock_quantity} Disponíveis`}
+              <span className={`text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-widest ${product.stock_quantity === 0 ? 'bg-red-500/10 text-red-500 border border-red-500/20' : 'bg-green-500/10 text-green-500 border border-green-500/20'}`}>
+                {product.stock_quantity === 0 ? 'Esgotado' : `${product.stock_quantity} Disponíveis`}
               </span>
             )}
           </div>
@@ -188,17 +134,12 @@ export default function ProductDetails() {
                   <span className="text-[10px] font-black text-gray-500 uppercase tracking-widest block mb-3 px-1">{v.name}</span>
                   <div className="flex flex-wrap gap-2">
                     {v.values.map((val, j) => (
-                      <button
+                      <span
                         key={j}
-                        onClick={() => setSelectedVariations(prev => ({ ...prev, [v.name]: val }))}
-                        className={`px-6 py-3 rounded-2xl text-sm font-black transition-all border ${
-                          selectedVariations[v.name] === val
-                            ? 'bg-primary border-primary text-black'
-                            : 'bg-surface border-white/5 text-gray-400 hover:border-primary/50'
-                        }`}
+                        className="px-6 py-3 rounded-2xl text-sm font-black bg-surface border border-white/5 text-gray-400"
                       >
                         {val}
-                      </button>
+                      </span>
                     ))}
                   </div>
                 </div>
@@ -206,46 +147,24 @@ export default function ProductDetails() {
             </div>
           )}
 
-          {/* Quantidade e Compra */}
           <div className="mt-auto space-y-6">
-            <div className="flex items-center justify-between gap-6 p-4 bg-surface rounded-3xl border border-white/5">
-              <span className="text-xs font-black text-gray-500 uppercase tracking-widest pl-2">Quantidade</span>
-              <div className="flex items-center bg-card rounded-2xl border border-white/5">
-                <button
-                  onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                  className="p-3 text-gray-400 hover:text-white disabled:opacity-20"
-                  disabled={isOutOfStock}
-                >
-                  <Minus size={20} />
-                </button>
-                <span className="w-10 text-center font-black text-lg">{isOutOfStock ? 0 : quantity}</span>
-                <button
-                  onClick={() => setQuantity(Math.min(maxStock, quantity + 1))}
-                  className="p-3 text-primary disabled:opacity-20"
-                  disabled={isOutOfStock || quantity >= maxStock}
-                >
-                  <Plus size={20} />
-                </button>
+            <div className="bg-primary/5 border border-primary/20 rounded-3xl p-6 text-center space-y-4">
+              <div className="flex items-center justify-center gap-2 text-primary">
+                <Smartphone size={20} />
+                <span className="font-black uppercase tracking-widest text-xs">Compre pelo Aplicativo</span>
               </div>
-            </div>
+              <p className="text-sm text-gray-400 font-medium">Baixe nosso app para adicionar ao carrinho e fazer seu pedido com facilidade.</p>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <button
-                onClick={handleAddToCart}
-                disabled={isAdding || isOutOfStock}
-                className="flex items-center justify-center gap-3 py-5 bg-card border border-white/10 rounded-[1.5rem] font-black uppercase text-sm hover:bg-white/5 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {isAdding ? <Loader2 className="animate-spin" /> : <ShoppingCart size={20} />}
-                {isOutOfStock ? 'Sem Estoque' : 'Colocar no Carrinho'}
-              </button>
-              <button
-                onClick={handleBuyNow}
-                disabled={isOutOfStock}
-                className="flex items-center justify-center gap-3 py-5 bg-primary text-black rounded-[1.5rem] font-black uppercase text-sm hover:scale-[1.02] active:scale-95 transition-all shadow-xl shadow-primary/20 disabled:opacity-50 disabled:bg-gray-600 disabled:cursor-not-allowed"
-              >
-                <CheckCircle2 size={20} />
-                {isOutOfStock ? 'Indisponível' : 'Comprar Agora'}
-              </button>
+              {downloadUrl && (
+                <a
+                  href={downloadUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center justify-center gap-3 py-4 bg-primary text-black rounded-2xl font-black uppercase text-sm hover:scale-[1.02] active:scale-95 transition-all shadow-xl shadow-primary/20"
+                >
+                  <Download size={20} /> Baixar App Agora
+                </a>
+              )}
             </div>
 
             <div className="flex items-center justify-between p-4 bg-surface rounded-2xl border border-white/5">

@@ -1,11 +1,10 @@
 import { useEffect, useState } from 'react'
-import { Search, SearchX } from 'lucide-react'
+import { Search, SearchX, Download, Smartphone } from 'lucide-react'
 import { productService } from '../services/productService'
 import { configService } from '../services/configService'
 import type { Product } from '../types/database'
 import ProductCard from '../components/ProductCard'
 import LoadingSpinner from '../components/LoadingSpinner'
-import { Smartphone } from 'lucide-react'
 
 export default function Home() {
   const [products, setProducts] = useState<Product[]>([])
@@ -38,58 +37,56 @@ export default function Home() {
   )
 
   return (
-    <div className="bg-background text-white">
-      <div className="bg-gradient-to-b from-primary to-orange-400 p-6 md:p-10 rounded-b-[2.5rem] shadow-2xl mb-6">
-        <div className="max-w-6xl mx-auto">
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-            <div className="space-y-1">
-              <h1 className="text-3xl md:text-4xl font-black text-black tracking-tight italic uppercase">Promoções</h1>
-              <p className="text-black/70 font-bold text-[10px] md:text-xs uppercase tracking-[0.2em]">As melhores ofertas para você</p>
-            </div>
-            <div className="relative flex-1 max-w-md">
-              <div className="relative">
-                <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-primary w-5 h-5" />
-                <input
-                  type="text"
-                  placeholder="O que você procura hoje?"
-                  className="w-full pl-12 pr-6 py-4 rounded-[1.2rem] bg-white text-black text-base font-medium focus:outline-none shadow-xl placeholder:text-gray-400"
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                />
-              </div>
-            </div>
+    <div className="bg-background text-white min-h-screen">
+      <div className="bg-gradient-to-b from-primary to-orange-500 p-8 md:p-16 rounded-b-[3rem] shadow-2xl mb-12 text-center">
+        <div className="max-w-4xl mx-auto space-y-8">
+          <div className="space-y-4">
+            <h1 className="text-4xl md:text-6xl font-black text-black tracking-tighter uppercase italic">CompraFacil</h1>
+            <p className="text-black font-bold text-sm md:text-base uppercase tracking-[0.3em] opacity-80">Catálogo de Produtos Online</p>
+          </div>
+
+          <div className="bg-black/10 backdrop-blur-md rounded-[2rem] p-6 md:p-10 border border-black/5">
+            <h2 className="text-xl md:text-2xl font-black text-black mb-4 uppercase">Faça seu pedido pelo App!</h2>
+            <p className="text-black/70 font-medium mb-8 text-sm md:text-base">Para uma experiência completa com carrinho, pagamentos e rastreio em tempo real, baixe nosso aplicativo oficial.</p>
+
+            {downloadUrl && (
+              <a
+                href={downloadUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-3 bg-black text-primary font-black px-10 py-5 rounded-2xl text-lg shadow-2xl hover:scale-105 active:scale-95 transition-all uppercase tracking-widest"
+              >
+                <Download size={24} /> Baixar App Agora
+              </a>
+            )}
+          </div>
+
+          <div className="relative max-w-2xl mx-auto">
+            <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-primary w-6 h-6" />
+            <input
+              type="text"
+              placeholder="O que você procura hoje?"
+              className="w-full pl-16 pr-8 py-5 rounded-[1.5rem] bg-white text-black text-lg font-bold focus:outline-none shadow-2xl placeholder:text-gray-400 border-none"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
           </div>
         </div>
       </div>
 
-      <main className="max-w-6xl mx-auto px-4 py-4">
-        {downloadUrl && (
-          <div className="md:hidden bg-card border border-white/5 rounded-3xl p-6 mb-6 flex flex-col gap-4">
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 bg-primary/20 rounded-2xl flex items-center justify-center text-primary">
-                <Smartphone size={24} />
-              </div>
-              <div>
-                <h3 className="text-lg font-bold">CompraFacil no Android</h3>
-                <p className="text-xs text-gray-500 font-bold uppercase tracking-widest">Experiência completa</p>
-              </div>
-            </div>
-            <a
-              href={downloadUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="bg-primary text-white font-black py-4 rounded-2xl text-center uppercase tracking-widest text-xs shadow-lg shadow-primary/20 hover:scale-[1.02] active:scale-[0.98] transition-all"
-            >
-              Baixar Aplicativo
-            </a>
+      <main className="max-w-6xl mx-auto px-6">
+        <div className="bg-primary/5 border border-primary/20 rounded-[2rem] p-8 mb-16 flex flex-col md:flex-row items-center justify-center gap-6 text-center md:text-left">
+          <div className="w-12 h-12 rounded-full bg-primary/20 flex items-center justify-center text-primary animate-pulse">
+            <Smartphone size={24} />
           </div>
-        )}
-
-        <div className="bg-primary/5 border border-primary/10 rounded-3xl p-6 mb-12 flex items-center justify-center gap-3">
-          <div className="w-2 h-2 rounded-full bg-primary animate-pulse"></div>
-          <p className="text-primary font-black text-sm uppercase tracking-widest">
-            Entrega em Sítio Riacho dos Barreiros e região
-          </p>
+          <div>
+            <p className="text-primary font-black text-lg uppercase tracking-widest">
+              Atendimento Exclusivo
+            </p>
+            <p className="text-gray-400 font-bold text-sm uppercase tracking-tighter">
+              Sítio Riacho dos Barreiros e locais próximos
+            </p>
+          </div>
         </div>
 
         {loading ? (

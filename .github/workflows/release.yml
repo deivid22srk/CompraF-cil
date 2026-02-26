@@ -27,12 +27,6 @@ on:
         required: true
         type: boolean
         default: true
-      build_flutter_web:
-        description: 'Build Flutter Web Application'
-        required: true
-        type: boolean
-        default: true
-
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -103,7 +97,7 @@ jobs:
         path: ./admin/build/outputs/apk/release/*.apk
 
     - name: Set up Flutter
-      if: github.event_name != 'workflow_dispatch' || inputs.build_flutter_android || inputs.build_flutter_web
+      if: github.event_name != 'workflow_dispatch' || inputs.build_flutter_android
       uses: subosito/flutter-action@v2
       with:
         channel: 'stable'
@@ -122,17 +116,3 @@ jobs:
       with:
         name: CompraFacil-Flutter-Release
         path: ./comprafacil_flutter/build/app/outputs/flutter-apk/*.apk
-
-    - name: Build Flutter Web
-      if: github.event_name != 'workflow_dispatch' || inputs.build_flutter_web
-      run: |
-        cd comprafacil_flutter
-        flutter pub get
-        flutter build web --release --base-href /
-
-    - name: Upload Flutter Web Artifact
-      if: github.event_name != 'workflow_dispatch' || inputs.build_flutter_web
-      uses: actions/upload-artifact@v4
-      with:
-        name: CompraFacil-Flutter-Web-Release
-        path: ./comprafacil_flutter/build/web
