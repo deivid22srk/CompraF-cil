@@ -41,11 +41,15 @@ class _UpdateDialogState extends State<UpdateDialog> {
               _statusMessage = 'Iniciando instalação...';
               _progress = 100;
               break;
+            case OtaStatus.INSTALLATION_DONE:
+              _statusMessage = 'Instalação concluída.';
+              _isDownloading = false;
+              break;
             case OtaStatus.ALREADY_RUNNING_ERROR:
               _errorMessage = 'Já existe um download em execução.';
               _isDownloading = false;
               break;
-            case OtaStatus.PERMISSION_NOT_ALLOWED_ERROR:
+            case OtaStatus.PERMISSION_NOT_GRANTED_ERROR:
               _errorMessage = 'Permissão negada para instalar o aplicativo.';
               _isDownloading = false;
               break;
@@ -59,6 +63,14 @@ class _UpdateDialogState extends State<UpdateDialog> {
               break;
             case OtaStatus.CHECKSUM_ERROR:
               _errorMessage = 'Erro de integridade no arquivo baixado.';
+              _isDownloading = false;
+              break;
+            case OtaStatus.INSTALLATION_ERROR:
+              _errorMessage = 'Erro ao instalar a atualização.';
+              _isDownloading = false;
+              break;
+            case OtaStatus.CANCELED:
+              _errorMessage = 'Download cancelado.';
               _isDownloading = false;
               break;
             default:
