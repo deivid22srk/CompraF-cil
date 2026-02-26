@@ -41,7 +41,7 @@ class CompraFacilApp extends ConsumerWidget {
     final themeMode = ref.watch(themeProvider);
 
     return MaterialApp(
-      title: 'CompraFácil',
+      title: 'CompraFacil',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,
       darkTheme: AppTheme.darkTheme,

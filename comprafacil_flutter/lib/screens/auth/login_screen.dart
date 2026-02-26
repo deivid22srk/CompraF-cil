@@ -114,12 +114,33 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     const CircularProgressIndicator()
                   else
                     ElevatedButton(
-                      onPressed: () {
+                      onPressed: () async {
                         if (_isSignUp) {
-                          ref.read(authProvider.notifier).signUp(
-                                _emailController.text,
-                                _passwordController.text,
+                          try {
+                            final response = await ref.read(authProvider.notifier).signUp(
+                                  _emailController.text,
+                                  _passwordController.text,
+                                );
+                            if (response != null && mounted) {
+                              showDialog(
+                                context: context,
+                                builder: (context) => AlertDialog(
+                                  title: const Text('Confirmação enviada'),
+                                  content: const Text(
+                                    'Um e-mail de confirmação do Supabase foi enviado para o seu endereço de e-mail. Por favor, verifique sua caixa de entrada para ativar sua conta.',
+                                  ),
+                                  actions: [
+                                    TextButton(
+                                      onPressed: () => Navigator.pop(context),
+                                      child: const Text('OK'),
+                                    ),
+                                  ],
+                                ),
                               );
+                            }
+                          } catch (e) {
+                            // Error is already handled by ref.listen
+                          }
                         } else {
                           ref.read(authProvider.notifier).signIn(
                                 _emailController.text,
