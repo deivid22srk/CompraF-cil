@@ -30,8 +30,8 @@ dependencies:
   flutter_local_notifications: ^17.1.2
   flutter_background_service: ^5.0.5
   permission_handler: ^11.3.1
-  package_info_plus: ^8.0.0
-  ota_update: ^5.0.0
+  package_info_plus: ^9.0.0
+  ota_update: ^7.1.0
 
 dev_dependencies:
   flutter_test:
