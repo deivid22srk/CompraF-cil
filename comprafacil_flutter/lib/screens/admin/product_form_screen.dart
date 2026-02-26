@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
-import 'dart:io';
+import 'dart:typed_data';
 import '../../models/product_models.dart';
 import '../../providers/product_provider.dart';
 
@@ -21,7 +21,7 @@ class _ProductFormScreenState extends ConsumerState<ProductFormScreen> {
   late TextEditingController _priceController;
   late TextEditingController _stockController;
   String? _selectedCategoryId;
-  List<File> _newImageFiles = [];
+  List<XFile> _newImageFiles = [];
   List<String> _existingImageUrls = [];
   bool _isLoading = false;
 
@@ -43,7 +43,7 @@ class _ProductFormScreenState extends ConsumerState<ProductFormScreen> {
     final picker = ImagePicker();
     final pickedFiles = await picker.pickMultiImage();
     if (pickedFiles.isNotEmpty) {
-      setState(() => _newImageFiles.addAll(pickedFiles.map((p) => File(p.path))));
+      setState(() => _newImageFiles.addAll(pickedFiles));
     }
   }
 
@@ -59,7 +59,7 @@ class _ProductFormScreenState extends ConsumerState<ProductFormScreen> {
       for (var file in _newImageFiles) {
         final bytes = await file.readAsBytes();
         final fileName = '${DateTime.now().millisecondsSinceEpoch}_${_newImageFiles.indexOf(file)}.jpg';
-        final url = await db.uploadProductImage(bytes, fileName);
+        final url = await db.uploadProductImage(bytes.toList(), fileName);
         uploadedUrls.add(url);
       }
 
@@ -146,9 +146,15 @@ class _ProductFormScreenState extends ConsumerState<ProductFormScreen> {
                           ),
                         ),
                         const SizedBox(width: 12),
-                        ..._newImageFiles.map((file) => _buildImageItem(
-                          Image.file(file, fit: BoxFit.cover),
-                          onDelete: () => setState(() => _newImageFiles.remove(file)),
+                        ..._newImageFiles.map((file) => FutureBuilder<Uint8List>(
+                          future: file.readAsBytes(),
+                          builder: (context, snapshot) {
+                            if (!snapshot.hasData) return const SizedBox(width: 120, height: 120);
+                            return _buildImageItem(
+                              Image.memory(snapshot.data!, fit: BoxFit.cover),
+                              onDelete: () => setState(() => _newImageFiles.remove(file)),
+                            );
+                          }
                         )),
                         ..._existingImageUrls.map((url) => _buildImageItem(
                           Image.network(url, fit: BoxFit.cover),

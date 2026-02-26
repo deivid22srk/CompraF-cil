@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:dio/dio.dart';
-import 'dart:io';
+import 'dart:io' if (dart.library.html) 'dart:html';
 import 'package:path_provider/path_provider.dart';
 import 'dart:ui' as ui;
 import 'dart:typed_data';
@@ -43,6 +44,12 @@ class CachedNetworkImageProvider extends ImageProvider<CachedNetworkImageProvide
   }
 
   Future<ui.Codec> _loadAsync(CachedNetworkImageProvider key, ImageDecoderCallback decode) async {
+    if (kIsWeb) {
+      // No caching on web to avoid dart:io issues
+      final response = await Dio().get<List<int>>(url, options: Options(responseType: ResponseType.bytes));
+      return decode(await ui.ImmutableBuffer.fromUint8List(Uint8List.fromList(response.data!)));
+    }
+
     final cacheDir = await getTemporaryDirectory();
     final file = File('${cacheDir.path}/tiles/${coordinates.z}/${coordinates.x}/${coordinates.y}.png');
 
