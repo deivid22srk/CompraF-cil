@@ -17,17 +17,17 @@ import 'providers/admin_provider.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await SupabaseService.initialize();
-  await NotificationService.initialize();
+  // await NotificationService.initialize();
 
-  // Request notification permission before starting background service
-  // to avoid crash on Android 13+
-  await Permission.notification.request();
+  // // Request notification permission before starting background service
+  // // to avoid crash on Android 13+
+  // await Permission.notification.request();
 
-  final prefs = await SharedPreferences.getInstance();
-  final isBgServiceEnabled = prefs.getBool('background_service_enabled') ?? true;
-  if (isBgServiceEnabled) {
-    await BackgroundService.initialize();
-  }
+  // final prefs = await SharedPreferences.getInstance();
+  // final isBgServiceEnabled = prefs.getBool('background_service_enabled') ?? true;
+  // if (isBgServiceEnabled) {
+  //   await BackgroundService.initialize();
+  // }
 
   runApp(const ProviderScope(child: CompraFacilApp()));
 }

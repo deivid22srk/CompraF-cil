@@ -52,24 +52,27 @@ class SettingsNotifier extends StateNotifier<SettingsState> {
     state = state.copyWith(adminNotifEnabled: value);
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool('admin_notif_enabled', value);
-    await _syncBackgroundService();
+    // await _syncBackgroundService();
   }
 
   Future<void> updateUserNotif(bool value) async {
     state = state.copyWith(userNotifEnabled: value);
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool('user_notif_enabled', value);
-    await _syncBackgroundService();
+    // await _syncBackgroundService();
   }
 
   Future<void> updateBackgroundService(bool value) async {
     state = state.copyWith(backgroundServiceEnabled: value);
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool('background_service_enabled', value);
-    await _syncBackgroundService();
+    // await _syncBackgroundService();
   }
 
   Future<void> _syncBackgroundService() async {
+    // Background service is temporarily disabled by user request
+    return;
+    /*
     final service = FlutterBackgroundService();
     final isRunning = await service.isRunning();
 
@@ -93,5 +96,6 @@ class SettingsNotifier extends StateNotifier<SettingsState> {
         service.invoke('stopService');
       }
     }
+    */
   }
 }

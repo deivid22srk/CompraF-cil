@@ -4,6 +4,8 @@ import '../../providers/product_provider.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/product_card.dart';
 import '../../widgets/category_chip.dart';
+import '../../widgets/update_dialog.dart';
+import '../../services/update_service.dart';
 import '../cart/cart_screen.dart';
 import '../search/search_screen.dart';
 import '../profile/profile_screen.dart';
@@ -18,6 +20,30 @@ class HomeScreen extends ConsumerStatefulWidget {
 
 class _HomeScreenState extends ConsumerState<HomeScreen> {
   int _currentIndex = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _checkForUpdates();
+  }
+
+  Future<void> _checkForUpdates() async {
+    // Small delay to ensure the UI is ready
+    await Future.delayed(const Duration(seconds: 2));
+    if (!mounted) return;
+
+    final updateInfo = await UpdateService.checkForUpdate();
+    if (updateInfo != null && mounted) {
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => UpdateDialog(
+          latestVersion: updateInfo['latestVersion'],
+          downloadUrl: updateInfo['downloadUrl'],
+        ),
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {

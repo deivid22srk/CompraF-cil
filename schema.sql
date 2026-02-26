@@ -284,6 +284,7 @@ ON CONFLICT (id) DO NOTHING;
 -- Initial Config
 INSERT INTO app_config (key, value) VALUES
 ('min_version', '"1.0"'),
+('latest_version', '"1.0"'),
 ('download_url', '"https://comprafacil.ct.ws/download"'),
 ('delivery_fee', '0.0')
 ON CONFLICT (key) DO NOTHING;
