@@ -129,7 +129,7 @@ jobs:
       run: |
         cd comprafacil_flutter
         flutter pub get
-        flutter build web --release --base-href /
+        flutter build web --release --base-href / --web-renderer html
 
     - name: Upload Flutter Web Artifact
       if: github.event_name != 'workflow_dispatch' || inputs.build_flutter_web

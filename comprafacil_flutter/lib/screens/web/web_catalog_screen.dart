@@ -35,50 +35,56 @@ class WebCatalogScreen extends ConsumerWidget {
     final productsAsync = ref.watch(filteredProductsProvider);
     final categoriesAsync = ref.watch(categoriesProvider);
     final selectedCategory = ref.watch(selectedCategoryProvider);
+    final screenWidth = MediaQuery.of(context).size.width;
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('CompraFacil - Catálogo'),
-        actions: [
-          Padding(
-            padding: const EdgeInsets.only(right: 16),
-            child: ElevatedButton.icon(
-              onPressed: () => _downloadApp(context, ref),
-              icon: const Icon(Icons.download, size: 18),
-              label: const Text('BAIXAR APP'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppTheme.primaryColor,
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-              ),
-            ),
-          ),
-        ],
-      ),
       body: CustomScrollView(
         slivers: [
           SliverToBoxAdapter(
             child: Container(
-              padding: const EdgeInsets.symmetric(vertical: 40, horizontal: 20),
+              padding: const EdgeInsets.only(top: 60, bottom: 40, left: 20, right: 20),
               decoration: const BoxDecoration(
                 gradient: AppGradients.primary,
+                borderRadius: BorderRadius.only(
+                  bottomLeft: Radius.circular(40),
+                  bottomRight: Radius.circular(40),
+                ),
               ),
               child: Column(
                 children: [
+                  const Icon(Icons.shopping_cart, color: Colors.white, size: 48),
+                  const SizedBox(height: 16),
                   const Text(
-                    'Confira nossos produtos!',
-                    style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold),
+                    'CompraFacil',
+                    style: TextStyle(color: Colors.white, fontSize: 32, fontWeight: FontWeight.bold),
                   ),
                   const SizedBox(height: 8),
                   const Text(
-                    'Para fazer pedidos e acompanhar em tempo real, baixe nosso aplicativo.',
-                    style: TextStyle(color: Colors.white70, fontSize: 14),
-                    textAlign: TextAlign.center,
+                    'Confira nosso catálogo online!',
+                    style: TextStyle(color: Colors.white, fontSize: 18),
+                  ),
+                  const SizedBox(height: 24),
+                  ElevatedButton.icon(
+                    onPressed: () => _downloadApp(context, ref),
+                    icon: const Icon(Icons.download),
+                    label: const Text('BAIXAR APLICATIVO AGORA', style: TextStyle(fontWeight: FontWeight.bold)),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.white,
+                      foregroundColor: AppTheme.primaryColor,
+                      padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
+                      elevation: 5,
+                    ),
                   ),
                   const SizedBox(height: 20),
                   const Text(
+                    'Para fazer pedidos e rastrear em tempo real, use o app.',
+                    style: TextStyle(color: Colors.white70, fontSize: 12),
+                  ),
+                  const SizedBox(height: 12),
+                  const Text(
                     'Atendemos apenas o Sítio Riacho dos Barreiros e locais próximos',
-                    style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w300),
+                    style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w300),
                   ),
                 ],
               ),
@@ -86,7 +92,7 @@ class WebCatalogScreen extends ConsumerWidget {
           ),
           SliverToBoxAdapter(
             child: Padding(
-              padding: const EdgeInsets.symmetric(vertical: 20),
+              padding: const EdgeInsets.symmetric(vertical: 24),
               child: categoriesAsync.when(
                 data: (categories) => SingleChildScrollView(
                   scrollDirection: Axis.horizontal,
@@ -115,11 +121,11 @@ class WebCatalogScreen extends ConsumerWidget {
             data: (products) => SliverPadding(
               padding: const EdgeInsets.symmetric(horizontal: 20),
               sliver: SliverGrid(
-                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 4, // More columns for web
-                  childAspectRatio: 0.75,
-                  crossAxisSpacing: 20,
-                  mainAxisSpacing: 20,
+                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: screenWidth > 1200 ? 6 : (screenWidth > 900 ? 4 : (screenWidth > 600 ? 3 : 2)),
+                  childAspectRatio: 0.7,
+                  crossAxisSpacing: 16,
+                  mainAxisSpacing: 16,
                 ),
                 delegate: SliverChildBuilderDelegate(
                   (context, index) => ProductCard(product: products[index]),
