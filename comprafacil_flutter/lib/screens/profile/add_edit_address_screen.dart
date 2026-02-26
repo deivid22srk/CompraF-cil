@@ -141,6 +141,7 @@ class _AddEditAddressScreenState extends ConsumerState<AddEditAddressScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const Text('Informações do Endereço', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+            const Text('Atendemos apenas o Sítio Riacho dos Barreiros e locais próximos', style: TextStyle(color: Colors.red, fontSize: 12)),
             const SizedBox(height: 16),
             TextField(
               controller: _nameController,

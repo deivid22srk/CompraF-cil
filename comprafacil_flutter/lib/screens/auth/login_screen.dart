@@ -17,6 +17,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _isSignUp = false;
+  bool _isLoadingLocal = false;
 
   @override
   void initState() {
@@ -83,6 +84,15 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         fontWeight: FontWeight.bold,
                       ),
                     ),
+                    const SizedBox(height: 8),
+                    const Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 24),
+                      child: Text(
+                        'Atendemos apenas o Sítio Riacho dos Barreiros e locais próximos',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(color: Colors.white70, fontSize: 12),
+                      ),
+                    ),
                   ],
                 ),
               ),
@@ -110,36 +120,45 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     ),
                   ),
                   const SizedBox(height: 32),
-                  if (authState.isLoading)
+                  if (authState.isLoading || _isLoadingLocal)
                     const CircularProgressIndicator()
                   else
                     ElevatedButton(
                       onPressed: () async {
                         if (_isSignUp) {
+                          setState(() => _isLoadingLocal = true);
                           try {
                             final response = await ref.read(authProvider.notifier).signUp(
                                   _emailController.text,
                                   _passwordController.text,
                                 );
-                            if (response != null && mounted) {
-                              showDialog(
-                                context: context,
-                                builder: (context) => AlertDialog(
-                                  title: const Text('Confirmação enviada'),
-                                  content: const Text(
-                                    'Um e-mail de confirmação do Supabase foi enviado para o seu endereço de e-mail. Por favor, verifique sua caixa de entrada para ativar sua conta.',
-                                  ),
-                                  actions: [
-                                    TextButton(
-                                      onPressed: () => Navigator.pop(context),
-                                      child: const Text('OK'),
+                            if (mounted) {
+                              setState(() => _isLoadingLocal = false);
+                              if (response != null) {
+                                showDialog(
+                                  context: context,
+                                  builder: (context) => AlertDialog(
+                                    title: const Text('Confirmação enviada'),
+                                    content: const Text(
+                                      'Um e-mail de confirmação do Supabase foi enviado para o seu endereço de e-mail. Por favor, verifique sua caixa de entrada para ativar sua conta.',
                                     ),
-                                  ],
-                                ),
-                              );
+                                    actions: [
+                                      TextButton(
+                                        onPressed: () => Navigator.pop(context),
+                                        child: const Text('OK'),
+                                      ),
+                                    ],
+                                  ),
+                                );
+                              }
                             }
                           } catch (e) {
-                            // Error is already handled by ref.listen
+                            if (mounted) {
+                              setState(() => _isLoadingLocal = false);
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(content: Text('Erro ao criar conta: $e'), backgroundColor: Colors.red),
+                              );
+                            }
                           }
                         } else {
                           ref.read(authProvider.notifier).signIn(

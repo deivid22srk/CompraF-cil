@@ -128,6 +128,10 @@ class HomeContent extends ConsumerWidget {
                           'Sua compra na palma da mão',
                           style: TextStyle(color: Colors.white70),
                         ),
+                        const Text(
+                          'Apenas Riacho dos Barreiros e proximidades',
+                          style: TextStyle(color: Colors.white60, fontSize: 10),
+                        ),
                       ],
                     ),
                     const CircleAvatar(

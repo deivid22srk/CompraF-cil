@@ -105,16 +105,6 @@ class ProfileScreen extends ConsumerWidget {
                       ),
                     ),
                     const Divider(indent: 50),
-                ListTile(
-                  leading: const Icon(Icons.notifications_outlined),
-                  title: const Text('Notificações e Apps'),
-                  trailing: const Icon(Icons.chevron_right),
-                  onTap: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (_) => const SettingsScreen()),
-                  ),
-                ),
-                    const Divider(indent: 50),
                     ListTile(
                       leading: const Icon(Icons.location_on_outlined),
                       title: const Text('Meus Endereços'),
