@@ -65,8 +65,19 @@ class BackgroundService {
     final supabase = Supabase.instance.client;
     final prefs = await SharedPreferences.getInstance();
 
+    // Internal state for notifications
+    bool adminNotifEnabled = prefs.getBool('admin_notif_enabled') ?? true;
+    bool userNotifEnabled = prefs.getBool('user_notif_enabled') ?? true;
+
     service.on('stopService').listen((event) {
       service.stopSelf();
+    });
+
+    service.on('updateConfig').listen((event) {
+      if (event != null) {
+        adminNotifEnabled = event['adminNotifEnabled'] ?? adminNotifEnabled;
+        userNotifEnabled = event['userNotifEnabled'] ?? userNotifEnabled;
+      }
     });
 
     // Update notification periodically to keep it alive and healthy
@@ -81,30 +92,22 @@ class BackgroundService {
       }
     });
 
-    // Monitor for changes in settings (we can use polling or simple event-based refresh if the app is alive)
-    // For simplicity in background, we just load once or periodically check prefs.
-
-    _setupRealtime(supabase, prefs);
-  }
-
-  static void _setupRealtime(SupabaseClient supabase, SharedPreferences prefs) {
     final userId = supabase.auth.currentUser?.id;
-    final isAdminNotifEnabled = prefs.getBool('admin_notif_enabled') ?? true;
-    final isUserNotifEnabled = prefs.getBool('user_notif_enabled') ?? true;
-    final isAdminMode = prefs.getBool('is_admin_mode') ?? false;
 
-    if (!isAdminNotifEnabled && !isUserNotifEnabled) return;
-
+    // Listen for order updates
     supabase.channel('order_updates').onPostgresChanges(
       event: PostgresChangeEvent.all,
       schema: 'public',
       table: 'orders',
       callback: (payload) async {
+        if (!adminNotifEnabled && !userNotifEnabled) return;
+
         final eventType = payload.eventType;
         final newData = payload.newRecord;
 
         // Admin Notification: New Order (INSERT)
-        if (isAdminNotifEnabled && isAdminMode && eventType == PostgresChangeEvent.insert) {
+        // We rely on adminNotifEnabled switch. Usually only admins have this ON.
+        if (adminNotifEnabled && eventType == PostgresChangeEvent.insert) {
           await NotificationService.showNotification(
             id: DateTime.now().millisecondsSinceEpoch ~/ 1000,
             title: 'Novo Pedido Recebido!',
@@ -113,7 +116,7 @@ class BackgroundService {
         }
 
         // User Notification: Status Update (UPDATE)
-        if (isUserNotifEnabled && userId != null && eventType == PostgresChangeEvent.update) {
+        if (userNotifEnabled && userId != null && eventType == PostgresChangeEvent.update) {
           if (newData['user_id'] == userId) {
             final oldData = payload.oldRecord;
             if (newData['status'] != oldData['status']) {

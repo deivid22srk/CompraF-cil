@@ -81,6 +81,12 @@ class SettingsNotifier extends StateNotifier<SettingsState> {
     if (shouldBeRunning) {
       if (!isRunning) {
         await service.startService();
+      } else {
+        // If already running, update its internal config
+        service.invoke('updateConfig', {
+          'adminNotifEnabled': state.adminNotifEnabled,
+          'userNotifEnabled': state.userNotifEnabled,
+        });
       }
     } else {
       if (isRunning) {
