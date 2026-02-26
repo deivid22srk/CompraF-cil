@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -11,6 +12,7 @@ import 'screens/splash_screen.dart';
 import 'screens/auth/login_screen.dart';
 import 'screens/home/home_screen.dart';
 import 'screens/admin/admin_home_screen.dart';
+import 'screens/web/web_catalog_screen.dart';
 import 'providers/auth_provider.dart';
 import 'providers/admin_provider.dart';
 
@@ -34,15 +36,17 @@ class CompraFacilApp extends ConsumerWidget {
       theme: AppTheme.lightTheme,
       darkTheme: AppTheme.darkTheme,
       themeMode: themeMode,
-      home: authState.when(
-        data: (user) {
-          if (user == null) return const LoginScreen();
-          final isAdminMode = ref.watch(isAdminModeProvider);
-          return isAdminMode ? const AdminHomeScreen() : const HomeScreen();
-        },
-        loading: () => const SplashScreen(),
-        error: (e, s) => const LoginScreen(),
-      ),
+      home: kIsWeb
+        ? const WebCatalogScreen()
+        : authState.when(
+            data: (user) {
+              if (user == null) return const LoginScreen();
+              final isAdminMode = ref.watch(isAdminModeProvider);
+              return isAdminMode ? const AdminHomeScreen() : const HomeScreen();
+            },
+            loading: () => const SplashScreen(),
+            error: (e, s) => const LoginScreen(),
+          ),
     );
   }
 }
