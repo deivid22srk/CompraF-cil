@@ -70,7 +70,7 @@ export default function ProductDetails() {
   ]
 
   return (
-    <div className="max-w-4xl mx-auto p-6 lg:py-12">
+    <div className="bg-background min-h-screen text-white">
       <Helmet>
         <title>{product.name} | CompraFácil</title>
         <meta name="description" content={product.description || `Confira ${product.name} no CompraFácil.`} />
@@ -80,80 +80,97 @@ export default function ProductDetails() {
         <meta property="og:type" content="product" />
       </Helmet>
 
-      <button
-        onClick={() => navigate('/')}
-        className="flex items-center gap-2 text-gray-400 hover:text-white mb-6 transition-colors"
-      >
-        <ArrowLeft size={20} /> Voltar
-      </button>
+      {/* Mobile-style Header */}
+      <div className="sticky top-0 z-50 bg-background/80 backdrop-blur-md p-4 flex items-center justify-between max-w-4xl mx-auto w-full">
+        <button
+          onClick={() => navigate('/')}
+          className="p-2 bg-card rounded-xl text-primary hover:bg-primary hover:text-black transition-all"
+        >
+          <ArrowLeft size={20} />
+        </button>
+        <h2 className="text-sm font-black uppercase tracking-widest truncate max-w-[200px]">Detalhes</h2>
+        <button
+          onClick={shareProduct}
+          className="p-2 bg-card rounded-xl text-primary hover:bg-primary hover:text-black transition-all"
+        >
+          <Share2 size={20} />
+        </button>
+      </div>
 
-      <div className="grid md:grid-cols-2 gap-10 bg-card rounded-[40px] overflow-hidden shadow-2xl">
-        <div className="flex flex-col">
-          <div className="h-[400px] bg-surface">
-            <ImageWithLoading
-              src={selectedImage || product.image_url}
-              alt={product.name}
-              className="w-full h-full object-cover transition-all duration-300"
-              containerClassName="w-full h-full"
-            />
-          </div>
-          <ImageGallery
-            images={allImages}
-            selectedImage={selectedImage}
-            onSelect={setSelectedImage}
-          />
-        </div>
-
-        <div className="p-10 flex flex-col">
-          <div className="flex justify-between items-start mb-4">
-            <h1 className="text-3xl font-bold">{product.name}</h1>
-            <button onClick={shareProduct} className="p-2 bg-surface rounded-full text-primary hover:bg-primary hover:text-black transition-all">
-              <Share2 size={24} />
-            </button>
-          </div>
-
-          <div className="flex items-center justify-between mb-6">
-            <div className="flex items-center gap-2 text-primary">
-              <span className="text-3xl font-black">R$ {product.price.toFixed(2)}</span>
+      <div className="max-w-4xl mx-auto px-4 pb-20">
+        <div className="grid lg:grid-cols-2 gap-8 items-start">
+          <div className="space-y-4">
+            <div className="aspect-square bg-card rounded-[2.5rem] overflow-hidden border border-white/5 shadow-2xl">
+              <ImageWithLoading
+                src={selectedImage || product.image_url}
+                alt={product.name}
+                className="w-full h-full object-cover transition-all duration-500"
+                containerClassName="w-full h-full"
+              />
             </div>
-            {product.stock_quantity !== undefined && (
-              <span className={`text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-widest ${product.stock_quantity === 0 ? 'bg-red-500/10 text-red-500 border border-red-500/20' : 'bg-green-500/10 text-green-500 border border-green-500/20'}`}>
-                {product.stock_quantity === 0 ? 'Esgotado' : `${product.stock_quantity} Disponíveis`}
-              </span>
+            {allImages.length > 1 && (
+              <ImageGallery
+                images={allImages}
+                selectedImage={selectedImage}
+                onSelect={setSelectedImage}
+              />
             )}
           </div>
 
-          <p className="text-gray-400 leading-relaxed mb-6 flex-1">
-            {product.description || 'Nenhuma descrição disponível para este produto.'}
-          </p>
-
-          {product.variations && product.variations.length > 0 && (
-            <div className="space-y-6 mb-10">
-              {product.variations.map((v, i) => (
-                <div key={i}>
-                  <span className="text-[10px] font-black text-gray-500 uppercase tracking-widest block mb-3 px-1">{v.name}</span>
-                  <div className="flex flex-wrap gap-2">
-                    {v.values.map((val, j) => (
-                      <span
-                        key={j}
-                        className="px-6 py-3 rounded-2xl text-sm font-black bg-surface border border-white/5 text-gray-400"
-                      >
-                        {val}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-
-          <div className="mt-auto space-y-6">
-            <div className="bg-primary/5 border border-primary/20 rounded-3xl p-6 text-center space-y-4">
-              <div className="flex items-center justify-center gap-2 text-primary">
-                <Smartphone size={20} />
-                <span className="font-black uppercase tracking-widest text-xs">Compre pelo Aplicativo</span>
+          <div className="flex flex-col gap-6">
+            <div>
+              <div className="flex items-center gap-2 mb-2">
+                 <span className="text-[10px] font-black text-primary uppercase tracking-[0.2em]">{product.sold_by || 'CompraFácil'}</span>
               </div>
-              <p className="text-sm text-gray-400 font-medium">Baixe nosso app para adicionar ao carrinho e fazer seu pedido com facilidade.</p>
+              <h1 className="text-2xl md:text-3xl font-black leading-tight mb-4 uppercase italic tracking-tighter">{product.name}</h1>
+
+              <div className="flex items-center justify-between bg-card p-4 rounded-2xl border border-white/5">
+                <span className="text-3xl font-black text-primary italic tracking-tighter">R$ {product.price.toFixed(2)}</span>
+                {product.stock_quantity !== undefined && (
+                  <span className={`text-[8px] font-black px-3 py-1 rounded-full uppercase tracking-widest ${product.stock_quantity === 0 ? 'bg-red-500/10 text-red-500' : 'bg-green-500/10 text-green-500'}`}>
+                    {product.stock_quantity === 0 ? 'Esgotado' : `${product.stock_quantity} Em estoque`}
+                  </span>
+                )}
+              </div>
+            </div>
+
+            {product.description && (
+              <div className="space-y-2">
+                <span className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Descrição</span>
+                <p className="text-sm text-gray-400 leading-relaxed font-medium bg-card/30 p-4 rounded-2xl border border-white/5">
+                  {product.description}
+                </p>
+              </div>
+            )}
+
+            {product.variations && product.variations.length > 0 && (
+              <div className="space-y-6">
+                {product.variations.map((v, i) => (
+                  <div key={i} className="space-y-3">
+                    <span className="text-[10px] font-black text-gray-500 uppercase tracking-widest px-1">{v.name}</span>
+                    <div className="flex flex-wrap gap-2">
+                      {v.values.map((val, j) => (
+                        <span
+                          key={j}
+                          className="px-5 py-2.5 rounded-xl text-xs font-black bg-card border border-white/5 text-gray-400"
+                        >
+                          {val}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            <div className="mt-4 p-6 bg-primary/10 rounded-[2rem] border border-primary/20 space-y-4">
+              <div className="flex items-center gap-3 text-primary">
+                <Smartphone size={20} />
+                <span className="font-black uppercase tracking-widest text-xs italic">Peça agora no aplicativo</span>
+              </div>
+              <p className="text-xs text-gray-400 font-medium leading-relaxed">
+                Baixe o CompraFacil para adicionar ao carrinho, aplicar cupons de desconto e receber em casa com agilidade.
+              </p>
 
               {downloadUrl && (
                 <a
@@ -165,11 +182,6 @@ export default function ProductDetails() {
                   <Download size={20} /> Baixar App Agora
                 </a>
               )}
-            </div>
-
-            <div className="flex items-center justify-between p-4 bg-surface rounded-2xl border border-white/5">
-              <span className="text-sm text-gray-400 font-bold uppercase tracking-tighter">Vendido por</span>
-              <span className="font-black text-secondary">{product.sold_by || 'CompraFácil'}</span>
             </div>
           </div>
         </div>

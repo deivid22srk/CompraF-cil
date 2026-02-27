@@ -8,7 +8,7 @@ export const configService = {
 
     if (error) throw error
 
-    const config: Record<string, any> = {}
+    const config: Record<string, string | number | boolean | null | Record<string, unknown>> = {}
     data.forEach(item => {
       config[item.key] = item.value
     })
