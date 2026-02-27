@@ -7,6 +7,9 @@ import '../../services/update_service.dart';
 import 'product_management_screen.dart';
 import 'category_management_screen.dart';
 import 'admin_settings_screen.dart';
+import 'admin_management_screen.dart';
+import '../profile/profile_screen.dart';
+import '../../providers/profile_provider.dart';
 import '../orders/orders_screen.dart';
 
 class AdminHomeScreen extends ConsumerStatefulWidget {
@@ -82,32 +85,52 @@ class AdminDashboard extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final profile = ref.watch(profileProvider).value;
+    final isMainAdmin = profile?.role == 'main_admin';
+
     return ListView(
       padding: const EdgeInsets.all(20),
       children: [
-        _buildAdminCard(
-          context,
-          title: 'Produtos',
-          subtitle: 'Gerenciar catálogo de produtos',
-          icon: Icons.inventory_2,
-          onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ProductManagementScreen())),
-        ),
-        const SizedBox(height: 16),
-        _buildAdminCard(
-          context,
-          title: 'Categorias',
-          subtitle: 'Adicionar ou remover categorias',
-          icon: Icons.category,
-          onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const CategoryManagementScreen())),
-        ),
-        const SizedBox(height: 16),
-        _buildAdminCard(
-          context,
-          title: 'Configurações do App',
-          subtitle: 'Taxa de entrega e atualizações',
-          icon: Icons.app_settings_alt,
-          onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const AdminSettingsScreen())),
-        ),
+        if (profile?.hasPermission('manage_products') ?? false) ...[
+          _buildAdminCard(
+            context,
+            title: 'Produtos',
+            subtitle: 'Gerenciar catálogo de produtos',
+            icon: Icons.inventory_2,
+            onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ProductManagementScreen())),
+          ),
+          const SizedBox(height: 16),
+        ],
+        if (profile?.hasPermission('manage_categories') ?? false) ...[
+          _buildAdminCard(
+            context,
+            title: 'Categorias',
+            subtitle: 'Adicionar ou remover categorias',
+            icon: Icons.category,
+            onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const CategoryManagementScreen())),
+          ),
+          const SizedBox(height: 16),
+        ],
+        if (profile?.hasPermission('manage_config') ?? false) ...[
+          _buildAdminCard(
+            context,
+            title: 'Configurações do App',
+            subtitle: 'Taxa de entrega e atualizações',
+            icon: Icons.app_settings_alt,
+            onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const AdminSettingsScreen())),
+          ),
+          const SizedBox(height: 16),
+        ],
+        if (isMainAdmin) ...[
+          _buildAdminCard(
+            context,
+            title: 'Administradores',
+            subtitle: 'Gerenciar permissões e novos admins',
+            icon: Icons.admin_panel_settings,
+            onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const AdminManagementScreen())),
+          ),
+          const SizedBox(height: 16),
+        ],
       ],
     );
   }

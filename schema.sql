@@ -139,6 +139,16 @@ BEGIN
     IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='order_items' AND column_name='selected_variations') THEN
         ALTER TABLE order_items ADD COLUMN selected_variations JSONB;
     END IF;
+
+    -- profiles.email
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='profiles' AND column_name='email') THEN
+        ALTER TABLE profiles ADD COLUMN email TEXT;
+    END IF;
+
+    -- profiles.permissions
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='profiles' AND column_name='permissions') THEN
+        ALTER TABLE profiles ADD COLUMN permissions JSONB DEFAULT '{}'::jsonb;
+    END IF;
 END $$;
 
 -- Enable RLS

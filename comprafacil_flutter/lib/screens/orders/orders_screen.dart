@@ -5,6 +5,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../providers/order_provider.dart';
 import '../../providers/admin_provider.dart';
 import '../../providers/product_provider.dart';
+import '../../providers/profile_provider.dart';
 import '../../models/user_models.dart';
 import '../../theme/app_theme.dart';
 import 'order_details_screen.dart';
@@ -19,9 +20,14 @@ class OrdersScreen extends ConsumerWidget {
     final currencyFormat = NumberFormat.currency(locale: 'pt_BR', symbol: 'R\$');
     final dateFormat = DateFormat('dd/MM/yyyy HH:mm');
 
+    final profile = ref.watch(profileProvider).value;
+    final hasOrderPermission = profile?.hasPermission('manage_orders') ?? false;
+
     return Scaffold(
       appBar: AppBar(title: const Text('Meus Pedidos')),
-      body: ordersAsync.when(
+      body: (isAdminMode && !hasOrderPermission)
+          ? const Center(child: Text('Você não tem permissão para gerenciar pedidos.'))
+          : ordersAsync.when(
         data: (orders) => orders.isEmpty
             ? const Center(child: Text('Você ainda não fez nenhum pedido.'))
             : ListView.builder(

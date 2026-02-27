@@ -98,6 +98,34 @@ class DatabaseService {
     return Profile.fromJson(response);
   }
 
+  Future<List<Profile>> getAdmins() async {
+    final response = await _client
+        .from('profiles')
+        .select()
+        .inFilter('role', ['admin', 'main_admin'])
+        .order('full_name');
+
+    return (response as List).map((json) => Profile.fromJson(json)).toList();
+  }
+
+  Future<Profile?> getProfileByEmail(String email) async {
+    final response = await _client
+        .from('profiles')
+        .select()
+        .eq('email', email)
+        .maybeSingle();
+
+    if (response == null) return null;
+    return Profile.fromJson(response);
+  }
+
+  Future<void> updateAdminPermissions(String userId, String role, Map<String, bool> permissions) async {
+    await _client.from('profiles').update({
+      'role': role,
+      'permissions': permissions,
+    }).eq('id', userId);
+  }
+
   // App Config
   Future<Map<String, dynamic>> getAppConfig() async {
     final response = await _client.from('app_config').select();
@@ -115,6 +143,7 @@ class DatabaseService {
       'full_name': profile.fullName,
       'avatar_url': profile.avatarUrl,
       'whatsapp': profile.whatsapp,
+      'email': profile.email,
     });
   }
 

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../models/product_models.dart';
 import '../../providers/product_provider.dart';
+import '../../providers/profile_provider.dart';
 import '../../theme/app_theme.dart';
 
 class CategoryManagementScreen extends ConsumerWidget {
@@ -11,9 +12,14 @@ class CategoryManagementScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final categoriesAsync = ref.watch(categoriesProvider);
 
+    final profile = ref.watch(profileProvider).value;
+    final hasPermission = profile?.hasPermission('manage_categories') ?? false;
+
     return Scaffold(
       appBar: AppBar(title: const Text('Gerenciar Categorias')),
-      body: categoriesAsync.when(
+      body: !hasPermission
+          ? const Center(child: Text('Você não tem permissão para gerenciar categorias.'))
+          : categoriesAsync.when(
         data: (categories) => ListView.builder(
           padding: const EdgeInsets.all(16),
           itemCount: categories.length,

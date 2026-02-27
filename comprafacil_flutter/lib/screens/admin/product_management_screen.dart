@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import '../../models/product_models.dart';
 import '../../providers/product_provider.dart';
+import '../../providers/profile_provider.dart';
 import '../../theme/app_theme.dart';
 import 'product_form_screen.dart';
 
@@ -14,9 +15,14 @@ class ProductManagementScreen extends ConsumerWidget {
     final productsAsync = ref.watch(productsProvider);
     final currencyFormat = NumberFormat.currency(locale: 'pt_BR', symbol: 'R\$');
 
+    final profile = ref.watch(profileProvider).value;
+    final hasPermission = profile?.hasPermission('manage_products') ?? false;
+
     return Scaffold(
       appBar: AppBar(title: const Text('Gerenciar Produtos')),
-      body: productsAsync.when(
+      body: !hasPermission
+          ? const Center(child: Text('Você não tem permissão para gerenciar produtos.'))
+          : productsAsync.when(
         data: (products) => ListView.builder(
           padding: const EdgeInsets.all(16),
           itemCount: products.length,

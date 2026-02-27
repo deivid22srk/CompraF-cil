@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../providers/product_provider.dart';
 import '../../providers/admin_provider.dart';
+import '../../providers/profile_provider.dart';
 
 class AdminSettingsScreen extends ConsumerStatefulWidget {
   const AdminSettingsScreen({super.key});
@@ -54,11 +55,16 @@ class _AdminSettingsScreenState extends ConsumerState<AdminSettingsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final profile = ref.watch(profileProvider).value;
+    final hasPermission = profile?.hasPermission('manage_config') ?? false;
+
     return Scaffold(
       appBar: AppBar(title: const Text('Configurações do App')),
       body: _isLoading
         ? const Center(child: CircularProgressIndicator())
-        : ListView(
+        : !hasPermission
+          ? const Center(child: Text('Você não tem permissão para gerenciar configurações.'))
+          : ListView(
             padding: const EdgeInsets.all(24),
             children: [
               const Text('Taxa de Entrega', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
