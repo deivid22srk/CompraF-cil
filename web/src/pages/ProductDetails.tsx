@@ -37,7 +37,7 @@ export default function ProductDetails() {
         setSelectedImage(productData.image_url)
       }
       if (imagesData) setImages(imagesData)
-      if (config.download_url) setDownloadUrl(config.download_url)
+      if (typeof config.download_url === 'string') setDownloadUrl(config.download_url)
     } catch (error) {
       console.error('Error fetching product details:', error)
     } finally {

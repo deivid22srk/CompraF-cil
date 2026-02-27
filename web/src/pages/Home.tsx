@@ -25,7 +25,7 @@ export default function Home() {
 
         setProducts(productsData)
         setCategories(categoriesData)
-        if (config.download_url) setDownloadUrl(config.download_url)
+        if (typeof config.download_url === 'string') setDownloadUrl(config.download_url)
       } catch (error) {
         console.error('Error fetching data:', error)
       } finally {
