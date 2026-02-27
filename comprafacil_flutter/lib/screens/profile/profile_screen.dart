@@ -114,7 +114,7 @@ class ProfileScreen extends ConsumerWidget {
                         MaterialPageRoute(builder: (_) => const AddressesScreen()),
                       ),
                     ),
-                    if (profile?.role == 'admin') ...[
+                    if (profile?.role == 'admin' || profile?.role == 'main_admin') ...[
                       const Divider(indent: 50),
                       ListTile(
                         leading: const Icon(Icons.admin_panel_settings_outlined),
