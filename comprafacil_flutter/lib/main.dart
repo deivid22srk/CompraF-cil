@@ -11,6 +11,7 @@ import 'screens/home/home_screen.dart';
 import 'screens/admin/admin_home_screen.dart';
 import 'providers/auth_provider.dart';
 import 'providers/admin_provider.dart';
+import 'services/deep_link_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -18,11 +19,33 @@ void main() async {
   runApp(const ProviderScope(child: CompraFacilApp()));
 }
 
-class CompraFacilApp extends ConsumerWidget {
+class CompraFacilApp extends ConsumerStatefulWidget {
   const CompraFacilApp({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<CompraFacilApp> createState() => _CompraFacilAppState();
+}
+
+class _CompraFacilAppState extends ConsumerState<CompraFacilApp> {
+  final _deepLinkService = DeepLinkService();
+
+  @override
+  void initState() {
+    super.initState();
+    // Use addPostFrameCallback to ensure context is available
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _deepLinkService.init(context);
+    });
+  }
+
+  @override
+  void dispose() {
+    _deepLinkService.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final authState = ref.watch(authProvider);
     final themeMode = ref.watch(themeProvider);
 
