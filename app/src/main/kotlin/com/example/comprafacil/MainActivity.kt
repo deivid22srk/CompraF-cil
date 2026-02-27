@@ -27,6 +27,7 @@ import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavType
 import androidx.navigation.compose.*
 import androidx.navigation.navArgument
+import androidx.navigation.navDeepLink
 import com.example.comprafacil.ui.screens.*
 import com.example.comprafacil.ui.theme.CompraFacilTheme
 import android.content.Intent
@@ -43,6 +44,13 @@ import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
+    private var navController: androidx.navigation.NavHostController? = null
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        navController?.handleDeepLink(intent)
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         SupabaseConfig.initialize(this)
@@ -53,8 +61,9 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             CompraFacilTheme {
-                val navController = rememberNavController()
-                val navBackStackEntry by navController.currentBackStackEntryAsState()
+                val currentNavController = rememberNavController()
+                navController = currentNavController
+                val navBackStackEntry by currentNavController.currentBackStackEntryAsState()
                 val currentDestination = navBackStackEntry?.destination
                 val scope = rememberCoroutineScope()
 
@@ -174,8 +183,8 @@ class MainActivity : ComponentActivity() {
                                         label = { Text(screen.label) },
                                         selected = currentDestination?.hierarchy?.any { it.route == screen.route } == true,
                                         onClick = {
-                                            navController.navigate(screen.route) {
-                                                popUpTo(navController.graph.findStartDestination().id) {
+                                            currentNavController.navigate(screen.route) {
+                                                popUpTo(currentNavController.graph.findStartDestination().id) {
                                                     saveState = true
                                                 }
                                                 launchSingleTop = true
@@ -196,13 +205,13 @@ class MainActivity : ComponentActivity() {
                     }
                 ) { innerPadding ->
                     NavHost(
-                        navController,
+                        currentNavController,
                         startDestination = startDestination,
                         modifier = Modifier.padding(innerPadding)
                     ) {
                         composable("auth") {
                             AuthScreen {
-                                navController.navigate("home") {
+                                currentNavController.navigate("home") {
                                     popUpTo("auth") { inclusive = true }
                                 }
                             }
@@ -210,32 +219,38 @@ class MainActivity : ComponentActivity() {
                         composable("home") {
                             HomeScreen(
                                 onProductClick = { productId ->
-                                    navController.navigate("product/$productId")
+                                    currentNavController.navigate("product/$productId")
                                 }
                             )
                         }
                         composable(
                             "product/{productId}",
-                            arguments = listOf(navArgument("productId") { type = NavType.StringType })
+                            arguments = listOf(navArgument("productId") { type = NavType.StringType }),
+                            deepLinks = listOf(
+                                navDeepLink { uriPattern = "https://comprafacil.ct.ws/#/product/{productId}" },
+                                navDeepLink { uriPattern = "https://comprafacil.ct.ws/product/{productId}" },
+                                navDeepLink { uriPattern = "http://comprafacil.ct.ws/#/product/{productId}" },
+                                navDeepLink { uriPattern = "http://comprafacil.ct.ws/product/{productId}" }
+                            )
                         ) { backStackEntry ->
                             val productId = backStackEntry.arguments?.getString("productId") ?: ""
                             ProductDetailsScreen(
                                 productId = productId,
-                                onBack = { navController.popBackStack() }
+                                onBack = { currentNavController.popBackStack() }
                             )
                         }
                         composable("cart") {
                             CartScreen(
                                 onCheckout = {
-                                    navController.navigate("checkout")
+                                    currentNavController.navigate("checkout")
                                 }
                             )
                         }
                         composable("checkout") {
                             CheckoutScreen(
-                                onBack = { navController.popBackStack() },
+                                onBack = { currentNavController.popBackStack() },
                                 onOrderFinished = {
-                                    navController.navigate("home") {
+                                    currentNavController.navigate("home") {
                                         popUpTo("home") { inclusive = true }
                                     }
                                 }
@@ -244,26 +259,26 @@ class MainActivity : ComponentActivity() {
                         composable("profile") {
                             ProfileScreen(
                                 onLogout = {
-                                    navController.navigate("auth") {
-                                        popUpTo(navController.graph.startDestinationId) { inclusive = true }
+                                    currentNavController.navigate("auth") {
+                                        popUpTo(currentNavController.graph.startDestinationId) { inclusive = true }
                                     }
                                 },
                                 onOrdersClick = {
-                                    navController.navigate("orders")
+                                    currentNavController.navigate("orders")
                                 },
                                 onAddressesClick = {
-                                    navController.navigate("addresses")
+                                    currentNavController.navigate("addresses")
                                 }
                             )
                         }
                         composable("addresses") {
                             AddressScreen(
-                                onBack = { navController.popBackStack() }
+                                onBack = { currentNavController.popBackStack() }
                             )
                         }
                         composable("orders") {
                             OrdersScreen(
-                                onBack = { navController.popBackStack() }
+                                onBack = { currentNavController.popBackStack() }
                             )
                         }
                     }
