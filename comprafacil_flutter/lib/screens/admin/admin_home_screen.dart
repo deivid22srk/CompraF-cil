@@ -50,13 +50,19 @@ class _AdminHomeScreenState extends ConsumerState<AdminHomeScreen> {
   Widget build(BuildContext context) {
     final screens = [
       const AdminDashboard(),
-      const OrdersScreen(), // Reuse orders screen for admin (they can see all orders anyway via Supabase if role is admin)
+      const OrdersScreen(),
       const AdminSettingsScreen(),
+    ];
+
+    final titles = [
+      'Painel Administrativo',
+      'Gerenciar Pedidos',
+      'Configurações',
     ];
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Painel Administrativo'),
+        title: Text(titles[_currentIndex]),
         actions: [
           IconButton(
             icon: const Icon(Icons.exit_to_app),

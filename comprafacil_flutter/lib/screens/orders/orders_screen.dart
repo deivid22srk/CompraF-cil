@@ -23,9 +23,7 @@ class OrdersScreen extends ConsumerWidget {
     final profile = ref.watch(profileProvider).value;
     final hasOrderPermission = profile?.hasPermission('manage_orders') ?? false;
 
-    return Scaffold(
-      appBar: AppBar(title: const Text('Meus Pedidos')),
-      body: (isAdminMode && !hasOrderPermission)
+    final content = (isAdminMode && !hasOrderPermission)
           ? const Center(child: Text('Você não tem permissão para gerenciar pedidos.'))
           : ordersAsync.when(
         data: (orders) => orders.isEmpty
@@ -110,7 +108,13 @@ class OrdersScreen extends ConsumerWidget {
               ),
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, s) => Center(child: Text('Erro: $e')),
-      ),
+      );
+
+    if (isAdminMode) return content;
+
+    return Scaffold(
+      appBar: AppBar(title: const Text('Meus Pedidos')),
+      body: content,
     );
   }
 

@@ -58,9 +58,7 @@ class _AdminSettingsScreenState extends ConsumerState<AdminSettingsScreen> {
     final profile = ref.watch(profileProvider).value;
     final hasPermission = profile?.hasPermission('manage_config') ?? false;
 
-    return Scaffold(
-      appBar: AppBar(title: const Text('Configurações do App')),
-      body: _isLoading
+    return _isLoading
         ? const Center(child: CircularProgressIndicator())
         : !hasPermission
           ? const Center(child: Text('Você não tem permissão para gerenciar configurações.'))
@@ -80,7 +78,13 @@ class _AdminSettingsScreenState extends ConsumerState<AdminSettingsScreen> {
                   ),
                   const SizedBox(width: 16),
                   ElevatedButton(
-                    onPressed: () => _update('delivery_fee', double.parse(_deliveryFeeController.text)),
+                    onPressed: () {
+                      final fee = double.tryParse(_deliveryFeeController.text);
+                      if (fee != null) {
+                        _update('delivery_fee', fee);
+                      }
+                    },
+                    style: ElevatedButton.styleFrom(minimumSize: const Size(80, 50)),
                     child: const Text('Salvar'),
                   ),
                 ],

@@ -157,6 +157,10 @@ class _AddEditAdminScreenState extends ConsumerState<AddEditAdminScreen> {
                   const SizedBox(width: 8),
                   ElevatedButton(
                     onPressed: _isSearching ? null : _searchUser,
+                    style: ElevatedButton.styleFrom(
+                      minimumSize: const Size(50, 50),
+                      padding: EdgeInsets.zero,
+                    ),
                     child: _isSearching
                         ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
                         : const Icon(Icons.search),
