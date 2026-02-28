@@ -195,7 +195,7 @@ BEGIN
     DROP POLICY IF EXISTS "Only admins can manage app_config" ON app_config;
     CREATE POLICY "Only admins can manage app_config" ON app_config FOR ALL USING (
         auth.role() = 'service_role' OR
-        EXISTS (SELECT 1 FROM profiles WHERE profiles.id = auth.uid() AND profiles.role = 'admin')
+        EXISTS (SELECT 1 FROM profiles WHERE profiles.id = auth.uid() AND (profiles.role = 'admin' OR profiles.role = 'main_admin'))
     );
 
     -- Addresses
@@ -215,7 +215,7 @@ BEGIN
     CREATE POLICY "Allow public select on categories" ON categories FOR SELECT USING (true);
     DROP POLICY IF EXISTS "Only admins can manage categories" ON categories;
     CREATE POLICY "Only admins can manage categories" ON categories FOR ALL USING (
-        EXISTS (SELECT 1 FROM profiles WHERE profiles.id = auth.uid() AND profiles.role = 'admin')
+        EXISTS (SELECT 1 FROM profiles WHERE profiles.id = auth.uid() AND (profiles.role = 'admin' OR profiles.role = 'main_admin'))
     );
 
     -- Products
@@ -223,7 +223,7 @@ BEGIN
     CREATE POLICY "Allow public select on products" ON products FOR SELECT USING (true);
     DROP POLICY IF EXISTS "Only admins can manage products" ON products;
     CREATE POLICY "Only admins can manage products" ON products FOR ALL USING (
-        EXISTS (SELECT 1 FROM profiles WHERE profiles.id = auth.uid() AND profiles.role = 'admin')
+        EXISTS (SELECT 1 FROM profiles WHERE profiles.id = auth.uid() AND (profiles.role = 'admin' OR profiles.role = 'main_admin'))
     );
 
     -- Product Images
@@ -231,7 +231,7 @@ BEGIN
     CREATE POLICY "Allow public select on product_images" ON product_images FOR SELECT USING (true);
     DROP POLICY IF EXISTS "Only admins can manage product_images" ON product_images;
     CREATE POLICY "Only admins can manage product_images" ON product_images FOR ALL USING (
-        EXISTS (SELECT 1 FROM profiles WHERE profiles.id = auth.uid() AND profiles.role = 'admin')
+        EXISTS (SELECT 1 FROM profiles WHERE profiles.id = auth.uid() AND (profiles.role = 'admin' OR profiles.role = 'main_admin'))
     );
 
     -- Cart Items
@@ -244,17 +244,17 @@ BEGIN
     DROP POLICY IF EXISTS "Users can view their own orders" ON orders;
     CREATE POLICY "Users can view their own orders" ON orders FOR SELECT USING (
         auth.uid() = user_id OR
-        EXISTS (SELECT 1 FROM profiles WHERE profiles.id = auth.uid() AND profiles.role = 'admin')
+        EXISTS (SELECT 1 FROM profiles WHERE profiles.id = auth.uid() AND (profiles.role = 'admin' OR profiles.role = 'main_admin'))
     );
     DROP POLICY IF EXISTS "Authenticated users can insert orders" ON orders;
     CREATE POLICY "Authenticated users can insert orders" ON orders FOR INSERT WITH CHECK (auth.uid() = user_id);
     DROP POLICY IF EXISTS "Only admins can delete orders" ON orders;
     CREATE POLICY "Only admins can delete orders" ON orders FOR DELETE USING (
-        EXISTS (SELECT 1 FROM profiles WHERE profiles.id = auth.uid() AND profiles.role = 'admin')
+        EXISTS (SELECT 1 FROM profiles WHERE profiles.id = auth.uid() AND (profiles.role = 'admin' OR profiles.role = 'main_admin'))
     );
     DROP POLICY IF EXISTS "Only admins can update orders" ON orders;
     CREATE POLICY "Only admins can update orders" ON orders FOR UPDATE USING (
-        EXISTS (SELECT 1 FROM profiles WHERE profiles.id = auth.uid() AND profiles.role = 'admin')
+        EXISTS (SELECT 1 FROM profiles WHERE profiles.id = auth.uid() AND (profiles.role = 'admin' OR profiles.role = 'main_admin'))
     );
 
     -- Order Status History
@@ -262,12 +262,12 @@ BEGIN
     CREATE POLICY "Users can view history of their own orders" ON order_status_history FOR SELECT USING (
         EXISTS (SELECT 1 FROM orders WHERE orders.id = order_status_history.order_id AND (
             orders.user_id = auth.uid() OR
-            EXISTS (SELECT 1 FROM profiles WHERE profiles.id = auth.uid() AND profiles.role = 'admin')
+            EXISTS (SELECT 1 FROM profiles WHERE profiles.id = auth.uid() AND (profiles.role = 'admin' OR profiles.role = 'main_admin'))
         ))
     );
     DROP POLICY IF EXISTS "Only admins can insert order history" ON order_status_history;
     CREATE POLICY "Only admins can insert order history" ON order_status_history FOR INSERT WITH CHECK (
-        EXISTS (SELECT 1 FROM profiles WHERE profiles.id = auth.uid() AND profiles.role = 'admin')
+        EXISTS (SELECT 1 FROM profiles WHERE profiles.id = auth.uid() AND (profiles.role = 'admin' OR profiles.role = 'main_admin'))
     );
 
     -- Order Items
@@ -275,7 +275,7 @@ BEGIN
     CREATE POLICY "Users can view items of their own orders" ON order_items FOR SELECT USING (
         EXISTS (SELECT 1 FROM orders WHERE orders.id = order_items.order_id AND (
             orders.user_id = auth.uid() OR
-            EXISTS (SELECT 1 FROM profiles WHERE profiles.id = auth.uid() AND profiles.role = 'admin')
+            EXISTS (SELECT 1 FROM profiles WHERE profiles.id = auth.uid() AND (profiles.role = 'admin' OR profiles.role = 'main_admin'))
         ))
     );
     DROP POLICY IF EXISTS "Authenticated users can insert order items" ON order_items;
@@ -321,3 +321,42 @@ END $$;
 -- This is critical for RLS and client-side filtering (e.g., user_id)
 ALTER TABLE orders REPLICA IDENTITY FULL;
 ALTER TABLE order_status_history REPLICA IDENTITY FULL;
+
+-- Trigger to auto-sync email from auth.users to public.profiles
+CREATE OR REPLACE FUNCTION public.handle_new_user_profile()
+RETURNS TRIGGER AS $$
+BEGIN
+    INSERT INTO public.profiles (id, email, full_name, avatar_url, role)
+    VALUES (
+        NEW.id,
+        NEW.email,
+        NEW.raw_user_meta_data->>'full_name',
+        NEW.raw_user_meta_data->>'avatar_url',
+        'user'
+    )
+    ON CONFLICT (id) DO UPDATE
+    SET email = EXCLUDED.email;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- Trigger for existing users updates
+CREATE OR REPLACE FUNCTION public.handle_user_update_profile()
+RETURNS TRIGGER AS $$
+BEGIN
+    UPDATE public.profiles
+    SET email = NEW.email
+    WHERE id = NEW.id;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
+CREATE TRIGGER on_auth_user_created
+    AFTER INSERT ON auth.users
+    FOR EACH ROW EXECUTE FUNCTION public.handle_new_user_profile();
+
+DROP TRIGGER IF EXISTS on_auth_user_updated ON auth.users;
+CREATE TRIGGER on_auth_user_updated
+    AFTER UPDATE OF email ON auth.users
+    FOR EACH ROW EXECUTE FUNCTION public.handle_user_update_profile();

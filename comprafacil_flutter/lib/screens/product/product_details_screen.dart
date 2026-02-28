@@ -121,7 +121,7 @@ class _ProductDetailsScreenState extends ConsumerState<ProductDetailsScreen> {
                   child: IconButton(
                     icon: const Icon(Icons.share, color: Colors.black),
                     onPressed: () {
-                      final productUrl = 'https://comprafacil.ct.ws/product/${widget.product.id}';
+                      final productUrl = 'https://comprafacil.ct.ws/#/product/${widget.product.id}';
                       Share.share(
                         'Confira este produto no CompraFácil: ${widget.product.name}\n\n$productUrl',
                         subject: widget.product.name,

@@ -80,9 +80,12 @@ class _AddEditAdminScreenState extends ConsumerState<AddEditAdminScreen> {
 
     setState(() => _isSaving = true);
     try {
+      // Preserve main_admin role if it already exists
+      final newRole = _foundUser!.role == 'main_admin' ? 'main_admin' : 'admin';
+
       await ref.read(databaseServiceProvider).updateAdminPermissions(
         _foundUser!.id,
-        'admin',
+        newRole,
         _permissions,
       );
       if (mounted) {

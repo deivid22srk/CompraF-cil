@@ -112,7 +112,7 @@ class DatabaseService {
     final response = await _client
         .from('profiles')
         .select()
-        .eq('email', email)
+        .ilike('email', email.trim())
         .maybeSingle();
 
     if (response == null) return null;
@@ -144,6 +144,8 @@ class DatabaseService {
       'avatar_url': profile.avatarUrl,
       'whatsapp': profile.whatsapp,
       'email': profile.email,
+      'role': profile.role,
+      'permissions': profile.permissions,
     });
   }
 
