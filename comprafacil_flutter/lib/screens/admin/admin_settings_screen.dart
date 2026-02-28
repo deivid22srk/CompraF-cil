@@ -120,7 +120,6 @@ class _AdminSettingsScreenState extends ConsumerState<AdminSettingsScreen> {
                 ),
               ),
             ],
-          ),
-    );
+          );
   }
 }
