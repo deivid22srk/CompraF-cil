@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../providers/profile_provider.dart';
 import '../../theme/app_theme.dart';
+import '../../widgets/cached_avatar.dart';
 
 class EditProfileScreen extends ConsumerStatefulWidget {
   const EditProfileScreen({super.key});
@@ -85,11 +86,10 @@ class _EditProfileScreenState extends ConsumerState<EditProfileScreen> {
             children: [
               Stack(
                 children: [
-                  CircleAvatar(
+                  CachedAvatar(
+                    url: profile?.avatarUrl,
                     radius: 60,
-                    backgroundColor: AppTheme.primaryColor,
-                    backgroundImage: profile?.avatarUrl != null ? NetworkImage(profile!.avatarUrl!) : null,
-                    child: profile?.avatarUrl == null ? const Icon(Icons.person, size: 80, color: Colors.white) : null,
+                    placeholderIcon: Icons.person,
                   ),
                   Positioned(
                     bottom: 0,

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../models/user_models.dart';
 import '../../providers/product_provider.dart';
+import '../../widgets/cached_avatar.dart';
 import 'add_edit_admin_screen.dart';
 
 class AdminManagementScreen extends ConsumerWidget {
@@ -28,10 +29,7 @@ class AdminManagementScreen extends ConsumerWidget {
             itemBuilder: (context, index) {
               final admin = admins[index];
               return ListTile(
-                leading: CircleAvatar(
-                  backgroundImage: admin.avatarUrl != null ? NetworkImage(admin.avatarUrl!) : null,
-                  child: admin.avatarUrl == null ? const Icon(Icons.person) : null,
-                ),
+                leading: CachedAvatar(url: admin.avatarUrl, radius: 20),
                 title: Text(admin.fullName ?? 'Sem nome'),
                 subtitle: Text(admin.email ?? 'Sem email'),
                 trailing: admin.role == 'main_admin'

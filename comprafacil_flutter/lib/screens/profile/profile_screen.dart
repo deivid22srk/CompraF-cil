@@ -6,6 +6,7 @@ import '../../providers/theme_provider.dart';
 import '../../providers/admin_provider.dart';
 import '../../providers/settings_provider.dart';
 import '../../theme/app_theme.dart';
+import '../../widgets/cached_avatar.dart';
 import 'addresses_screen.dart';
 import 'edit_profile_screen.dart';
 import 'settings_screen.dart';
@@ -55,12 +56,7 @@ class ProfileScreen extends ConsumerWidget {
                 ),
                 child: Row(
                   children: [
-                    CircleAvatar(
-                      radius: 40,
-                      backgroundColor: Colors.white24,
-                      backgroundImage: profile?.avatarUrl != null ? NetworkImage(profile!.avatarUrl!) : null,
-                      child: profile?.avatarUrl == null ? const Icon(Icons.person, size: 40, color: Colors.white) : null,
-                    ),
+                    CachedAvatar(url: profile?.avatarUrl),
                     const SizedBox(width: 20),
                     Expanded(
                       child: Column(

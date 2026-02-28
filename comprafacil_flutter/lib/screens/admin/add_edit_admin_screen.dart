@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../models/user_models.dart';
 import '../../providers/product_provider.dart';
 import '../../theme/app_theme.dart';
+import '../../widgets/cached_avatar.dart';
 
 class AddEditAdminScreen extends ConsumerStatefulWidget {
   final Profile? admin;
@@ -172,10 +173,7 @@ class _AddEditAdminScreenState extends ConsumerState<AddEditAdminScreen> {
             if (_foundUser != null) ...[
               Card(
                 child: ListTile(
-                  leading: CircleAvatar(
-                    backgroundImage: _foundUser!.avatarUrl != null ? NetworkImage(_foundUser!.avatarUrl!) : null,
-                    child: _foundUser!.avatarUrl == null ? const Icon(Icons.person) : null,
-                  ),
+                  leading: CachedAvatar(url: _foundUser!.avatarUrl, radius: 20),
                   title: Text(_foundUser!.fullName ?? 'Sem nome'),
                   subtitle: Text(_foundUser!.email ?? ''),
                 ),
