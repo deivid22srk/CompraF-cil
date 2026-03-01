@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:intl/intl.dart';
-import '../cart/cart_screen.dart';
+import 'package:share_plus/share_plus.dart';
+import '../checkout/checkout_screen.dart';
 import 'zoom_image_screen.dart';
 import '../../models/product_models.dart';
 import '../../providers/cart_provider.dart';
@@ -112,6 +113,24 @@ class _ProductDetailsScreenState extends ConsumerState<ProductDetailsScreen> {
                 ),
               ),
             ),
+            actions: [
+              Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: CircleAvatar(
+                  backgroundColor: Colors.white,
+                  child: IconButton(
+                    icon: const Icon(Icons.share, color: Colors.black),
+                    onPressed: () {
+                      final productUrl = 'https://comprafacil.ct.ws/#/product/${widget.product.id}';
+                      Share.share(
+                        'Confira este produto no CompraFácil: ${widget.product.name}\n\n$productUrl',
+                        subject: widget.product.name,
+                      );
+                    },
+                  ),
+                ),
+              ),
+            ],
           ),
           SliverToBoxAdapter(
             child: Container(
@@ -274,23 +293,17 @@ class _ProductDetailsScreenState extends ConsumerState<ProductDetailsScreen> {
             const SizedBox(width: 16),
             Expanded(
               child: ElevatedButton(
-                onPressed: () async {
-                  try {
-                    await ref.read(cartProvider.notifier).addToCart(
-                      widget.product,
-                      quantity: _quantity,
-                      variations: _selectedVariations,
-                    );
-                    if (mounted) {
-                      Navigator.push(context, MaterialPageRoute(builder: (_) => const CartScreen()));
-                    }
-                  } catch (e) {
-                    if (mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text(e.toString().replaceAll('Exception: ', ''))),
-                      );
-                    }
-                  }
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => CheckoutScreen(
+                        buyNowProduct: widget.product,
+                        buyNowQuantity: _quantity,
+                        buyNowVariations: _selectedVariations,
+                      ),
+                    ),
+                  );
                 },
                 child: const Text('COMPRAR AGORA'),
               ),

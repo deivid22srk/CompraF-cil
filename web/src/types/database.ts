@@ -27,7 +27,7 @@ export interface Category {
 
 export interface AppConfig {
   key: string;
-  value: any;
+  value: string | number | boolean | null | Record<string, unknown>;
   updated_at?: string;
 }
 

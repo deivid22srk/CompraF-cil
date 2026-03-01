@@ -8,7 +8,7 @@ export const configService = {
 
     if (error) throw error
 
-    const config: Record<string, any> = {}
+    const config: Record<string, string | number | boolean | null | Record<string, unknown>> = {}
     data.forEach(item => {
       config[item.key] = item.value
     })
@@ -23,6 +23,9 @@ export const configService = {
 
   async getDeliveryFee() {
     const config = await this.getConfig()
-    return parseFloat(config.delivery_fee) || 0
+    const fee = config.delivery_fee
+    if (typeof fee === 'string') return parseFloat(fee) || 0
+    if (typeof fee === 'number') return fee
+    return 0
   }
 }

@@ -29,12 +29,14 @@ class AuthNotifier extends StateNotifier<AsyncValue<User?>> {
     }
   }
 
-  Future<void> signUp(String email, String password) async {
-    state = const AsyncValue.loading();
+  Future<AuthResponse?> signUp(String email, String password) async {
+    // We don't set state to loading here to avoid unmounting the LoginScreen
+    // when it redirects to SplashScreen in main.dart
     try {
-      await Supabase.instance.client.auth.signUp(email: email, password: password);
-    } catch (e, stack) {
-      state = AsyncValue.error(e, stack);
+      final response = await Supabase.instance.client.auth.signUp(email: email, password: password);
+      return response;
+    } catch (e) {
+      rethrow;
     }
   }
 

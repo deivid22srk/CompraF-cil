@@ -3,24 +3,36 @@ class Profile {
   final String? fullName;
   final String? avatarUrl;
   final String? whatsapp;
+  final String? email;
   final String role;
+  final Map<String, bool> permissions;
 
   Profile({
     required this.id,
     this.fullName,
     this.avatarUrl,
     this.whatsapp,
+    this.email,
     this.role = 'user',
+    this.permissions = const {},
   });
 
   factory Profile.fromJson(Map<String, dynamic> json) {
+    final permissionsMap = json['permissions'] as Map<String, dynamic>? ?? {};
     return Profile(
       id: json['id'],
       fullName: json['full_name'],
       avatarUrl: json['avatar_url'],
       whatsapp: json['whatsapp'],
+      email: json['email'],
       role: json['role'] ?? 'user',
+      permissions: permissionsMap.map((k, v) => MapEntry(k, v as bool)),
     );
+  }
+
+  bool hasPermission(String permission) {
+    if (role == 'main_admin') return true;
+    return permissions[permission] ?? false;
   }
 }
 
@@ -140,6 +152,32 @@ class Order {
       paymentMethod: json['payment_method'] ?? 'dinheiro',
       status: json['status'] ?? 'pendente',
       createdAt: json['created_at'] != null ? DateTime.parse(json['created_at']) : null,
+    );
+  }
+}
+
+class OrderStatusHistory {
+  final String id;
+  final String orderId;
+  final String status;
+  final String? notes;
+  final DateTime createdAt;
+
+  OrderStatusHistory({
+    required this.id,
+    required this.orderId,
+    required this.status,
+    this.notes,
+    required this.createdAt,
+  });
+
+  factory OrderStatusHistory.fromJson(Map<String, dynamic> json) {
+    return OrderStatusHistory(
+      id: json['id'],
+      orderId: json['order_id'],
+      status: json['status'],
+      notes: json['notes'],
+      createdAt: DateTime.parse(json['created_at']),
     );
   }
 }

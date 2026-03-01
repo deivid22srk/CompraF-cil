@@ -25,14 +25,30 @@ class ProfileNotifier extends StateNotifier<AsyncValue<Profile?>> {
     state = const AsyncValue.loading();
     try {
       final db = _ref.read(databaseServiceProvider);
-      final profile = await db.getProfile(_userId!);
+      var profile = await db.getProfile(_userId!);
+
+      // Auto-update email from auth if missing in profile
+      final user = _ref.read(authProvider).value;
+      if (profile != null && profile.email == null && user?.email != null) {
+        profile = Profile(
+          id: profile.id,
+          fullName: profile.fullName,
+          avatarUrl: profile.avatarUrl,
+          whatsapp: profile.whatsapp,
+          email: user!.email,
+          role: profile.role,
+          permissions: profile.permissions,
+        );
+        await db.updateProfile(profile);
+      }
+
       state = AsyncValue.data(profile);
     } catch (e, stack) {
       state = AsyncValue.error(e, stack);
     }
   }
 
-  Future<void> updateProfile({String? fullName, String? avatarUrl, String? whatsapp}) async {
+  Future<void> updateProfile({String? fullName, String? avatarUrl, String? whatsapp, String? email}) async {
     if (_userId == null || state.value == null) return;
     try {
       final db = _ref.read(databaseServiceProvider);
@@ -41,7 +57,9 @@ class ProfileNotifier extends StateNotifier<AsyncValue<Profile?>> {
         fullName: fullName ?? state.value!.fullName,
         avatarUrl: avatarUrl ?? state.value!.avatarUrl,
         whatsapp: whatsapp ?? state.value!.whatsapp,
+        email: email ?? state.value!.email,
         role: state.value!.role,
+        permissions: state.value!.permissions,
       );
       await db.updateProfile(updatedProfile);
       state = AsyncValue.data(updatedProfile);

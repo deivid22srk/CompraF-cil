@@ -27,7 +27,6 @@ on:
         required: true
         type: boolean
         default: true
-
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -101,7 +100,6 @@ jobs:
       if: github.event_name != 'workflow_dispatch' || inputs.build_flutter_android
       uses: subosito/flutter-action@v2
       with:
-        flutter-version: '3.38.7'
         channel: 'stable'
         cache: true
 

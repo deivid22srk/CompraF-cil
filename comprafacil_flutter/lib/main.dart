@@ -1,12 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'services/supabase_service.dart';
+// import 'services/notification_service.dart';
+// import 'services/background_service.dart';
 import 'theme/app_theme.dart';
 import 'providers/theme_provider.dart';
 import 'screens/splash_screen.dart';
 import 'screens/auth/login_screen.dart';
 import 'screens/home/home_screen.dart';
+import 'screens/admin/admin_home_screen.dart';
 import 'providers/auth_provider.dart';
+import 'providers/admin_provider.dart';
+import 'services/deep_link_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -14,24 +19,50 @@ void main() async {
   runApp(const ProviderScope(child: CompraFacilApp()));
 }
 
-class CompraFacilApp extends ConsumerWidget {
+class CompraFacilApp extends ConsumerStatefulWidget {
   const CompraFacilApp({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<CompraFacilApp> createState() => _CompraFacilAppState();
+}
+
+class _CompraFacilAppState extends ConsumerState<CompraFacilApp> {
+  final _deepLinkService = DeepLinkService();
+
+  @override
+  void initState() {
+    super.initState();
+    // Use addPostFrameCallback to ensure context is available
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _deepLinkService.init(context);
+    });
+  }
+
+  @override
+  void dispose() {
+    _deepLinkService.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final authState = ref.watch(authProvider);
     final themeMode = ref.watch(themeProvider);
 
     return MaterialApp(
-      title: 'CompraFácil',
+      title: 'CompraFacil',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,
       darkTheme: AppTheme.darkTheme,
       themeMode: themeMode,
       home: authState.when(
-        data: (user) => user == null ? const LoginScreen() : const HomeScreen(),
+        data: (user) {
+          if (user == null) return const LoginScreen();
+          final isAdminMode = ref.watch(isAdminModeProvider);
+          return isAdminMode ? const AdminHomeScreen() : const HomeScreen();
+        },
         loading: () => const SplashScreen(),
-        error: (e, s) => Scaffold(body: Center(child: Text('Erro: $e'))),
+        error: (e, s) => const LoginScreen(),
       ),
     );
   }

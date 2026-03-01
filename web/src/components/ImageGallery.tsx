@@ -1,10 +1,10 @@
+import ImageWithLoading from './ImageWithLoading'
+
 interface ImageGalleryProps {
   images: { id: string; image_url: string }[]
   selectedImage: string
   onSelect: (url: string) => void
 }
-
-import ImageWithLoading from './ImageWithLoading'
 
 export default function ImageGallery({ images, selectedImage, onSelect }: ImageGalleryProps) {
   if (images.length <= 1) return null

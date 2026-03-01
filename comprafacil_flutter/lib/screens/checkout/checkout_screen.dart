@@ -1,14 +1,27 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:intl/intl.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../providers/cart_provider.dart';
 import '../../providers/auth_provider.dart';
+import '../../providers/product_provider.dart';
+import '../../providers/address_provider.dart';
+import '../../models/user_models.dart';
 import '../../theme/app_theme.dart';
 import '../../models/product_models.dart';
 
 class CheckoutScreen extends ConsumerStatefulWidget {
-  const CheckoutScreen({super.key});
+  final Product? buyNowProduct;
+  final int? buyNowQuantity;
+  final Map<String, String>? buyNowVariations;
+
+  const CheckoutScreen({
+    super.key,
+    this.buyNowProduct,
+    this.buyNowQuantity,
+    this.buyNowVariations,
+  });
 
   @override
   ConsumerState<CheckoutScreen> createState() => _CheckoutScreenState();
@@ -21,6 +34,61 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
   String _paymentMethod = 'dinheiro';
   Position? _currentPosition;
   bool _isLoading = false;
+  double _calculatedDeliveryFee = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadInitialFee();
+  }
+
+  Future<void> _loadInitialFee() async {
+    try {
+      final db = ref.read(databaseServiceProvider);
+      final config = await db.getAppConfig();
+      final type = config['delivery_fee_type'] ?? 'fixed';
+      if (type == 'fixed') {
+        setState(() {
+          _calculatedDeliveryFee = double.tryParse(config['delivery_fee']?.toString() ?? '0') ?? 0;
+        });
+      }
+    } catch (e) {
+      debugPrint('Error loading initial fee: $e');
+    }
+  }
+
+  Future<void> _calculateDynamicFee(Position userPos) async {
+    try {
+      final db = ref.read(databaseServiceProvider);
+      final config = await db.getAppConfig();
+      final type = config['delivery_fee_type'] ?? 'fixed';
+
+      if (type == 'fixed') {
+        setState(() {
+          _calculatedDeliveryFee = double.tryParse(config['delivery_fee']?.toString() ?? '0') ?? 0;
+        });
+      } else {
+        final storeLat = double.tryParse(config['store_latitude']?.toString() ?? '0') ?? 0;
+        final storeLng = double.tryParse(config['store_longitude']?.toString() ?? '0') ?? 0;
+        final feePerKm = double.tryParse(config['delivery_fee_per_km']?.toString() ?? '0') ?? 0;
+
+        if (storeLat != 0 && storeLng != 0) {
+          final distanceInMeters = Geolocator.distanceBetween(
+            storeLat, storeLng, userPos.latitude, userPos.longitude
+          );
+
+          double distanceInKm = distanceInMeters / 1000;
+          if (distanceInKm < 1) distanceInKm = 1; // Minimum 1km
+
+          setState(() {
+            _calculatedDeliveryFee = distanceInKm * feePerKm;
+          });
+        }
+      }
+    } catch (e) {
+      debugPrint('Error calculating dynamic fee: $e');
+    }
+  }
 
   Future<void> _getCurrentLocation() async {
     bool serviceEnabled;
@@ -61,6 +129,7 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
     try {
       final position = await Geolocator.getCurrentPosition();
       setState(() => _currentPosition = position);
+      await _calculateDynamicFee(position);
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -71,11 +140,53 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
   }
 
   Future<void> _submitOrder() async {
-    final user = ref.read(authProvider).value;
-    final cartItems = ref.read(cartProvider).value;
-    final total = ref.read(cartTotalProvider);
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Confirmar Pedido'),
+        content: const Text(
+          'Seu pedido será enviado para análise. Note que ele pode ser cancelado por motivos logísticos, como distância excessiva ou indisponibilidade de entrega para sua região.',
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('CANCELAR')),
+          ElevatedButton(onPressed: () => Navigator.pop(context, true), child: const Text('CONFIRMAR')),
+        ],
+      ),
+    );
 
-    if (user == null || cartItems == null || cartItems.isEmpty) return;
+    if (confirmed != true) return;
+
+    final user = ref.read(authProvider).value;
+    if (user == null) return;
+
+    List<Map<String, dynamic>> itemsToOrder = [];
+    double cartTotal = 0;
+
+    if (widget.buyNowProduct != null) {
+      itemsToOrder = [{
+        'product_id': widget.buyNowProduct!.id,
+        'quantity': widget.buyNowQuantity ?? 1,
+        'price_at_time': widget.buyNowProduct!.price,
+        'selected_variations': widget.buyNowVariations,
+      }];
+      cartTotal = widget.buyNowProduct!.price * (widget.buyNowQuantity ?? 1);
+    } else {
+      final cartItems = ref.read(cartProvider).value;
+      if (cartItems == null || cartItems.isEmpty) return;
+
+      itemsToOrder = cartItems.map((item) {
+        final product = Product.fromJson(item.product);
+        return {
+          'product_id': item.productId,
+          'quantity': item.quantity,
+          'price_at_time': product.price,
+          'selected_variations': item.selectedVariations,
+        };
+      }).toList();
+      cartTotal = ref.read(cartTotalProvider);
+    }
+
+    final finalTotal = cartTotal + _calculatedDeliveryFee;
 
     setState(() => _isLoading = true);
 
@@ -85,7 +196,8 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
         'customer_name': _customerNameController.text,
         'whatsapp': _whatsappController.text,
         'location': _addressController.text,
-        'total_price': total,
+        'total_price': finalTotal,
+        'delivery_fee': _calculatedDeliveryFee,
         'latitude': _currentPosition?.latitude,
         'longitude': _currentPosition?.longitude,
         'payment_method': _paymentMethod,
@@ -94,20 +206,16 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
 
       final orderId = orderResponse['id'];
 
-      final orderItems = cartItems.map((item) {
-        final product = Product.fromJson(item.product);
-        return {
-          'order_id': orderId,
-          'product_id': item.productId,
-          'quantity': item.quantity,
-          'price_at_time': product.price,
-          'selected_variations': item.selectedVariations,
-        };
+      final orderItems = itemsToOrder.map((item) => {
+        ...item,
+        'order_id': orderId,
       }).toList();
 
       await Supabase.instance.client.from('order_items').insert(orderItems);
 
-      await ref.read(cartProvider.notifier).clearCart();
+      if (widget.buyNowProduct == null) {
+        await ref.read(cartProvider.notifier).clearCart();
+      }
 
       if (mounted) {
         Navigator.popUntil(context, (route) => route.isFirst);
@@ -128,6 +236,17 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final addressesAsync = ref.watch(addressesProvider);
+
+    double cartTotal = 0;
+    if (widget.buyNowProduct != null) {
+      cartTotal = widget.buyNowProduct!.price * (widget.buyNowQuantity ?? 1);
+    } else {
+      cartTotal = ref.read(cartTotalProvider);
+    }
+
+    final currencyFormat = NumberFormat.currency(locale: 'pt_BR', symbol: 'R\$');
+
     return Scaffold(
       appBar: AppBar(title: const Text('Checkout')),
       body: SingleChildScrollView(
@@ -142,6 +261,64 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
           children: [
             const Text('Informações de Entrega', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
             const SizedBox(height: 16),
+            addressesAsync.when(
+              data: (addresses) => addresses.isEmpty
+                  ? const SizedBox.shrink()
+                  : Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text('Selecionar Endereço Salvo', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500)),
+                        const SizedBox(height: 8),
+                        DropdownButtonFormField<Address>(
+                          decoration: const InputDecoration(
+                            border: OutlineInputBorder(),
+                            contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                          ),
+                          hint: const Text('Escolha um endereço'),
+                          items: addresses.map((addr) => DropdownMenuItem(
+                            value: addr,
+                            child: Text(addr.name),
+                          )).toList(),
+                          onChanged: (addr) async {
+                            if (addr != null) {
+                              final newPos = addr.latitude != null && addr.longitude != null
+                                ? Position(
+                                    latitude: addr.latitude!,
+                                    longitude: addr.longitude!,
+                                    timestamp: DateTime.now(),
+                                    accuracy: 0,
+                                    altitude: 0,
+                                    heading: 0,
+                                    speed: 0,
+                                    speedAccuracy: 0,
+                                    altitudeAccuracy: 0,
+                                    headingAccuracy: 0,
+                                  )
+                                : null;
+
+                              setState(() {
+                                _addressController.text = addr.addressLine;
+                                if (addr.receiverName != null && addr.receiverName!.isNotEmpty) {
+                                  _customerNameController.text = addr.receiverName!;
+                                }
+                                _whatsappController.text = addr.phone;
+                                _currentPosition = newPos;
+                              });
+
+                              if (newPos != null) {
+                                await _calculateDynamicFee(newPos);
+                              }
+                            }
+                          },
+                        ),
+                        const SizedBox(height: 16),
+                        const Center(child: Text('OU PREENCHA ABAIXO', style: TextStyle(fontSize: 10, color: Colors.grey))),
+                        const SizedBox(height: 16),
+                      ],
+                    ),
+              loading: () => const LinearProgressIndicator(),
+              error: (e, s) => Text('Erro ao carregar endereços: $e', style: const TextStyle(color: Colors.red, fontSize: 12)),
+            ),
             TextField(
               controller: _customerNameController,
               decoration: const InputDecoration(labelText: 'Seu Nome', border: OutlineInputBorder()),
@@ -169,6 +346,14 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
               label: Text(_currentPosition != null ? 'Localização Capturada' : 'Capturar Localização Exata'),
               style: OutlinedButton.styleFrom(minimumSize: const Size(double.infinity, 50)),
             ),
+            const SizedBox(height: 32),
+            const Text('Resumo do Pedido', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+            const SizedBox(height: 16),
+            _buildSummaryRow('Produtos', currencyFormat.format(cartTotal)),
+            _buildSummaryRow('Entrega', currencyFormat.format(_calculatedDeliveryFee)),
+            const Divider(height: 24),
+            _buildSummaryRow('Total', currencyFormat.format(cartTotal + _calculatedDeliveryFee), isBold: true),
+
             const SizedBox(height: 32),
             const Text('Forma de Pagamento', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
             const SizedBox(height: 8),
@@ -198,6 +383,19 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
               ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildSummaryRow(String label, String value, {bool isBold = false}) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(label, style: TextStyle(color: isBold ? null : Colors.grey, fontWeight: isBold ? FontWeight.bold : null)),
+          Text(value, style: TextStyle(fontWeight: isBold ? FontWeight.bold : null)),
+        ],
       ),
     );
   }

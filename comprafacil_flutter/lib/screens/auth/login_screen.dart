@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../providers/auth_provider.dart';
 import '../../theme/app_theme.dart';
+import '../../widgets/update_dialog.dart';
+import '../../services/update_service.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
@@ -14,9 +17,45 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _isSignUp = false;
+  bool _isLoadingLocal = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _checkForUpdates();
+  }
+
+  Future<void> _checkForUpdates() async {
+    // Small delay to ensure the UI is ready
+    await Future.delayed(const Duration(seconds: 2));
+    if (!mounted) return;
+
+    final updateInfo = await UpdateService.checkForUpdate();
+    if (updateInfo != null && mounted) {
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => UpdateDialog(
+          latestVersion: updateInfo['latestVersion'],
+          downloadUrl: updateInfo['downloadUrl'],
+        ),
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
+    ref.listen<AsyncValue<User?>>(authProvider, (previous, next) {
+      if (next is AsyncError) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Erro: ${next.error}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    });
+
     final authState = ref.watch(authProvider);
 
     return Scaffold(
@@ -43,6 +82,15 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                         color: Colors.white,
                         fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    const Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 24),
+                      child: Text(
+                        'Atendemos apenas o Sítio Riacho dos Barreiros e locais próximos',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(color: Colors.white70, fontSize: 12),
                       ),
                     ),
                   ],
@@ -72,16 +120,46 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     ),
                   ),
                   const SizedBox(height: 32),
-                  if (authState.isLoading)
+                  if (authState.isLoading || _isLoadingLocal)
                     const CircularProgressIndicator()
                   else
                     ElevatedButton(
-                      onPressed: () {
+                      onPressed: () async {
                         if (_isSignUp) {
-                          ref.read(authProvider.notifier).signUp(
-                                _emailController.text,
-                                _passwordController.text,
+                          setState(() => _isLoadingLocal = true);
+                          try {
+                            final response = await ref.read(authProvider.notifier).signUp(
+                                  _emailController.text,
+                                  _passwordController.text,
+                                );
+                            if (mounted) {
+                              setState(() => _isLoadingLocal = false);
+                              if (response != null) {
+                                showDialog(
+                                  context: context,
+                                  builder: (context) => AlertDialog(
+                                    title: const Text('Confirmação enviada'),
+                                    content: const Text(
+                                      'Um e-mail de confirmação do Supabase foi enviado para o seu endereço de e-mail. Por favor, verifique sua caixa de entrada para ativar sua conta.',
+                                    ),
+                                    actions: [
+                                      TextButton(
+                                        onPressed: () => Navigator.pop(context),
+                                        child: const Text('OK'),
+                                      ),
+                                    ],
+                                  ),
+                                );
+                              }
+                            }
+                          } catch (e) {
+                            if (mounted) {
+                              setState(() => _isLoadingLocal = false);
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(content: Text('Erro ao criar conta: $e'), backgroundColor: Colors.red),
                               );
+                            }
+                          }
                         } else {
                           ref.read(authProvider.notifier).signIn(
                                 _emailController.text,

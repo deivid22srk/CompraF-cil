@@ -3,8 +3,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/profile_provider.dart';
 import '../../providers/theme_provider.dart';
+import '../../providers/admin_provider.dart';
+import '../../providers/settings_provider.dart';
 import '../../theme/app_theme.dart';
+import '../../widgets/cached_avatar.dart';
+import 'addresses_screen.dart';
 import 'edit_profile_screen.dart';
+import 'settings_screen.dart';
 
 class ProfileScreen extends ConsumerWidget {
   const ProfileScreen({super.key});
@@ -51,12 +56,7 @@ class ProfileScreen extends ConsumerWidget {
                 ),
                 child: Row(
                   children: [
-                    CircleAvatar(
-                      radius: 40,
-                      backgroundColor: Colors.white24,
-                      backgroundImage: profile?.avatarUrl != null ? NetworkImage(profile!.avatarUrl!) : null,
-                      child: profile?.avatarUrl == null ? const Icon(Icons.person, size: 40, color: Colors.white) : null,
-                    ),
+                    CachedAvatar(url: profile?.avatarUrl),
                     const SizedBox(width: 20),
                     Expanded(
                       child: Column(
@@ -71,7 +71,7 @@ class ProfileScreen extends ConsumerWidget {
                             ),
                           ),
                           Text(
-                            user?.email ?? '',
+                            _maskEmail(user?.email ?? ''),
                             style: const TextStyle(
                               color: Colors.white70,
                               fontSize: 14,
@@ -105,8 +105,25 @@ class ProfileScreen extends ConsumerWidget {
                       leading: const Icon(Icons.location_on_outlined),
                       title: const Text('Meus Endereços'),
                       trailing: const Icon(Icons.chevron_right),
-                      onTap: () {},
+                      onTap: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (_) => const AddressesScreen()),
+                      ),
                     ),
+                    if (profile?.role == 'admin' || profile?.role == 'main_admin') ...[
+                      const Divider(indent: 50),
+                      ListTile(
+                        leading: const Icon(Icons.admin_panel_settings_outlined),
+                        title: const Text('Alterar para o modo ADM'),
+                        trailing: const Icon(Icons.chevron_right),
+                        onTap: () {
+                          ref.read(isAdminModeProvider.notifier).toggle(true);
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Modo Administrador Ativado')),
+                          );
+                        },
+                      ),
+                    ],
                   ],
                 ),
               ),
@@ -166,6 +183,17 @@ class ProfileScreen extends ConsumerWidget {
         ),
       ),
     );
+  }
+
+  String _maskEmail(String email) {
+    if (email.isEmpty || !email.contains('@')) return email;
+    final parts = email.split('@');
+    final name = parts[0];
+    final domain = parts[1];
+    if (name.length <= 1) return email;
+    final visibleLength = (name.length / 2).floor();
+    final maskedPart = '*' * (name.length - visibleLength);
+    return '${name.substring(0, visibleLength)}$maskedPart@$domain';
   }
 
   Widget _buildSettingCard(BuildContext context, {required Widget child}) {
