@@ -149,6 +149,11 @@ BEGIN
     IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='profiles' AND column_name='permissions') THEN
         ALTER TABLE profiles ADD COLUMN permissions JSONB DEFAULT '{}'::jsonb;
     END IF;
+
+    -- orders.delivery_fee
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='orders' AND column_name='delivery_fee') THEN
+        ALTER TABLE orders ADD COLUMN delivery_fee DECIMAL(10, 2) DEFAULT 0;
+    END IF;
 END $$;
 
 -- Enable RLS
