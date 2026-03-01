@@ -12,7 +12,16 @@ import '../../theme/app_theme.dart';
 import '../../models/product_models.dart';
 
 class CheckoutScreen extends ConsumerStatefulWidget {
-  const CheckoutScreen({super.key});
+  final Product? buyNowProduct;
+  final int? buyNowQuantity;
+  final Map<String, String>? buyNowVariations;
+
+  const CheckoutScreen({
+    super.key,
+    this.buyNowProduct,
+    this.buyNowQuantity,
+    this.buyNowVariations,
+  });
 
   @override
   ConsumerState<CheckoutScreen> createState() => _CheckoutScreenState();
@@ -131,12 +140,53 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
   }
 
   Future<void> _submitOrder() async {
-    final user = ref.read(authProvider).value;
-    final cartItems = ref.read(cartProvider).value;
-    final cartTotal = ref.read(cartTotalProvider);
-    final finalTotal = cartTotal + _calculatedDeliveryFee;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Confirmar Pedido'),
+        content: const Text(
+          'Seu pedido será enviado para análise. Note que ele pode ser cancelado por motivos logísticos, como distância excessiva ou indisponibilidade de entrega para sua região.',
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('CANCELAR')),
+          ElevatedButton(onPressed: () => Navigator.pop(context, true), child: const Text('CONFIRMAR')),
+        ],
+      ),
+    );
 
-    if (user == null || cartItems == null || cartItems.isEmpty) return;
+    if (confirmed != true) return;
+
+    final user = ref.read(authProvider).value;
+    if (user == null) return;
+
+    List<Map<String, dynamic>> itemsToOrder = [];
+    double cartTotal = 0;
+
+    if (widget.buyNowProduct != null) {
+      itemsToOrder = [{
+        'product_id': widget.buyNowProduct!.id,
+        'quantity': widget.buyNowQuantity ?? 1,
+        'price_at_time': widget.buyNowProduct!.price,
+        'selected_variations': widget.buyNowVariations,
+      }];
+      cartTotal = widget.buyNowProduct!.price * (widget.buyNowQuantity ?? 1);
+    } else {
+      final cartItems = ref.read(cartProvider).value;
+      if (cartItems == null || cartItems.isEmpty) return;
+
+      itemsToOrder = cartItems.map((item) {
+        final product = Product.fromJson(item.product);
+        return {
+          'product_id': item.productId,
+          'quantity': item.quantity,
+          'price_at_time': product.price,
+          'selected_variations': item.selectedVariations,
+        };
+      }).toList();
+      cartTotal = ref.read(cartTotalProvider);
+    }
+
+    final finalTotal = cartTotal + _calculatedDeliveryFee;
 
     setState(() => _isLoading = true);
 
@@ -156,20 +206,16 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
 
       final orderId = orderResponse['id'];
 
-      final orderItems = cartItems.map((item) {
-        final product = Product.fromJson(item.product);
-        return {
-          'order_id': orderId,
-          'product_id': item.productId,
-          'quantity': item.quantity,
-          'price_at_time': product.price,
-          'selected_variations': item.selectedVariations,
-        };
+      final orderItems = itemsToOrder.map((item) => {
+        ...item,
+        'order_id': orderId,
       }).toList();
 
       await Supabase.instance.client.from('order_items').insert(orderItems);
 
-      await ref.read(cartProvider.notifier).clearCart();
+      if (widget.buyNowProduct == null) {
+        await ref.read(cartProvider.notifier).clearCart();
+      }
 
       if (mounted) {
         Navigator.popUntil(context, (route) => route.isFirst);
@@ -191,7 +237,14 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
   @override
   Widget build(BuildContext context) {
     final addressesAsync = ref.watch(addressesProvider);
-    final cartTotal = ref.read(cartTotalProvider);
+
+    double cartTotal = 0;
+    if (widget.buyNowProduct != null) {
+      cartTotal = widget.buyNowProduct!.price * (widget.buyNowQuantity ?? 1);
+    } else {
+      cartTotal = ref.read(cartTotalProvider);
+    }
+
     final currencyFormat = NumberFormat.currency(locale: 'pt_BR', symbol: 'R\$');
 
     return Scaffold(

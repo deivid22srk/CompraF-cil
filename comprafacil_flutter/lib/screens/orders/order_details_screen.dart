@@ -26,6 +26,11 @@ class OrderDetailsScreen extends ConsumerWidget {
     final currencyFormat = NumberFormat.currency(locale: 'pt_BR', symbol: 'R\$');
     final dateFormat = DateFormat('dd/MM/yyyy HH:mm');
 
+    final canCancel = !isAdminMode &&
+                     order.status == 'pendente' &&
+                     order.createdAt != null &&
+                     DateTime.now().difference(order.createdAt!).inHours < 1;
+
     return Scaffold(
       appBar: AppBar(title: Text('Pedido #${order.id?.substring(0, 8)}')),
       body: SingleChildScrollView(
@@ -122,6 +127,20 @@ class OrderDetailsScreen extends ConsumerWidget {
                   minimumSize: const Size(double.infinity, 50),
                   backgroundColor: Colors.red,
                   foregroundColor: Colors.white,
+                ),
+              ),
+            ],
+            if (canCancel) ...[
+              const SizedBox(height: 24),
+              ElevatedButton.icon(
+                onPressed: () => _cancelOrder(context, ref),
+                icon: const Icon(Icons.cancel),
+                label: const Text('CANCELAR PEDIDO'),
+                style: ElevatedButton.styleFrom(
+                  minimumSize: const Size(double.infinity, 50),
+                  backgroundColor: Colors.red[50],
+                  foregroundColor: Colors.red,
+                  side: const BorderSide(color: Colors.red),
                 ),
               ),
             ],
@@ -288,6 +307,33 @@ class OrderDetailsScreen extends ConsumerWidget {
               }
             },
             child: const Text('Excluir', style: TextStyle(color: Colors.red)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _cancelOrder(BuildContext context, WidgetRef ref) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Cancelar Pedido'),
+        content: const Text('Tem certeza que deseja cancelar este pedido? Esta ação não pode ser desfeita.'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context), child: const Text('VOLTAR')),
+          ElevatedButton(
+            onPressed: () async {
+              final db = ref.read(databaseServiceProvider);
+              await db.updateOrderStatus(order.id!, 'cancelado', notes: 'Cancelado pelo cliente');
+              ref.refresh(orderStatusHistoryProvider(order.id!));
+              ref.refresh(ordersProvider);
+              if (context.mounted) {
+                Navigator.pop(context);
+                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Pedido cancelado com sucesso.')));
+              }
+            },
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+            child: const Text('CONFIRMAR CANCELAMENTO'),
           ),
         ],
       ),

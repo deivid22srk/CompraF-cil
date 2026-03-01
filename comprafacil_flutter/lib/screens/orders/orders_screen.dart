@@ -114,7 +114,28 @@ class OrdersScreen extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(title: const Text('Meus Pedidos')),
-      body: content,
+      body: Column(
+        children: [
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(12),
+            color: Colors.amber[50],
+            child: const Row(
+              children: [
+                Icon(Icons.info_outline, size: 16, color: Colors.amber),
+                SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    'O histórico de pedidos é mantido por 30 dias.',
+                    style: TextStyle(fontSize: 12, color: Colors.amber, fontWeight: FontWeight.bold),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Expanded(child: content),
+        ],
+      ),
     );
   }
 
